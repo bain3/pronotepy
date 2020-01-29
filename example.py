@@ -1,0 +1,19 @@
+import apipronote
+
+# initialise the client
+# Note: the address should be a direct one (like the one below) usually the address shown by your school just redirects
+# you to the real one.
+# Ex.: https://your-school.com/pronote/students <-- BAD
+#      https://0000000a.index-education.net/pronote/eleve.html <-- GOOD
+
+client = apipronote.Client('https://0000000a.index-education.net/pronote/eleve.html')
+
+if client.login('username', 'password'):  # login() returns bool that signifies if it successfully logged itself in
+
+    # get the all the periods (may return multiple types like trimesters and semesters but it doesn't really matter
+    # the api will get it anyway)
+    periods = client.periods()
+
+    for period in periods:
+        for grade in period.grades():  # iterate over all the grades
+            print(f'{grade.grade}/{grade.out_of}')  # print out the grade in this style: 20/20

@@ -1,2 +1,5 @@
 # Project exclude paths
 /tests/
+/api-tests.py
+/venv/
+/api.log
