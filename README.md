@@ -1,4 +1,4 @@
-# apipronote
+# api-pronote
 
 ## Introduction
 
@@ -76,7 +76,7 @@ Gets all the periods of the school year. Will return semesters and trimesters.
 
 - ***Returns***
 
-  List[[apipronote.Period](#period)] - list of all the periods obtained
+  List[[apipronote.Period](#apipronoteperiod)] - list of all the periods obtained
 
 ##### `current_period()`
 
@@ -84,7 +84,7 @@ Gets the current periods. Will return semesters and trimesters.
 
 - ***Returns***
 
-  List[[apipronote.Period](#period)] - list of all the current periods
+  List[[apipronote.Period](#apipronoteperiod)] - list of all the current periods
 
 ##### `homework(date_from, date_to = None)`
 
@@ -102,7 +102,7 @@ Returns all homework in the given timespan. If `date_to` is `None` , it will ret
 
 - ***Returns***
 
-  List[[apipronote.Homework](#homework)] - Homework given between the two time boundaries.
+  List[[apipronote.Homework](#apipronotehomework)] - Homework given between the two time boundaries.
 
 ##### `lessons(date_from, date_to = None)`
 
@@ -122,11 +122,11 @@ Returns all lessons in the given timespan. If `date_to` is `None`, it will retur
 
 - ***Returns***
 
-  List[[apipronote.Lesson](#lesson)] - Lessons between the two time boundaries.
+  List[[apipronote.Lesson](#apipronotelesson)] - Lessons between the two time boundaries.
 
   
 
-#### `apipronote.Grade`<a name="grade"></a>
+#### `apipronote.Grade`
 
 Represents a grade. You shouldn't have to initialise this class manually.
 
@@ -152,11 +152,11 @@ Represents a grade. You shouldn't have to initialise this class manually.
 
 ##### `course`
 
-***[apipronote.Course](#course)*** (only partially attributed) - course in which the grade was given 
+***[apipronote.Course](#apipronotecourse)*** (only partially attributed) - course in which the grade was given 
 
 ##### `period`
 
-***[apipronote.Period](#period)*** - period in which the grade was given
+***[apipronote.Period](#apipronoteperiod)*** - period in which the grade was given
 
 ##### `average`
 
@@ -176,7 +176,7 @@ Represents a grade. You shouldn't have to initialise this class manually.
 
 
 
-#### `apipronote.Course`<a name="course"></a>
+#### `apipronote.Course`
 
 Represents a course. You shouldn't have to initialise this class manually.
 
@@ -220,7 +220,7 @@ Represents a course. You shouldn't have to initialise this class manually.
 
 
 
-#### `apipronote.Lesson`<a name="lesson"></a>
+#### `apipronote.Lesson`
 
 Represents a lesson with a given time. You shouldn't have to create this class manually.
 
@@ -232,7 +232,7 @@ Represents a lesson with a given time. You shouldn't have to create this class m
 
 ##### `course`
 
-***[apipronote.Course](#course)*** (only partially attributed) - course that the lesson is from
+***[apipronote.Course](#apipronotecourse)*** (only partially attributed) - course that the lesson is from
 
 ##### `teacher_name`
 
@@ -256,7 +256,7 @@ Represents a lesson with a given time. You shouldn't have to create this class m
 
 
 
-#### `apipronote.Homework`<a name="homework"></a>
+#### `apipronote.Homework`
 
 Represents a homework. You shouldn't have to create this class manually.
 
@@ -266,7 +266,7 @@ Represents a homework. You shouldn't have to create this class manually.
 
 ##### `course`
 
-[***apipronote.Course***](#course) (only partially attributed) - course that the homework is for
+[***apipronote.Course***](#apipronotecourse) (only partially attributed) - course that the homework is for
 
 ##### `description`
 
@@ -288,7 +288,7 @@ Changes the status of the homework (done or not done).
 
 
 
-#### `apipronote.Period`<a name="period"></a>
+#### `apipronote.Period`
 
 Represents a homework. You shouldn't have to create this class manually.
 
@@ -314,7 +314,7 @@ Fetches the grades from this period from the server.
 
 - ***Returns***
 
-  [***apipronote.Grade***](#grade) - grades from this period
+  [***apipronote.Grade***](#apipronotegrade) - grades from this period
 
 ##### `averages()`
 
@@ -322,7 +322,7 @@ Fetches the averages from this period from the server.
 
 - ***Returns***
 
-  [***apipronote.Course***](#course) (fully attributed) - averages from this period
+  [***apipronote.Course***](#apipronotecourse) (fully attributed) - averages from this period
 
 ## License
 
