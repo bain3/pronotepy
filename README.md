@@ -6,6 +6,12 @@ This is an Python API wrapper for the PRONOTE service. Every function was tested
 
 ## About
 
+### Dependencies
+
+ - cryprodome
+ - beautifulsoup4
+ - requests
+
 ### Small example
 
 This is an example code of the user accessing all of his grades:

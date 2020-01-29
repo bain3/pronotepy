@@ -1,0 +1,11 @@
+beautifulsoup4==4.8.2
+certifi==2019.11.28
+chardet==3.0.4
+docopt==0.6.2
+idna==2.8
+pyasn1==0.4.8
+pycryptodome==3.9.4
+requests==2.22.0
+soupsieve==1.9.5
+urllib3==1.25.7
+yarg==0.1.9
