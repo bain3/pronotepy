@@ -2,7 +2,7 @@
 
 ## Introduction
 
-This is an Python API wrapper for the PRONOTE service. Every function was tested on a student account, but the API should support teacher, parent or any other account. Any functions which are not accessible by the students are not yet supported. This project does **not** use the HYPERPLANNING API provided by PRONOTE, because its main goal is to make programming with PRONOTE a lot easier for students who are still learning.
+This is a Python API wrapper for the PRONOTE service. Every function was tested on a student account, but the API should support teacher, parent or any other account. Any functions which are not accessible by the students are not yet supported. This project does **not** use the HYPERPLANNING API provided by PRONOTE, because its main goal is to make programming with PRONOTE a lot easier for students who are still learning.
 
 ## About
 
@@ -29,7 +29,7 @@ client = apipronote.Client('https://0000000a.index-education.net/pronote/eleve.h
 
 if client.login('username', 'password'):  # login() returns bool that signifies if it successfully logged itself in
 
-    # get the all the periods (may return multiple types like trimesters and semesters but it doesn't really matter
+    # get all the periods (may return multiple types like trimesters and semesters but it doesn't really matter
     # the api will get it anyway)
     periods = client.periods()
 
