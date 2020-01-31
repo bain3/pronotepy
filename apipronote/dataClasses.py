@@ -21,6 +21,22 @@ class Util:
                 output.append(i)
         return output
 
+    @classmethod
+    def prepare_json(cls, clss, json_dict):
+        attribute_dict = clss.attribute_guide
+        output = {}
+        for key in attribute_dict:
+            actual_dict = key.split(',')
+            try:
+                out = json_dict
+                for level in actual_dict:
+                    out = out[level]
+            except KeyError:
+                out = None
+
+            output[attribute_dict[key]] = out
+        return output
+
 
 class Grade:
     """
@@ -57,6 +73,8 @@ class Grade:
                  'period', 'average', 'max', 'min', 'coefficient']
 
     def __init__(self, parsed_json):
+        if parsed_json['G'] != 60:
+            raise IncorrectJson('The json received was not the same as expected.')
         self.id = parsed_json["N"]
         self.grade = None
         self.out_of = None
@@ -98,30 +116,22 @@ class Course:
     default_out_of = the default maximum amount of points
     """
     __slots__ = ['id', 'name', 'groups', 'average', 'class_average', 'max', 'min', 'out_of', 'default_out_of']
-    variable_attr = {
-        'moyEleve': 'average',
-        'baremeMoyEleve': 'out_of',
-        'baremeMoyEleveParDefault': 'default_out_of',
-        'moyClasse': 'class_average',
-        'moyMin': 'min',
-        'moyMax': 'max'
+    attribute_guide = {
+        'moyEleve,V': 'average',
+        'baremeMoyEleve,V': 'out_of',
+        'baremeMoyEleveParDefault,V': 'default_out_of',
+        'moyClasse,V': 'class_average',
+        'moyMin,V': 'min',
+        'moyMax,V': 'max',
+        'N': 'id',
+        'L': 'name',
+        'estServiceEnGroupe': 'groups'
     }
 
     def __init__(self, parsed_json):
-        self.id = parsed_json['N']
-        self.name = parsed_json['L']
-        self.groups = None
-        self.average = None
-        self.class_average = None
-        self.max = None
-        self.min = None
-        self.out_of = None
-        self.default_out_of = None
-        if 'estServiceEnGroup' in parsed_json:
-            self.groups = parsed_json['estServiceEnGroupe']
-        for key in parsed_json:
-            if key in self.__class__.variable_attr:
-                setattr(self, self.__class__.variable_attr[key], parsed_json[key]['V'])
+        prepared_json = Util.prepare_json(self.__class__, parsed_json)
+        for key in prepared_json:
+            self.__setattr__(key, prepared_json[key])
 
 
 class Lesson:
@@ -129,6 +139,7 @@ class Lesson:
     Represents a lesson with a given time. You shouldn't have to create this class manually.
 
     !!If a lesson is a pedagogical outing, it will only have the "outing" and "start" attributes!!
+    FIXME: Date is not date but str
 
     -- Attributes --
     id = the id of the lesson (used internally)
@@ -139,22 +150,32 @@ class Lesson:
     outing = if it is a pedagogical outing
     start = starting time of the lesson
     """
-    __slots__ = ['id', 'course', 'teacher_name', 'classroom', 'start', 'canceled', 'outing']
+    __slots__ = ['id', 'course', 'teacher_name', 'classroom', 'start', 'canceled', 'outing', '_liste_contenus']
+    attribute_guide = {
+        'DateDuCours,V': 'start',
+        'N': 'id',
+        'estAnnule': 'canceled'
+    }
 
     def __init__(self, parsed_json):
-        if 'estSortiePedagogique' in parsed_json:
-            self.outing = True
-            self.start = datetime.datetime.strptime(parsed_json['DateDuCours']['V'], '%d/%m/%Y %H:%M:%S')
-            return
-        self.id = parsed_json['N']
-        self.course = Course(parsed_json['ListeContenus']['V'][0])
-        self.teacher_name = parsed_json['ListeContenus']['V'][1]['L']
-        self.classroom = parsed_json['ListeContenus']['V'][2]['L']
-        self.canceled = False
-        if 'estAnnule' in parsed_json:
-            self.canceled = True
+        prepared_json = Util.prepare_json(self.__class__, parsed_json)
+        self._liste_contenus = parsed_json['ListeContenus']['V']
+        for key in prepared_json:
+            self.__setattr__(key, prepared_json[key])
+
+        if self.start:
+            self.start = datetime.datetime.strptime(self.start, '%d/%m/%Y %H:%M:%S')
+
+        for d in self._liste_contenus:
+            if 'G' not in d:
+                continue
+            elif d['G'] == 16:
+                self.course = Course(d)
+            elif d['G'] == 3:
+                self.teacher_name = d['L']
+            elif d['G'] == 17:
+                self.classroom = d['L']
         self.outing = False
-        self.start = datetime.datetime.strptime(parsed_json['DateDuCours']['V'], '%d/%m/%Y %H:%M:%S')
 
 
 class Homework:
@@ -168,14 +189,23 @@ class Homework:
     done = if the homework is marked done
     """
     __slots__ = ['id', 'course', 'description', 'done', '_client']
+    attribute_guide = {
+        'N': 'id',
+        'descriptif,V': 'description',
+        'TAFFait': 'done',
+        'Matiere,V': 'course'
+    }
 
     def __init__(self, client, parsed_json):
         self._client = client
-        self.id = parsed_json['N']
-        self.course = Course(parsed_json['Matiere']['V'])
-        # get rid of this html shait
-        self.description = re.sub(re.compile('<.*?>'), '', parsed_json['descriptif']['V'])
-        self.done = parsed_json['TAFFait']
+        self.id = self.description = self.done = self.course = None
+        prepared_json = Util.prepare_json(self.__class__, parsed_json)
+        for key in prepared_json:
+            self.__setattr__(key, prepared_json[key])
+        if self.course:
+            self.course = Course(self.course)
+        if self.description:
+            self.description = re.sub(re.compile('<.*?>'), '', self.description)
 
     def set_done(self, status: bool):
         data = {'_Signature_': {'onglet': 88}, 'donnees': {'listeTAF': [
@@ -218,3 +248,11 @@ class Period:
         response = self._client.communication.post('DernieresNotes', json_data)
         crs = response.json()['donneesSec']['donnees']['listeServices']['V']
         return [Course(c) for c in crs]
+
+
+class DataError(Exception):
+    pass
+
+
+class IncorrectJson(DataError):
+    pass

@@ -126,9 +126,7 @@ class Client(object):
         json_data = {'donnees': {
             'domaine': {'_T': 8, 'V': f"[{self._get_week(date_from)}..{self._get_week(date_to)}]"}},
             '_Signature_': {'onglet': 88}}
-        print(json_data)
         response = self.communication.post('PageCahierDeTexte', json_data)
-        print(response.json())
         h_list = response.json()['donneesSec']['donnees']['ListeTravauxAFaire']['V']
         return [dataClasses.Homework(self, h) for h in h_list]
 
