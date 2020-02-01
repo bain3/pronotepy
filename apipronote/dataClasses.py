@@ -22,8 +22,12 @@ class Util:
         return output
 
     @classmethod
-    def prepare_json(cls, clss, json_dict):
-        attribute_dict = clss.attribute_guide
+    def prepare_json(cls, data_class, json_dict):
+        """
+        Prepares json for the data class.
+        TODO: Maybe remove None if didn't find? It is already done in the class.
+        """
+        attribute_dict = data_class.attribute_guide
         output = {}
         for key in attribute_dict:
             actual_dict = key.split(',')
@@ -55,16 +59,18 @@ class Grade:
     min = the lowest grade of the test
     coefficient = the coefficient of the grade
     """
-    variable_attr = {
-        "note": "grade",
-        "bareme": "out_of",
-        "baremeParDefault": "default_out_of",
-        "date": "date",
-        "service": "course",
-        "periode": "period",
-        "moyenne": "average",
-        "noteMax": "max",
-        "noteMin": "min"
+    attribute_guide = {
+        "N": "id",
+        "note,V": "grade",
+        "bareme,V": "out_of",
+        "baremeParDefault,V": "default_out_of",
+        "date,V": "date",
+        "service,V": "course",
+        "periode,V": "period",
+        "moyenne,V": "average",
+        "noteMax,V": "max",
+        "noteMin,V": "min",
+        "coefficient": "coefficient"
     }
 
     instances = set()
@@ -75,28 +81,20 @@ class Grade:
     def __init__(self, parsed_json):
         if parsed_json['G'] != 60:
             raise IncorrectJson('The json received was not the same as expected.')
-        self.id = parsed_json["N"]
-        self.grade = None
-        self.out_of = None
-        self.default_out_of = None
-        self.date = None
-        self.course = {}
-        self.period = {}
-        self.average = None
-        self.max = None
-        self.min = None
+        prepared_json = Util.prepare_json(self.__class__, parsed_json)
+        self.grade = self.out_of = self.default_out_of = self.date = self.average = self.max = self.id = self.min = None
+        self.course = None
+        self.period = None
         self.coefficient = 1
-        for key in parsed_json:
-            if key in self.__class__.variable_attr:
-                setattr(self, self.__class__.variable_attr[key], parsed_json[key]['V'])
+        for key in prepared_json:
+            self.__setattr__(key, prepared_json[key])
         if self.course:
             self.course = Course(self.course)
         if self.period:
+            # noinspection PyTypeChecker
             self.period = Util.get(Period.instances, id=self.period['N'])
         if self.date:
             self.date = datetime.datetime.strptime(self.date, '%d/%m/%Y').date()
-        if 'coefficient' in parsed_json:
-            self.coefficient = parsed_json['coefficient']
 
 
 class Course:
@@ -139,7 +137,6 @@ class Lesson:
     Represents a lesson with a given time. You shouldn't have to create this class manually.
 
     !!If a lesson is a pedagogical outing, it will only have the "outing" and "start" attributes!!
-    FIXME: Date is not date but str
 
     -- Attributes --
     id = the id of the lesson (used internally)
@@ -150,32 +147,39 @@ class Lesson:
     outing = if it is a pedagogical outing
     start = starting time of the lesson
     """
-    __slots__ = ['id', 'course', 'teacher_name', 'classroom', 'start', 'canceled', 'outing', '_liste_contenus']
+    __slots__ = ['id', 'course', 'teacher_name', 'classroom', 'start', 'canceled', '_liste_contenus', 'detention', 'end', 'outing']
     attribute_guide = {
         'DateDuCours,V': 'start',
         'N': 'id',
-        'estAnnule': 'canceled'
+        'estAnnule': 'canceled',
+        'estRetenue': 'detention',
+        'duree': 'end',
+        'estSortiePedagogique': 'outing'
     }
 
-    def __init__(self, parsed_json):
+    def __init__(self, client, parsed_json):
+        self.id = self.course = self.teacher_name = self.classroom = \
+            self.start = self.canceled = self.detention = self.end = self.outing = None
+
         prepared_json = Util.prepare_json(self.__class__, parsed_json)
-        self._liste_contenus = parsed_json['ListeContenus']['V']
         for key in prepared_json:
             self.__setattr__(key, prepared_json[key])
 
         if self.start:
             self.start = datetime.datetime.strptime(self.start, '%d/%m/%Y %H:%M:%S')
+        if self.end:
+            self.end = self.start + client.one_hour_duration * self.end
 
-        for d in self._liste_contenus:
-            if 'G' not in d:
-                continue
-            elif d['G'] == 16:
-                self.course = Course(d)
-            elif d['G'] == 3:
-                self.teacher_name = d['L']
-            elif d['G'] == 17:
-                self.classroom = d['L']
-        self.outing = False
+        if 'ListeContenus' in parsed_json:
+            for d in parsed_json['ListeContenus']['V']:
+                if 'G' not in d:
+                    continue
+                elif d['G'] == 16:
+                    self.course = Course(d)
+                elif d['G'] == 3:
+                    self.teacher_name = d['L']
+                elif d['G'] == 17:
+                    self.classroom = d['L']
 
 
 class Homework:
@@ -211,7 +215,7 @@ class Homework:
         data = {'_Signature_': {'onglet': 88}, 'donnees': {'listeTAF': [
             {'N': self.id, 'TAFFait': status}
         ]}}
-        r = self._client.communication.post("SaisieTAFFaitEleve", data)
+        self._client.communication.post("SaisieTAFFaitEleve", data)
         self.done = status
 
 

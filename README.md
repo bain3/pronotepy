@@ -8,7 +8,7 @@ This is a Python API wrapper for the PRONOTE service. Every function was tested 
 
 ### Dependencies
 
- - cryprodome
+ - cryptodome
  - beautifulsoup4
  - requests
 

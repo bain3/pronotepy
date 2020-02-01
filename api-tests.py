@@ -16,7 +16,7 @@ logger.addHandler(logfile)
 logger.addHandler(stream)
 
 # example
-test = apipronote.Client('https://demo.index-education.net/pronote/eleve.html')
+test = apipronote.ClientStudent('https://demo.index-education.net/pronote/eleve.html')
 if test.login('demonstration', 'pronotevs'):
 
     periods = test.current_periods()
