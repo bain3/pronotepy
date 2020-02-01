@@ -82,9 +82,8 @@ class Grade:
         if parsed_json['G'] != 60:
             raise IncorrectJson('The json received was not the same as expected.')
         prepared_json = Util.prepare_json(self.__class__, parsed_json)
-        self.grade = self.out_of = self.default_out_of = self.date = self.average = self.max = self.id = self.min = None
-        self.course = None
-        self.period = None
+        self.grade = self.out_of = self.default_out_of = self.date = self.average = \
+            self.max = self.id = self.min = self.course = self.period = None
         self.coefficient = 1
         for key in prepared_json:
             self.__setattr__(key, prepared_json[key])
@@ -127,6 +126,8 @@ class Course:
     }
 
     def __init__(self, parsed_json):
+        self.id = self.name = self.groups = self.average = self.class_average = \
+            self.max = self.min = self.out_of = self.default_out_of = None
         prepared_json = Util.prepare_json(self.__class__, parsed_json)
         for key in prepared_json:
             self.__setattr__(key, prepared_json[key])
@@ -252,6 +253,34 @@ class Period:
         response = self._client.communication.post('DernieresNotes', json_data)
         crs = response.json()['donneesSec']['donnees']['listeServices']['V']
         return [Course(c) for c in crs]
+
+    def summary(self):
+        json_data = {'donnees': {'Periode': {'N': self.id, 'L': self.name},
+                                 'DateDebut': {'_T': 7, 'V': self.start.strftime('%d/%m/%Y 0:0:0')},
+                                 'DateFin': {'_T': 7, 'V': self.end.strftime('%d/%m/%Y 0:0:0')}},
+                     "_Signature_": {"onglet": 19}}
+        response = self._client.communication.post('PagePresence', json_data)
+        events = response.json()['donneesSec']['donnees']['listeAbsences']['V']
+        return [Event(e) for e in events]
+
+
+class Event:
+    __slots__ = ['name', 'id', 'comment', 'time', 'created_by']
+    attribute_guide = {
+        'L': 'name',
+        'N': 'id',
+        'commentaire': 'comment',
+        'date,V': 'time',
+        'demandeur,V,L': 'created_by'
+    }
+
+    def __init__(self, parsed_json):
+        prepared_json = Util.prepare_json(self.__class__, parsed_json)
+        self.name = self.id = self.comment = self.time = self.created_by = None
+        for key in prepared_json:
+            self.__setattr__(key, prepared_json[key])
+        if self.time:
+            self.time = datetime.datetime.strptime(self.time, '%d/%m/%Y %H:%M:%S')
 
 
 class DataError(Exception):

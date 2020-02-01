@@ -16,7 +16,7 @@ log.setLevel(logging.DEBUG)
 
 
 class Client(object):
-    """A PRONOTE client with basic login."""
+    """A PRONOTE client with basic functions."""
 
     def __init__(self, pronote_url):
         log.info('INIT')
@@ -108,6 +108,29 @@ class Client(object):
 
     def _get_week(self, date: datetime.date):
         return int(1 + math.floor((date - self.start_day.date()).days / 7))
+
+    def lessons(self, date_from: datetime.date, date_to: datetime.date = None):
+        if not date_to:
+            date_to = date_from
+        user = self.auth_response.json()['donneesSec']['donnees']['ressource']
+        data = {"_Signature_": {"onglet": 16},
+                "donnees": {"ressource": user,
+                            "numeroSemaine": 0, "avecAbsencesEleve": False, "avecConseilDeClasse": True,
+                            "estEDTPermanence": False, "avecAbsencesRessource": True,
+                            "avecDisponibilites": True, "avecInfosPrefsGrille": True,
+                            "Ressource": user,
+                            "NumeroSemaine": 0}}
+        output = []
+        for i in range(self._get_week(date_from), self._get_week(date_to) + 1):
+            data['donnees']['numeroSemaine'] = i
+            data['donnees']['NumeroSemaine'] = i
+            response = self.communication.post('PageEmploiDuTemps', data)
+            l_list = response.json()['donneesSec']['donnees']['ListeCours']
+            for lesson in l_list:
+                l_object = dataClasses.Lesson(self, lesson)
+                if l_object is not None and date_from <= l_object.start.date() <= date_to:
+                    output.append(l_object)
+        return output
 
 
 class Communication(object):
@@ -245,28 +268,10 @@ class ClientStudent(Client):
         h_list = response.json()['donneesSec']['donnees']['ListeTravauxAFaire']['V']
         return [dataClasses.Homework(self, h) for h in h_list]
 
-    def lessons(self, date_from: datetime.date, date_to: datetime.date = None):
-        if not date_to:
-            date_to = date_from
-        user = self.auth_response.json()['donneesSec']['donnees']['ressource']
-        data = {"_Signature_": {"onglet": 16},
-                "donnees": {"ressource": user,
-                            "numeroSemaine": 0, "avecAbsencesEleve": False, "avecConseilDeClasse": True,
-                            "estEDTPermanence": False, "avecAbsencesRessource": True,
-                            "avecDisponibilites": True, "avecInfosPrefsGrille": True,
-                            "Ressource": user,
-                            "NumeroSemaine": 0}}
-        output = []
-        for i in range(self._get_week(date_from), self._get_week(date_to) + 1):
-            data['donnees']['numeroSemaine'] = i
-            data['donnees']['NumeroSemaine'] = i
-            response = self.communication.post('PageEmploiDuTemps', data)
-            l_list = response.json()['donneesSec']['donnees']['ListeCours']
-            for lesson in l_list:
-                l_object = dataClasses.Lesson(self, lesson)
-                if l_object is not None and date_from <= l_object.start.date() <= date_to:
-                    output.append(l_object)
-        return output
+
+class ClientTeacher(Client):
+    def __init__(self, pronote_url):
+        super(ClientTeacher, self).__init__(pronote_url)
 
 
 def create_random_string(length):
