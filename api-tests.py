@@ -29,16 +29,12 @@ if test.login('demonstration', 'pronotevs'):
 
     print('Averages...', end='')
     for period in periods:
-        a = periods[0].averages()
-    print('OK')
-
-    print('Summary...', end='')
-    for period in periods:
-        a = periods[0].summary()
+        a = period.averages()
     print('OK')
 
     print('Homework...', end='')
     h = test.homework(datetime.date(2019, 9, 8))
+    h[0].set_done(True)
     print('OK')
 
     print('Lessons...', end='')
