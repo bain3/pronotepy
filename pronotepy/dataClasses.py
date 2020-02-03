@@ -1,5 +1,6 @@
 import datetime
 import re
+import pronoteAPI
 
 
 def get_l(d): return d['L']
@@ -7,6 +8,7 @@ def get_l(d): return d['L']
 
 class Util:
     """Utilities for the API wrapper"""
+
     @classmethod
     def get(cls, iterable, **kwargs) -> list:
         """Gets items from the list with the attributes specified.
@@ -135,7 +137,7 @@ class Grade:
         "bareme,V":           ("out_of", str),
         "baremeParDefault,V": ("default_out_of", str),
         "date,V":             ("date", lambda d: datetime.datetime.strptime(d, '%d/%m/%Y').date()),
-        "service,V":          ("course", Subject),
+        "service,V":          ("subject", Subject),
         "periode,V,N":        ("period", lambda p: Util.get(Period.instances, id=p)),
         "moyenne,V":          ("average", str),
         "noteMax,V":          ("max", str),
@@ -146,7 +148,7 @@ class Grade:
 
     instances = set()
 
-    __slots__ = ['id', 'grade', 'out_of', 'default_out_of', 'date', 'course',
+    __slots__ = ['id', 'grade', 'out_of', 'default_out_of', 'date', 'subject',
                  'period', 'average', 'max', 'min', 'coefficient', 'comment']
 
     def __init__(self, parsed_json):
@@ -185,8 +187,8 @@ class Lesson:
     outing = if it is a pedagogical outing
     start = starting time of the lesson
     """
-    __slots__ = ['id', 'course', 'teacher_name', 'classroom', 'start',
-                 'canceled', 'detention', 'end', 'outing', 'group_name', 'student_class']
+    __slots__ = ['id', 'subject', 'teacher_name', 'classroom', 'start',
+                 'canceled', 'detention', 'end', 'outing', 'group_name', 'student_class', '_client']
     attribute_guide = {
         'DateDuCours,V':        ('start', lambda d: datetime.datetime.strptime(d, '%d/%m/%Y %H:%M:%S')),
         'N':                    ('id', str),
@@ -196,7 +198,7 @@ class Lesson:
         'estSortiePedagogique': ('outing', bool)
     }
     transformers = {
-        16: ('course', Subject),
+        16: ('subject', Subject),
         3:  ('teacher_name', get_l),
         17: ('classroom', get_l),
         2:  ('group_name', get_l),
@@ -204,18 +206,37 @@ class Lesson:
     }
 
     def __init__(self, client, parsed_json):
+        self._client = client
         prepared_json = Util.prepare_json(self.__class__, parsed_json)
         for key in prepared_json:
             self.__setattr__(key, prepared_json[key])
         if self.end:
             self.end = self.start + client.one_hour_duration * self.end
-        self.course = self.teacher_name = self.classroom = self.group_name = self.student_class = None
+        self.subject = self.teacher_name = self.classroom = self.group_name = self.student_class = None
         if 'ListeContenus' in parsed_json:
             for d in parsed_json['ListeContenus']['V']:
                 try:
                     self.__setattr__(self.__class__.transformers[d['G']][0], self.__class__.transformers[d['G']][1](d))
                 except KeyError:
                     pass
+
+    def absences(self):
+        print(self._client.autorisations)
+        if self._client.autorisations['AvecSaisieAbsence'] is False:
+            raise pronoteAPI.PronoteAPIError('Client not authorised')
+        user = self._client.auth_response.json()['donneesSec']['donnees']['ressource']
+        data = {'_Signature_': {'onglet': 113},
+                'donnees': {
+                    'Professeur': user,
+                    'Ressource': {'N': self.id},
+                    'Date': {'_T': 7, 'V': self.start.strftime('%d/%m%Y 0:0:0')}
+                }}
+        return Absences(self._client, self._client.communication.post("PageSaisieAbsences", data).json())
+
+
+class Absences:
+    def __init__(self, client, parsed_json):
+        self.json = parsed_json
 
 
 class Homework:
@@ -228,14 +249,14 @@ class Homework:
     description = the description of the homework
     done = if the homework is marked done
     """
-    __slots__ = ['id', 'course', 'description', 'done', '_client']
+    __slots__ = ['id', 'subject', 'description', 'done', '_client']
     attribute_guide = {
         'N':            ('id', str),
         'descriptif,V': ('description', lambda d: re.sub(re.compile('<.*?>'), '', d)),
         'TAFFait':      ('done', bool),
-        'Matiere,V':    ('course', Subject)
+        'Matiere,V':    ('subject', Subject)
     }
-    
+
     def __init__(self, client, parsed_json):
         self._client = client
         prepared_json = Util.prepare_json(self.__class__, parsed_json)

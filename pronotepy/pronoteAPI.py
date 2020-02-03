@@ -24,8 +24,7 @@ class Client(object):
         self.options, self.func_options = self.communication.initialise()
         self.encryption = Encryption()
         self.encryption.aes_iv = self.communication.encryption.aes_iv
-        self.auth_response = None
-        self.auth_cookie = None
+        self.auth_response = self.auth_cookie = self.autorisations = None
         self.date = datetime.datetime.now()
         self.start_day = datetime.datetime.strptime(
             self.func_options.json()['donneesSec']['donnees']['General']['PremierLundi']['V'], '%d/%m/%Y')
@@ -75,6 +74,7 @@ class Client(object):
         self.auth_response = self.communication.post("Authentification", {'donnees': auth_json})
         if 'cle' in self.auth_response.json()['donneesSec']['donnees']:
             self.communication.after_auth(self.auth_response, e.aes_key)
+            self.autorisations = self.auth_response.json()['donneesSec']['donnees']['autorisations']
             log.info(f'successfully logged in as {username}')
             # self.homepage = self._get_homepage_info()
             return True
