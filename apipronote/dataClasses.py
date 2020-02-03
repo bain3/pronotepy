@@ -2,6 +2,9 @@ import datetime
 import re
 
 
+def get_l(d): return d['L']
+
+
 class Util:
     """Utilities for the API wrapper"""
     @classmethod
@@ -38,7 +41,7 @@ class Util:
         return output
 
 
-class Course:
+class Subject:
     """
     Represents a course. You shouldn't have to create this class manually.
 
@@ -107,7 +110,7 @@ class Period:
         json_data = {'donnees': {'Periode': {'N': self.id, 'L': self.name}}, "_Signature_": {"onglet": 198}}
         response = self._client.communication.post('DernieresNotes', json_data)
         crs = response.json()['donneesSec']['donnees']['listeServices']['V']
-        return [Course(c) for c in crs]
+        return [Subject(c) for c in crs]
 
 
 class Grade:
@@ -132,7 +135,7 @@ class Grade:
         "bareme,V":           ("out_of", str),
         "baremeParDefault,V": ("default_out_of", str),
         "date,V":             ("date", lambda d: datetime.datetime.strptime(d, '%d/%m/%Y').date()),
-        "service,V":          ("course", Course),
+        "service,V":          ("course", Subject),
         "periode,V,N":        ("period", lambda p: Util.get(Period.instances, id=p)),
         "moyenne,V":          ("average", str),
         "noteMax,V":          ("max", str),
@@ -155,6 +158,18 @@ class Grade:
             self.__setattr__(key, prepared_json[key])
 
 
+class StudentClass:
+    attribute_guide = {
+        'N': ('id', str),
+        'L': ('name', str)
+    }
+
+    def __init__(self, parsed_json):
+        prepared_json = Util.prepare_json(self.__class__, parsed_json)
+        for key in prepared_json:
+            self.__setattr__(key, prepared_json[key])
+
+
 class Lesson:
     """
     Represents a lesson with a given time. You shouldn't have to create this class manually.
@@ -170,7 +185,8 @@ class Lesson:
     outing = if it is a pedagogical outing
     start = starting time of the lesson
     """
-    __slots__ = ['id', 'course', 'teacher_name', 'classroom', 'start', 'canceled', 'detention', 'end', 'outing', 'group_name']
+    __slots__ = ['id', 'course', 'teacher_name', 'classroom', 'start',
+                 'canceled', 'detention', 'end', 'outing', 'group_name', 'student_class']
     attribute_guide = {
         'DateDuCours,V':        ('start', lambda d: datetime.datetime.strptime(d, '%d/%m/%Y %H:%M:%S')),
         'N':                    ('id', str),
@@ -180,10 +196,11 @@ class Lesson:
         'estSortiePedagogique': ('outing', bool)
     }
     transformers = {
-        16: ('course', Course),
-        3:  ('teacher_name', lambda d: d['L']),
-        17: ('classroom', lambda d: d['L']),
-        2:  ('group_name', lambda d: d['L'])
+        16: ('course', Subject),
+        3:  ('teacher_name', get_l),
+        17: ('classroom', get_l),
+        2:  ('group_name', get_l),
+        1:  ('student_class', StudentClass)
     }
 
     def __init__(self, client, parsed_json):
@@ -192,10 +209,11 @@ class Lesson:
             self.__setattr__(key, prepared_json[key])
         if self.end:
             self.end = self.start + client.one_hour_duration * self.end
+        self.course = self.teacher_name = self.classroom = self.group_name = self.student_class = None
         if 'ListeContenus' in parsed_json:
             for d in parsed_json['ListeContenus']['V']:
                 try:
-                    self.__setattr__(self.__class__.transformers[d['G']][0], self.__class__.transformers[d['G']][1])
+                    self.__setattr__(self.__class__.transformers[d['G']][0], self.__class__.transformers[d['G']][1](d))
                 except KeyError:
                     pass
 
@@ -215,7 +233,7 @@ class Homework:
         'N':            ('id', str),
         'descriptif,V': ('description', lambda d: re.sub(re.compile('<.*?>'), '', d)),
         'TAFFait':      ('done', bool),
-        'Matiere,V':    ('course', Course)
+        'Matiere,V':    ('course', Subject)
     }
     
     def __init__(self, client, parsed_json):

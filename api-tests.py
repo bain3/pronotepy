@@ -41,11 +41,9 @@ if test.login('demonstration', 'pronotevs'):
     lessons = test.lessons(datetime.date(2019, 9, 8), datetime.date(2019, 10, 8))
     print('OK')
 
-# test = apipronote.ClientTeacher('https://demo.index-education.net/pronote/professeur.html')
-# if test.login('demonstration', 'pronotevs'):
-#     print('Teacher login...OK')
-#     print('Lessons...', end='')
-#     lessons = test.lessons(datetime.date(2019, 9, 8), datetime.date(2019, 10, 8))
-#     for lesson in lessons:
-#         print(lesson.class_name)
-#     print('OK')
+test = apipronote.ClientTeacher('https://demo.index-education.net/pronote/professeur.html')
+if test.login('demonstration', 'pronotevs'):
+    print('Teacher login...OK')
+    print('Lessons...', end='')
+    lessons = test.lessons(datetime.date(2019, 9, 8), datetime.date(2019, 10, 8))
+    print('OK')

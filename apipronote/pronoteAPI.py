@@ -136,7 +136,7 @@ class Client(object):
 class Communication(object):
     def __init__(self, site):
         """Handles all communication with the PRONOTE servers"""
-        self.root_site = self.get_root_address(site)
+        self.root_site, self.html_page = self.get_root_address(site)
         self.session = requests.Session()
         self.encryption = Encryption()
         self.attributes = {}
@@ -163,7 +163,7 @@ class Communication(object):
                    'Accept-Language': 'en-GB,en-US;q=0.9,en;q=0.8,cs;q=0.7'}
 
         # get rsa keys and session id
-        get_response = self.session.request('GET', self.root_site + '/eleve.html', headers=headers)
+        get_response = self.session.request('GET', f'{self.root_site}/{self.html_page}', headers=headers)
         self.attributes = self._parse_html(get_response.content)
         # uuid
         self.encryption.rsa_keys = {'MR': self.attributes['MR'], 'ER': self.attributes['ER']}
@@ -233,7 +233,7 @@ class Communication(object):
 
     @staticmethod
     def get_root_address(addr):
-        return '/'.join(addr.split('/')[:-1])
+        return '/'.join(addr.split('/')[:-1]), '/'.join(addr.split('/')[-1:])
 
 
 class ClientStudent(Client):
