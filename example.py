@@ -1,4 +1,4 @@
-import apipronote
+import pronotepy
 
 # initialise the client
 # Note: the address should be a direct one (like the one below) usually the address shown by your school just redirects
@@ -6,7 +6,7 @@ import apipronote
 # Ex.: https://your-school.com/pronote/students <-- BAD
 #      https://0000000a.index-education.net/pronote/eleve.html <-- GOOD
 
-client = apipronote.ClientStudent('https://0000000a.index-education.net/pronote/eleve.html')
+client = pronotepy.ClientStudent('https://0000000a.index-education.net/pronote/eleve.html')
 
 if client.login('username', 'password'):  # login() returns bool that signifies if it successfully logged itself in
 

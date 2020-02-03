@@ -9,7 +9,7 @@ import base64
 import logging
 import datetime
 import math
-from apipronote import dataClasses
+from pronotepy import dataClasses
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)

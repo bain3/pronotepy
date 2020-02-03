@@ -1,8 +1,8 @@
-import apipronote
+import pronotepy
 import logging
 import datetime
 
-logger = logging.getLogger(apipronote.pronoteAPI.__name__)
+logger = logging.getLogger(pronotepy.pronoteAPI.__name__)
 logger.setLevel(logging.DEBUG)
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
 logfile = logging.FileHandler('api.log')
@@ -16,7 +16,7 @@ logger.addHandler(logfile)
 logger.addHandler(stream)
 
 # example
-test = apipronote.ClientStudent('https://demo.index-education.net/pronote/eleve.html')
+test = pronotepy.ClientStudent('https://demo.index-education.net/pronote/eleve.html')
 if test.login('demonstration', 'pronotevs'):
     print('Student login...OK')
 
@@ -41,7 +41,7 @@ if test.login('demonstration', 'pronotevs'):
     lessons = test.lessons(datetime.date(2019, 9, 8), datetime.date(2019, 10, 8))
     print('OK')
 
-test = apipronote.ClientTeacher('https://demo.index-education.net/pronote/professeur.html')
+test = pronotepy.ClientTeacher('https://demo.index-education.net/pronote/professeur.html')
 if test.login('demonstration', 'pronotevs'):
     print('Teacher login...OK')
     print('Lessons...', end='')

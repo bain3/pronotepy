@@ -1,4 +1,4 @@
-# api-pronote
+# pronotepy
 
 ## Introduction
 
@@ -17,7 +17,7 @@ This is a Python API wrapper for the PRONOTE service. Every function was tested 
 This is an example code of the user accessing all of his grades:
 
 ```python
-import apipronote
+import pronotepy
 
 # initialise the client
 # Note: the address should be a direct one (like the one below) usually the address shown by your school just redirects
@@ -25,7 +25,7 @@ import apipronote
 # Ex.: https://your-school.com/pronote/students <-- BAD
 #      https://0000000a.index-education.net/pronote/eleve.html <-- GOOD
 
-client = apipronote.ClientStudent('https://demo.index-education.net/pronote/eleve.html')
+client = pronotepy.ClientStudent('https://demo.index-education.net/pronote/eleve.html')
 
 if client.login('demonstration', 'pronotevs'):  # login() returns bool that signifies if it successfully logged itself in
 
