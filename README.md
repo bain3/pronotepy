@@ -38,7 +38,7 @@ if client.login('demonstration', 'pronotevs'):  # login() returns bool that sign
             print(f'{grade.grade}/{grade.out_of}')  # print out the grade in this style: 20/20
 ```
 
-### API Reference
+### API Reference - NOT EVERYTHING IS UP TO DATE (pls wait until wiki or help me create it)
 
 #### `apipronote.Client(pronote_url)`<a name="client"></a>
 
@@ -158,7 +158,7 @@ Represents a grade. You shouldn't have to initialise this class manually.
 
 ##### `course`
 
-***[apipronote.Course](#apipronotecourse)*** (only partially attributed) - course in which the grade was given 
+***[apipronote.Course](#apipronotesubject)*** (only partially attributed) - course in which the grade was given 
 
 ##### `period`
 
@@ -182,7 +182,7 @@ Represents a grade. You shouldn't have to initialise this class manually.
 
 
 
-#### `apipronote.Course`
+#### `apipronote.Subject`
 
 Represents a course. You shouldn't have to initialise this class manually.
 
@@ -236,9 +236,9 @@ Represents a lesson with a given time. You shouldn't have to create this class m
 
 ***str*** - id of the lesson (used internally)
 
-##### `course`
+##### `subject`
 
-***[apipronote.Course](#apipronotecourse)*** (only partially attributed) - course that the lesson is from
+***[apipronote.Subject](#apipronotesubject)*** (only partially attributed) - course that the lesson is from
 
 ##### `teacher_name`
 
@@ -272,7 +272,7 @@ Represents a homework. You shouldn't have to create this class manually.
 
 ##### `course`
 
-[***apipronote.Course***](#apipronotecourse) (only partially attributed) - course that the homework is for
+[***apipronote.Subject***](#apipronotesubject) (only partially attributed) - course that the homework is for
 
 ##### `description`
 
@@ -328,7 +328,7 @@ Fetches the averages from this period from the server.
 
 - ***Returns***
 
-  [***apipronote.Course***](#apipronotecourse) (fully attributed) - averages from this period
+  [***apipronote.Subject***](#apipronotesubject) (fully attributed) - averages from this period
 
 ## License
 
