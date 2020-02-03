@@ -198,8 +198,8 @@ class Communication(object):
             log.error(f'POST ERROR {response.json()["Erreur"]["G"]}')
             log.error(response.content)
             raise PronoteAPIError(f'POST error: got error {response.json()["Erreur"]["G"]}')
-        elif self.encryption.aes_encrypt(str(self.request_number - 1).encode()).hex().upper() != response.json()['numeroOrdre']:
-            log.warning(f'bad numeroOrdre: {response.json()["numeroOrdre"]}')
+        # elif self.encryption.aes_encrypt(str(self.request_number - 1).encode()).hex().upper() != response.json()['numeroOrdre']:
+        #     log.warning(f'bad numeroOrdre: {response.json()["numeroOrdre"]}')
         return response
 
     def after_auth(self, auth_response, auth_key):

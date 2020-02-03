@@ -1,6 +1,5 @@
 import datetime
 import re
-import pronoteAPI
 
 
 def get_l(d): return d['L']
@@ -223,7 +222,7 @@ class Lesson:
     def absences(self):
         print(self._client.autorisations)
         if self._client.autorisations['AvecSaisieAbsence'] is False:
-            raise pronoteAPI.PronoteAPIError('Client not authorised')
+            return None
         user = self._client.auth_response.json()['donneesSec']['donnees']['ressource']
         data = {'_Signature_': {'onglet': 113},
                 'donnees': {
