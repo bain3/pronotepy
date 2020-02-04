@@ -16,13 +16,12 @@ log.setLevel(logging.DEBUG)
 
 
 class Client(object):
-    """A PRONOTE client with basic functions."""
-
+    """A base PRONOTE client."""
     def __init__(self, pronote_url):
         log.info('INIT')
-        self.communication = Communication(pronote_url)
+        self.communication = _Communication(pronote_url)
         self.options, self.func_options = self.communication.initialise()
-        self.encryption = Encryption()
+        self.encryption = _Encryption()
         self.encryption.aes_iv = self.communication.encryption.aes_iv
         self.auth_response = self.auth_cookie = self.autorisations = None
         self.date = datetime.datetime.now()
@@ -37,6 +36,11 @@ class Client(object):
         self.one_hour_duration = hour_end - hour_start
 
     def login(self, username, password):
+        """
+        Logs in the user.
+        :param username:Username
+        :param password:Password
+        """
         # identification phase
         ident_json = {
             "genreConnexion": 0,
@@ -56,7 +60,7 @@ class Client(object):
         id_response = idr.json()
         alea = id_response['donneesSec']['donnees']['alea']
         challenge = id_response['donneesSec']['donnees']['challenge']
-        e = Encryption()
+        e = _Encryption()
         e.aes_set_iv(self.communication.encryption.aes_iv)
 
         # key gen
@@ -66,7 +70,7 @@ class Client(object):
 
         # challenge
         dec = e.aes_decrypt(bytes.fromhex(challenge))
-        dec_no_alea = enleverAlea(dec.decode())
+        dec_no_alea = _enleverAlea(dec.decode())
         ch = e.aes_encrypt(dec_no_alea.encode()).hex()
 
         # send
@@ -110,6 +114,11 @@ class Client(object):
         return int(1 + math.floor((date - self.start_day.date()).days / 7))
 
     def lessons(self, date_from: datetime.date, date_to: datetime.date = None):
+        """
+        Gets all lessons in a given timespan.
+        :param date_from:The first date.
+        :param date_to:The second date.
+        """
         if not date_to:
             date_to = date_from
         user = self.auth_response.json()['donneesSec']['donnees']['ressource']
@@ -133,12 +142,12 @@ class Client(object):
         return output
 
 
-class Communication(object):
+class _Communication(object):
     def __init__(self, site):
         """Handles all communication with the PRONOTE servers"""
         self.root_site, self.html_page = self.get_root_address(site)
         self.session = requests.Session()
-        self.encryption = Encryption()
+        self.encryption = _Encryption()
         self.attributes = {}
         self.request_number = 1
         self.cookies = None
@@ -212,7 +221,7 @@ class Communication(object):
         self.cookies = auth_response.cookies
         work = self.encryption.aes_decrypt(bytes.fromhex(auth_response.json()['donneesSec']['donnees']['cle']))
         # ok
-        key = MD5.new(enBytes(work.decode()))
+        key = MD5.new(_enBytes(work.decode()))
         key = key.digest()
         self.encryption.aes_key = key
 
@@ -239,18 +248,24 @@ class Communication(object):
 class ClientStudent(Client):
     """
     PRONOTE client for student accounts.
-    """
+
+    -- Attributes --
+    periods_: str = Periods."""
     def __init__(self, pronote_url):
         super(ClientStudent, self).__init__(pronote_url)
         self.periods_ = self.periods()
 
     def periods(self):
+        """
+        Get all of the periods of the year.
+        """
         if hasattr(self, 'periods_'):
             return self.periods_
         json = self.func_options.json()['donneesSec']['donnees']['General']['ListePeriodes']
         return [dataClasses.Period(self, j) for j in json]
 
     def current_periods(self):
+        """Get the current period(s)."""
         output = []
         for p in self.periods_:
             if p.start < self.date < p.end:
@@ -258,6 +273,11 @@ class ClientStudent(Client):
         return output
 
     def homework(self, date_from: datetime.date, date_to: datetime.date = None):
+        """
+        Get homework between two given points.
+        :param date_from:The first date.
+        :param date_to:The second date.
+        """
         if not date_to:
             date_to = datetime.datetime.strptime(
                 self.func_options.json()['donneesSec']['donnees']['General']['DerniereDate']['V'], '%d/%m/%Y').date()
@@ -270,11 +290,12 @@ class ClientStudent(Client):
 
 
 class ClientTeacher(Client):
+    """Teacher client. Not many uses yet."""
     def __init__(self, pronote_url):
         super(ClientTeacher, self).__init__(pronote_url)
 
 
-def create_random_string(length):
+def _create_random_string(length):
     output = ''
     for _ in range(length + 1):
         j = random.choice('ABCDEFGHIJKLMNOPQRSTUVabcdefghijklmnopqrstuv123456789')
@@ -282,7 +303,7 @@ def create_random_string(length):
     return output
 
 
-def enleverAlea(text):
+def _enleverAlea(text):
     """Gets rid of the stupid thing that they did, idk what it really is for, but i guess it adds security"""
     sansalea = []
     for i, b in enumerate(text):
@@ -291,17 +312,17 @@ def enleverAlea(text):
     return ''.join(sansalea)
 
 
-def enBytes(string: str):
+def _enBytes(string: str):
     list_string = string.split(',')
     return bytes([int(i) for i in list_string])
 
 
-class Encryption(object):
+class _Encryption(object):
     def __init__(self):
         """The encryption part of the API. You shouldn't have to use this normally."""
         # aes
         self.aes_iv = bytes(16)
-        self.aes_iv_temp = create_random_string(15).encode()
+        self.aes_iv_temp = _create_random_string(15).encode()
         self.aes_key = MD5.new().digest()
         # rsa
         self.rsa_keys = {}
@@ -329,4 +350,7 @@ class Encryption(object):
 
 
 class PronoteAPIError(Exception):
+    """
+    Base exception for any pronote api errors
+    """
     pass

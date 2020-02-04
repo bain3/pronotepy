@@ -44,20 +44,18 @@ class Util:
 
 class Subject:
     """
-    Represents a course. You shouldn't have to create this class manually.
+    Represents a subject. You shouldn't have to create this class manually.
 
     -- Attributes --
-    id = the id of the course (used internally)
-    name = name of the course
-    -- all attributes under this may not be present at all times --
-    groups = if the course is in groups
-    average = users average in the course
-    class_average = classes average in the course
-    max = the highest grade in the class
-    min = the lowest grade in the class
-    out_of = the maximum amount of points
-    default_out_of = the default maximum amount of points
-    """
+    id: str = the id of the subject (used internally)
+    name: str = name of the subject
+    groups: bool = if the subject is in groups
+    average: str = users average in the subject
+    class_average: str = classes average in the subject
+    max: str = the highest grade in the class
+    min: str = the lowest grade in the class
+    out_of: str = the maximum amount of points
+    default_out_of: str = the default maximum amount of points"""
     __slots__ = ['id', 'name', 'groups', 'average', 'class_average', 'max', 'min', 'out_of', 'default_out_of']
     attribute_guide = {
         'moyEleve,V':                 ('average', str),
@@ -84,11 +82,10 @@ class Period:
     Represents a period of the school year. You shouldn't have to create this class manually.
 
     -- Attributes --
-    id = the id of the period (used internally)
-    name = name of the period
-    start = date on which the period starts
-    end = date on which the period ends
-    """
+    id: str = the id of the period (used internally)
+    name: str = name of the period
+    start: datetime.datetime = date on which the period starts
+    end: datetime.datetime = date on which the period ends"""
 
     __slots__ = ['_client', 'id', 'name', 'start', 'end']
     instances = set()
@@ -102,12 +99,14 @@ class Period:
         self.end = datetime.datetime.strptime(parsed_json['dateFin']['V'], '%d/%m/%Y')
 
     def grades(self):
+        """Get grades from the period."""
         json_data = {'donnees': {'Periode': {'N': self.id, 'L': self.name}}, "_Signature_": {"onglet": 198}}
         response = self._client.communication.post('DernieresNotes', json_data)
         grades = response.json()['donneesSec']['donnees']['listeDevoirs']['V']
         return [Grade(g) for g in grades]
 
     def averages(self):
+        """Get averages from the period."""
         json_data = {'donnees': {'Periode': {'N': self.id, 'L': self.name}}, "_Signature_": {"onglet": 198}}
         response = self._client.communication.post('DernieresNotes', json_data)
         crs = response.json()['donneesSec']['donnees']['listeServices']['V']
@@ -118,18 +117,17 @@ class Grade:
     """Represents a grade. You shouldn't have to create this class manually.
 
     -- Attributes --
-    id = the id of the grade (used internally)
-    grade = the actual grade
-    out_of = the maximum amount of points
-    default_out_of = the default maximum amount of points
-    date = the date on which the grade was given
-    course = the course in which the grade was given
-    period = the period in which the grade was given
-    average = the average of the class
-    max = the highest grade of the test
-    min = the lowest grade of the test
-    coefficient = the coefficient of the grade
-    """
+    id: str = the id of the grade (used internally)
+    grade: str = the actual grade
+    out_of: str = the maximum amount of points
+    default_out_of: str = the default maximum amount of points
+    date: datetime.datetime = the date on which the grade was given
+    subject: Subject = the subject in which the grade was given
+    period: Period = the period in which the grade was given
+    average: str = the average of the class
+    max: str = the highest grade of the test
+    min: str = the lowest grade of the test
+    coefficient: int = the coefficient of the grade"""
     attribute_guide = {
         "N":                  ("id", str),
         "note,V":             ("grade", str),
@@ -178,14 +176,13 @@ class Lesson:
     !!If a lesson is a pedagogical outing, it will only have the "outing" and "start" attributes!!
 
     -- Attributes --
-    id = the id of the lesson (used internally)
-    course = the course that the lesson is from
-    teacher_name = name of the teacher
-    classroom = name of the classroom
-    canceled = if the lesson is canceled
-    outing = if it is a pedagogical outing
-    start = starting time of the lesson
-    """
+    id: str = the id of the lesson (used internally)
+    subject: Subject = the subject that the lesson is from
+    teacher_name: str = name of the teacher
+    classroom: str = name of the classroom
+    canceled: str = if the lesson is canceled
+    outing: bool = if it is a pedagogical outing
+    start: datetime.datetime = starting time of the lesson"""
     __slots__ = ['id', 'subject', 'teacher_name', 'classroom', 'start',
                  'canceled', 'detention', 'end', 'outing', 'group_name', 'student_class', '_client']
     attribute_guide = {
@@ -220,6 +217,9 @@ class Lesson:
                     pass
 
     def absences(self):
+        """
+        Teachers only. Get the absences from the lesson.
+        """
         print(self._client.autorisations)
         if self._client.autorisations['AvecSaisieAbsence'] is False:
             return None
@@ -234,6 +234,7 @@ class Lesson:
 
 
 class Absences:
+    """Teachers only. Represents the absences in a class."""
     def __init__(self, client, parsed_json):
         self.json = parsed_json
 
@@ -243,11 +244,10 @@ class Homework:
     Represents a homework. You shouldn't have to create this class manually.
 
     -- Attributes --
-    id = the id of the homework (used internally)
-    course = the course that the homework is for
-    description = the description of the homework
-    done = if the homework is marked done
-    """
+    id: str = the id of the homework (used internally)
+    subject: Subject = the subject that the homework is for
+    description: str = the description of the homework
+    done: bool = if the homework is marked done"""
     __slots__ = ['id', 'subject', 'description', 'done', '_client']
     attribute_guide = {
         'N':            ('id', str),
@@ -263,6 +263,10 @@ class Homework:
             self.__setattr__(key, prepared_json[key])
 
     def set_done(self, status: bool):
+        """
+        Sets the status of the homework.
+        :param status:The status to which to change
+        """
         data = {'_Signature_': {'onglet': 88}, 'donnees': {'listeTAF': [
             {'N': self.id, 'TAFFait': status}
         ]}}
@@ -271,8 +275,12 @@ class Homework:
 
 
 class DataError(Exception):
+    """
+    Base exception for any errors made by creating or manipulating data classes.
+    """
     pass
 
 
 class IncorrectJson(DataError):
+    """Bad json"""
     pass
