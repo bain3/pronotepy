@@ -247,13 +247,15 @@ class Homework:
     id: str = the id of the homework (used internally)
     subject: Subject = the subject that the homework is for
     description: str = the description of the homework
-    done: bool = if the homework is marked done"""
-    __slots__ = ['id', 'subject', 'description', 'done', '_client']
+    done: bool = if the homework is marked done
+    date: datetime.date = deadline"""
+    __slots__ = ['id', 'subject', 'description', 'done', '_client', 'date']
     attribute_guide = {
         'N':            ('id', str),
         'descriptif,V': ('description', lambda d: re.sub(re.compile('<.*?>'), '', d)),
         'TAFFait':      ('done', bool),
-        'Matiere,V':    ('subject', Subject)
+        'Matiere,V':    ('subject', Subject),
+        'PourLe,V':     ('date', lambda d: datetime.datetime.strptime(d, '%d/%m/%Y').date())
     }
 
     def __init__(self, client, parsed_json):
