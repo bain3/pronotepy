@@ -24,12 +24,12 @@ if test.login('demonstration', 'pronotevs'):
 
     print('Grades...', end='')
     for period in periods:
-        g = period.grades()
+        g = period.grades
     print('OK')
 
     print('Averages...', end='')
     for period in periods:
-        a = period.averages()
+        a = period.averages
     print('OK')
 
     print('Homework...', end='')

@@ -119,26 +119,23 @@ class Client(object):
         :param date_from:The first date.
         :param date_to:The second date.
         """
-        if not date_to:
-            date_to = date_from
         user = self.auth_response.json()['donneesSec']['donnees']['ressource']
         data = {"_Signature_": {"onglet": 16},
                 "donnees": {"ressource": user,
-                            "numeroSemaine": 0, "avecAbsencesEleve": False, "avecConseilDeClasse": True,
+                            "dateDebut": {"_T": 7, 'V': date_from.strftime('%d/%m/%Y 0:0:0')},
+                            "DateDebut": {"_T": 7, 'V': date_from.strftime('%d/%m/%Y 0:0:0')},
+                            "avecAbsencesEleve": False, "avecConseilDeClasse": True,
                             "estEDTPermanence": False, "avecAbsencesRessource": True,
                             "avecDisponibilites": True, "avecInfosPrefsGrille": True,
-                            "Ressource": user,
-                            "NumeroSemaine": 0}}
+                            "Ressource": user}}
+        if date_to:
+            # noinspection PyTypeChecker
+            data['donnees']['dateFin'] = data['donnees']['DateFin'] = {"_T": 7, 'V': date_to.strftime('%d/%m/%Y 0:0:0')}
         output = []
-        for i in range(self._get_week(date_from), self._get_week(date_to) + 1):
-            data['donnees']['numeroSemaine'] = i
-            data['donnees']['NumeroSemaine'] = i
-            response = self.communication.post('PageEmploiDuTemps', data)
-            l_list = response.json()['donneesSec']['donnees']['ListeCours']
-            for lesson in l_list:
-                l_object = dataClasses.Lesson(self, lesson)
-                if l_object is not None and date_from <= l_object.start.date() <= date_to:
-                    output.append(l_object)
+        response = self.communication.post('PageEmploiDuTemps', data)
+        l_list = response.json()['donneesSec']['donnees']['ListeCours']
+        for lesson in l_list:
+            output.append(dataClasses.Lesson(self, lesson))
         return output
 
 
