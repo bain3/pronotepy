@@ -2,7 +2,7 @@ import datetime
 import re
 
 
-def get_l(d): return d['L']
+def _get_l(d): return d['L']
 
 
 class Util:
@@ -98,6 +98,7 @@ class Period:
         self.start = datetime.datetime.strptime(parsed_json['dateDebut']['V'], '%d/%m/%Y')
         self.end = datetime.datetime.strptime(parsed_json['dateFin']['V'], '%d/%m/%Y')
 
+    @property
     def grades(self):
         """Get grades from the period."""
         json_data = {'donnees': {'Periode': {'N': self.id, 'L': self.name}}, "_Signature_": {"onglet": 198}}
@@ -105,6 +106,7 @@ class Period:
         grades = response.json()['donneesSec']['donnees']['listeDevoirs']['V']
         return [Grade(g) for g in grades]
 
+    @property
     def averages(self):
         """Get averages from the period."""
         json_data = {'donnees': {'Periode': {'N': self.id, 'L': self.name}}, "_Signature_": {"onglet": 198}}
@@ -157,7 +159,27 @@ class Grade:
             self.__setattr__(key, prepared_json[key])
 
 
+class Student:
+    """Represents a class of students
+        -- Attributes --
+        id: str = ID of the class
+        name: str = name of the class"""
+    attribute_guide = {
+        'N': ('id', str),
+        'L': ('name', str)
+    }
+
+    def __init__(self, parsed_json):
+        prepared_json = Util.prepare_json(self.__class__, parsed_json)
+        for key in prepared_json:
+            self.__setattr__(key, prepared_json[key])
+
+
 class StudentClass:
+    """Represents a class of students
+    -- Attributes --
+    id: str = ID of the class
+    name: str = name of the class"""
     attribute_guide = {
         'N': ('id', str),
         'L': ('name', str)
@@ -182,7 +204,9 @@ class Lesson:
     classroom: str = name of the classroom
     canceled: str = if the lesson is canceled
     outing: bool = if it is a pedagogical outing
-    start: datetime.datetime = starting time of the lesson"""
+    start: datetime.datetime = starting time of the lesson
+    group_name: str = Name of the group.
+    student_class: StudentClass = Teachers only. Class of the students"""
     __slots__ = ['id', 'subject', 'teacher_name', 'classroom', 'start',
                  'canceled', 'detention', 'end', 'outing', 'group_name', 'student_class', '_client']
     attribute_guide = {
@@ -195,9 +219,9 @@ class Lesson:
     }
     transformers = {
         16: ('subject', Subject),
-        3:  ('teacher_name', get_l),
-        17: ('classroom', get_l),
-        2:  ('group_name', get_l),
+        3:  ('teacher_name', _get_l),
+        17: ('classroom', _get_l),
+        2:  ('group_name', _get_l),
         1:  ('student_class', StudentClass)
     }
 
@@ -216,6 +240,13 @@ class Lesson:
                 except KeyError:
                     pass
 
+    @property
+    def normal(self):
+        if self.detention is None and self.outing is None:
+            return True
+        return False
+
+    @property
     def absences(self):
         """
         Teachers only. Get the absences from the lesson.
@@ -259,6 +290,7 @@ class Homework:
     }
 
     def __init__(self, client, parsed_json):
+        self.done = None
         self._client = client
         prepared_json = Util.prepare_json(self.__class__, parsed_json)
         for key in prepared_json:
