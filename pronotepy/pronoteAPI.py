@@ -8,8 +8,10 @@ from Crypto.PublicKey import RSA
 import base64
 import logging
 import datetime
-import math
-from pronotepy import dataClasses
+from math import floor
+from . import dataClasses
+import threading
+from time import time, sleep
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -20,6 +22,7 @@ class Client(object):
     def __init__(self, pronote_url):
         log.info('INIT')
         self.communication = _Communication(pronote_url)
+        self._last_ping = time()
         self.options, self.func_options = self.communication.initialise()
         self.encryption = _Encryption()
         self.encryption.aes_iv = self.communication.encryption.aes_iv
@@ -111,7 +114,7 @@ class Client(object):
         return p_a_response.json()
 
     def _get_week(self, date: datetime.date):
-        return int(1 + math.floor((date - self.start_day.date()).days / 7))
+        return int(1 + floor((date - self.start_day.date()).days / 7))
 
     def lessons(self, date_from: datetime.date, date_to: datetime.date = None):
         """
@@ -138,6 +141,13 @@ class Client(object):
             output.append(dataClasses.Lesson(self, lesson))
         return output
 
+    def keep_alive(self):
+        """
+        Returns a context manager to keep the connection alive. When inside the context manager,
+        it sends a "Presence" packet to the server after 5 minutes of inactivity from another thread.
+        """
+        return _KeepAlive(self)
+
 
 class _Communication(object):
     def __init__(self, site):
@@ -148,6 +158,7 @@ class _Communication(object):
         self.attributes = {}
         self.request_number = 1
         self.cookies = None
+        self.last_ping = 0
 
     def initialise(self):
         """
@@ -197,15 +208,14 @@ class _Communication(object):
         p_site = self.root_site + '/appelfonction/' + self.attributes['a'] + '/' + self.attributes['h'] + '/' + r_number
         response = self.session.request('POST', p_site, json=json, cookies=self.cookies)
         self.request_number += 2
+        self.last_ping = time()
 
         # error protection
-        # TODO: false positive bad numero ordre, make better error handler
+        if not response.ok:
+            raise requests.HTTPError(f'Status code: {response.status_code}')
         if 'Erreur' in response.json():
-            log.error(f'POST ERROR {response.json()["Erreur"]["G"]}')
-            log.error(response.content)
-            raise PronoteAPIError(f'POST error: got error {response.json()["Erreur"]["G"]}')
-        # elif self.encryption.aes_encrypt(str(self.request_number - 1).encode()).hex().upper() != response.json()['numeroOrdre']:
-        #     log.warning(f'bad numeroOrdre: {response.json()["numeroOrdre"]}')
+            raise PronoteAPIError(f'PRONOTE server returned error code: {response.json()["Erreur"]["G"]}')
+
         return response
 
     def after_auth(self, auth_response, auth_key):
@@ -344,6 +354,26 @@ class _Encryption(object):
         # noinspection PyTypeChecker
         pkcs = PKCS1_v1_5.new(key)
         return pkcs.encrypt(data)
+
+
+class _KeepAlive(threading.Thread):
+    def __init__(self, client):
+        super().__init__(target=self.alive)
+        self._connection = client.communication
+        self.keep_alive = True
+
+    def alive(self):
+        while self.keep_alive:
+            if time()-self._connection.last_ping >= 300:
+                self._connection.post('Presence', {'_Signature_': {'onglet': 7}})
+            sleep(1)
+
+    def __enter__(self):
+        self.start()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.keep_alive = False
+        self.join()
 
 
 class PronoteAPIError(Exception):
