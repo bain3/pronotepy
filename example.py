@@ -15,5 +15,5 @@ if client.login('demonstration', 'pronotevs'):  # login() returns bool that sign
     periods = client.periods()
 
     for period in periods:
-        for grade in period.grades():  # iterate over all the grades
+        for grade in period.grades:  # iterate over all the grades
             print(f'{grade.grade}/{grade.out_of}')  # print out the grade in this style: 20/20
