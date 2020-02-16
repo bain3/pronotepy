@@ -12,6 +12,13 @@ This is a Python API wrapper for the PRONOTE student administration service. Eve
  - beautifulsoup4
  - requests
 
+### Installation
+ - **Stable**
+   install with pip: `pip install pronotepy`
+ - **Latest**
+   1. clone this repository
+   2. run `pip install .`
+
 ### Small example
 
 This is an example code of the user accessing all of his grades:
