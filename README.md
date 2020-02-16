@@ -14,6 +14,7 @@ This is a Python API wrapper for the PRONOTE student administration service. Eve
 
 ### Installation
  - **Stable**
+ 
    install with pip: `pip install pronotepy`
  - **Latest**
    1. clone this repository
