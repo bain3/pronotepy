@@ -46,7 +46,7 @@ if client.login('demonstration', 'pronotevs'):  # login() returns bool that sign
             print(f'{grade.grade}/{grade.out_of}')  # print out the grade in this style: 20/20
 ```
 
-### [API Reference](https://github.com/bain3/pronotepy/wiki)
+### [Documentation](https://github.com/bain3/pronotepy/wiki)
 
 ## License
 
