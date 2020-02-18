@@ -12,40 +12,6 @@ This is a Python API wrapper for the PRONOTE student administration service. Eve
  - beautifulsoup4
  - requests
 
-### Installation
- - **Stable**
- 
-   install with pip: `pip install pronotepy`
- - **Latest**
-   1. clone this repository
-   2. run `pip install .`
-
-### Small example
-
-This is an example code of the user accessing all of his grades:
-
-```python
-import pronotepy
-
-# initialise the client
-# Note: the address should be a direct one (like the one below) usually the address shown by your school just redirects
-# you to the real one.
-# Ex.: https://your-school.com/pronote/students <-- BAD
-#      https://0000000a.index-education.net/pronote/eleve.html <-- GOOD
-
-client = pronotepy.ClientStudent('https://demo.index-education.net/pronote/eleve.html')
-
-if client.login('demonstration', 'pronotevs'):  # login() returns bool that signifies if it successfully logged itself in
-
-    # get all the periods (may return multiple types like trimesters and semesters but it doesn't really matter
-    # the api will get it anyway)
-    periods = client.periods()
-
-    for period in periods:
-        for grade in period.grades:  # iterate over all the grades
-            print(f'{grade.grade}/{grade.out_of}')  # print out the grade in this style: 20/20
-```
-
 ### [Documentation](https://github.com/bain3/pronotepy/wiki)
 
 ## License
