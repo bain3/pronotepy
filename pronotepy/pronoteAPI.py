@@ -188,7 +188,12 @@ class Client(object):
             '_Signature_': {'onglet': 88}}
         response = self.communication.post('PageCahierDeTexte', json_data)
         h_list = response.json()['donneesSec']['donnees']['ListeTravauxAFaire']['V']
-        return [dataClasses.Homework(self, h) for h in h_list]
+        out = []
+        for h in h_list:
+            hw = dataClasses.Homework(self, h)
+            if date_from <= hw.date <= date_to:
+                out.append(hw)
+        return out
 
     def keep_alive(self):
         """

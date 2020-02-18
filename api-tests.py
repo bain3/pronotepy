@@ -33,7 +33,7 @@ if test.login('demonstration', 'pronotevs'):
     print('OK')
 
     print('Homework...', end='')
-    h = test.homework(datetime.date(2019, 9, 8))
+    h = test.homework(datetime.date(2019, 11, 4))
     h[0].set_done(True)
     print('OK')
 
