@@ -16,7 +16,7 @@ logger.addHandler(logfile)
 logger.addHandler(stream)
 
 # example
-test = pronotepy.ClientStudent('https://demo.index-education.net/pronote/eleve.html')
+test = pronotepy.Client('https://demo.index-education.net/pronote/eleve.html')
 if test.login('demonstration', 'pronotevs'):
     print('Student login...OK')
 
@@ -41,7 +41,7 @@ if test.login('demonstration', 'pronotevs'):
     lessons = test.lessons(datetime.date(2019, 9, 8), datetime.date(2019, 10, 8))
     print('OK')
 
-test = pronotepy.ClientTeacher('https://demo.index-education.net/pronote/professeur.html')
+test = pronotepy.Client('https://demo.index-education.net/pronote/professeur.html')
 if test.login('demonstration', 'pronotevs'):
     print('Teacher login...OK')
     print('Lessons...', end='')

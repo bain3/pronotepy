@@ -1,2 +1,2 @@
-from .pronoteAPI import ClientStudent, ClientTeacher
+from .pronoteAPI import Client
 from .dataClasses import *

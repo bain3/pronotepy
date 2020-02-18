@@ -251,9 +251,6 @@ class Lesson:
         """
         Teachers only. Get the absences from the lesson.
         """
-        print(self._client.autorisations)
-        if self._client.autorisations['AvecSaisieAbsence'] is False:
-            return None
         user = self._client.auth_response.json()['donneesSec']['donnees']['ressource']
         data = {'_Signature_': {'onglet': 113},
                 'donnees': {
@@ -261,12 +258,12 @@ class Lesson:
                     'Ressource': {'N': self.id},
                     'Date': {'_T': 7, 'V': self.start.strftime('%d/%m%Y 0:0:0')}
                 }}
-        return Absences(self._client, self._client.communication.post("PageSaisieAbsences", data).json())
+        return Absences(self._client.communication.post("PageSaisieAbsences", data).json())
 
 
 class Absences:
     """Teachers only. Represents the absences in a class."""
-    def __init__(self, client, parsed_json):
+    def __init__(self, parsed_json):
         self.json = parsed_json
 
 

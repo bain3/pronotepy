@@ -19,37 +19,51 @@ log.setLevel(logging.DEBUG)
 
 class Client(object):
     """A base PRONOTE client."""
-    def __init__(self, pronote_url):
+    def __init__(self, pronote_url, ent: bool = False, cookies=None):
         log.info('INIT')
-        self.communication = _Communication(pronote_url)
-        self._last_ping = time()
-        self.options, self.func_options = self.communication.initialise()
+        # start communication session
+        self.ent = ent
+        self.communication = _Communication(pronote_url, cookies)
+        self.attributes, self.func_options = self.communication.initialise()
+
+        # set up encryption
         self.encryption = _Encryption()
         self.encryption.aes_iv = self.communication.encryption.aes_iv
-        self.auth_response = self.auth_cookie = self.autorisations = None
+
+        # some other attribute creation
+        self._last_ping = time()
+
+        self.auth_response = self.auth_cookie = None
+
         self.date = datetime.datetime.now()
         self.start_day = datetime.datetime.strptime(
             self.func_options.json()['donneesSec']['donnees']['General']['PremierLundi']['V'], '%d/%m/%Y')
         self.week = self._get_week(datetime.date.today())
-        self.homepage = None
+
+        # get the length of one hour
         hour_start = datetime.datetime.strptime(
             self.func_options.json()['donneesSec']['donnees']['General']['ListeHeures']['V'][0]['L'], '%Hh%M')
         hour_end = datetime.datetime.strptime(
             self.func_options.json()['donneesSec']['donnees']['General']['ListeHeuresFin']['V'][0]['L'], '%Hh%M')
         self.one_hour_duration = hour_end - hour_start
 
-    def login(self, username, password):
+        self.periods_ = self.periods()
+
+    def login(self, username='', password=''):
         """
         Logs in the user.
         :param username:Username
         :param password:Password
         """
+        if self.ent is True:
+            username = self.attributes['e']
+            password = self.attributes['f']
         # identification phase
         ident_json = {
             "genreConnexion": 0,
-            "genreEspace": int(self.options['a']),
+            "genreEspace": int(self.attributes['a']),
             "identifiant": username,
-            "pourENT": True,
+            "pourENT": self.ent,
             "enConnexionAuto": False,
             "demandeConnexionAuto": False,
             "demandeConnexionAppliMobile": False,
@@ -60,15 +74,19 @@ class Client(object):
         log.debug('indentification')
 
         # creating the authentification data
-        id_response = idr.json()
-        challenge = id_response['donneesSec']['donnees']['challenge']
+        idr = idr.json()
+        challenge = idr['donneesSec']['donnees']['challenge']
         e = _Encryption()
         e.aes_set_iv(self.communication.encryption.aes_iv)
 
         # key gen
-        alea = ''
-        motdepasse = SHA256.new(str(password).encode()).hexdigest().upper()
-        e.aes_key = MD5.new((motdepasse).encode()).digest()
+        if self.ent is True:
+            motdepasse = SHA256.new(str(password).encode()).hexdigest().upper()
+            e.aes_key = MD5.new(motdepasse.encode()).digest()
+        else:
+            alea = idr['donneesSec']['donnees']['alea']
+            motdepasse = SHA256.new(str(alea + password.lower()).encode()).hexdigest().upper()
+            e.aes_key = MD5.new((username.lower() + motdepasse).encode()).digest()
         del password
 
         # challenge
@@ -77,13 +95,11 @@ class Client(object):
         ch = e.aes_encrypt(dec_no_alea.encode()).hex()
 
         # send
-        auth_json = {"connexion": 0, "challenge": ch, "espace": int(self.options['a'])}
+        auth_json = {"connexion": 0, "challenge": ch, "espace": int(self.attributes['a'])}
         self.auth_response = self.communication.post("Authentification", {'donnees': auth_json})
         if 'cle' in self.auth_response.json()['donneesSec']['donnees']:
             self.communication.after_auth(self.auth_response, e.aes_key)
-            self.autorisations = self.auth_response.json()['donneesSec']['donnees']['autorisations']
             log.info(f'successfully logged in as {username}')
-            # self.homepage = self._get_homepage_info()
             return True
         else:
             log.info('login failed')
@@ -141,187 +157,6 @@ class Client(object):
             output.append(dataClasses.Lesson(self, lesson))
         return output
 
-    def keep_alive(self):
-        """
-        Returns a context manager to keep the connection alive. When inside the context manager,
-        it sends a "Presence" packet to the server after 5 minutes of inactivity from another thread.
-        """
-        return _KeepAlive(self)
-
-
-class _Communication(object):
-    def __init__(self, site):
-        """Handles all communication with the PRONOTE servers"""
-        self.root_site, self.html_page = self.get_root_address(site)
-        self.session = requests.Session()
-        self.encryption = _Encryption()
-        self.attributes = {}
-        self.request_number = 1
-        self.cookies = None
-        self.last_ping = 0
-
-    def initialise(self):
-        """
-        Initialisation of the communication. Sets up the encryption and sends the IV for AES to PRONOTE.
-        From this point, everything is encrypted with the communicated IV.
-        """
-        # some headers to be real
-        headers = {'connection': 'keep-alive',
-                   'cache-control': 'max-age=0',
-                   'DNT': '1',
-                   'Upgrade-Insecure-Requests': '1',
-                   'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) '
-                                 'Chrome/79.0.3945.117 Safari/537.36',
-                   'Sec-Fetch-User': '?1',
-                   'Accept': '*/*',
-                   'Sec-Fetch-Site': 'same-origin',
-                   'Sec-Fetch-Mode': 'cors',
-                   'Accept-Encoding': 'gzip, deflate, br',
-                   'Accept-Language': 'en-GB,en-US;q=0.9,en;q=0.8,cs;q=0.7'}
-
-        # ENT Creds
-        username = 'ent_occitanie_username_here'
-        password = 'ent_occitanie_password_here'
-
-        # Required Headers
-        headers = {
-            'connection': 'keep-alive',
-            'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:73.0) Gecko/20100101 Firefox/73.0'}
-
-        # Login payload
-        payload = {
-            'auth_mode': 'BASIC',
-            'orig_url': '%2Ffim42%2Fsso%2FSSO%3FSPEntityID%3Dsp-ent-entmip-prod',
-            'user': username,
-            'password': password}
-
-        # ENT / PRONOTE required URLs
-        ent_login = 'https://famille.ac-montpellier.fr/login/ct_logon_vk.jsp?CT_ORIG_URL=/fim42/sso/SSO?SPEntityID=sp-ent-entmip-prod&ct_orig_uri=/fim42/sso/SSO?SPEntityID=sp-ent-entmip-prod'
-        ent_verif = 'https://famille.ac-montpellier.fr/aten-web/connexion/controlesConnexion?CT_ORIG_URL=%2Ffim42%2Fsso%2FSSO%3FSPEntityID%3Dsp-ent-entmip-prod&amp;ct_orig_uri=%2Ffim42%2Fsso%2FSSO%3FSPEntityID%3Dsp-ent-entmip-prod'
-
-        pronote_login = 'https://0300950v.index-education.net/pronote/eleve.html'
-        pronote_verif = 'https://cas.mon-ent-occitanie.fr/saml/SAMLAssertionConsumer'
-
-        # ENT Connection
-        session = requests.Session()
-        response = session.get(ent_login, headers=headers)
-
-        #print('(000)[ENT] Trying to log in with ' + username + ':' + password)
-        print('(' + str(response.status_code) + ')[ENT] GET -> ENT Login Page')
-
-        # Send user:pass to the ENT
-        cookies = requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
-        response = session.post(ent_login, headers=headers, data=payload, cookies=cookies)
-        print('(' + str(response.status_code) + ')[ENT] POST -> ENT Login Data')
-
-        # Get the CAS verification shit
-        cookies = requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
-        response = session.get(ent_verif, headers=headers, cookies=cookies)
-        print('(' + str(response.status_code) + ')[CAS] GET -> CAS Verification Page\n')
-
-        # Get the actual values
-        soup = BeautifulSoup(response.text, 'html.parser')
-        cas_infos = dict()
-        inputs = soup.findAll('input', {'type': 'hidden'})
-        for input in inputs:
-            cas_infos[input.get('name')] = input.get('value')
-
-        cookies = requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
-        session.cookies.update({'SERVERID': 'entmip-prod-web4', 'preselection': 'MONTP-ATS_parent_eleve'})
-        response = session.post(pronote_verif, headers=headers, data=cas_infos, cookies=cookies)
-        print('CAS data = ' + str(cas_infos))
-        print('\n(' + str(response.status_code) + ')[CAS] POST -> CAS Verification Data')
-
-        # Get Pronote RSA keys / UUID
-        cookies = requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
-        response = session.get(pronote_login, headers=headers, cookies=cookies)
-        print('(' + str(response.status_code) + ')[PRONOTE] GET -> Pronote RSA/UUID\n')
-
-        self.cookies = cookies
-
-        # get rsa keys and session id
-        get_response = self.session.request('GET', f'{self.root_site}/{self.html_page}', cookies=cookies, headers=headers)
-        self.attributes = self._parse_html(get_response.content)
-        # uuid
-        self.encryption.rsa_keys = {'MR': self.attributes['MR'], 'ER': self.attributes['ER']}
-        uuid = base64.b64encode(self.encryption.rsa_encrypt(self.encryption.aes_iv_temp)).decode()
-        # post
-        json_post = {'Uuid': uuid}
-        initial_response = self.post('FonctionParametres', {'donnees': json_post})
-        self.encryption.aes_set_iv()
-        return self.attributes, initial_response
-
-    def post(self, function_name: str, data: dict):
-        """
-        Handler for all POST requests by the api to PRONOTE servers. Automatically provides all needed data for the
-        verification of posts. Session id and order numbers are preserved.
-
-        :param function_name:the name of the function (ex.: Authentification)
-        :param data:the data that will be sent in the donneesSec dictionary.
-        """
-        if type(data) != dict:
-            return PronoteAPIError('POST error: donnees not dict')
-
-        r_number = self.encryption.aes_encrypt(str(self.request_number).encode()).hex()
-        json = {'session': int(self.attributes['h']), 'numeroOrdre': r_number, 'nom': function_name,
-                'donneesSec': data}
-        p_site = self.root_site + '/appelfonction/' + self.attributes['a'] + '/' + self.attributes['h'] + '/' + r_number
-        response = self.session.request('POST', p_site, json=json, cookies=self.cookies)
-        self.request_number += 2
-        self.last_ping = time()
-
-        # error protection
-        if not response.ok:
-            raise requests.HTTPError(f'Status code: {response.status_code}')
-        if 'Erreur' in response.json():
-            raise PronoteAPIError(f'PRONOTE server returned error code: {response.json()["Erreur"]["G"]} | {response.json()["Erreur"]["Titre"]}')
-
-        return response
-
-    def after_auth(self, auth_response, auth_key):
-        """
-        Key change after the authentification was successful.
-        :param auth_response:the authentification response from the server
-        :param auth_key:authentification key used to calculate the challenge. (from password of the user)
-        """
-        self.encryption.aes_key = auth_key
-        #self.cookies = auth_response.cookies
-        work = self.encryption.aes_decrypt(bytes.fromhex(auth_response.json()['donneesSec']['donnees']['cle']))
-        # ok
-        key = MD5.new(_enBytes(work.decode()))
-        key = key.digest()
-        self.encryption.aes_key = key
-
-    @staticmethod
-    def _parse_html(html):
-        """Parses the html for the RSA keys"""
-        parsed = BeautifulSoup(html, "html.parser")
-        onload = parsed.find(id='id_body')
-        if onload:
-            onload_c = onload['onload'][14:-37]
-        else:
-            raise PronoteAPIError("The html parser couldn't find the json data.")
-        attributes = {}
-        for attr in onload_c.split(','):
-            key, value = attr.split(':')
-            attributes[key] = value.replace("'", '')
-        return attributes
-
-    @staticmethod
-    def get_root_address(addr):
-        return '/'.join(addr.split('/')[:-1]), '/'.join(addr.split('/')[-1:])
-
-
-class ClientStudent(Client):
-    """
-    PRONOTE client for student accounts.
-
-    -- Attributes --
-    periods_: str = Periods."""
-    def __init__(self, pronote_url):
-        super(ClientStudent, self).__init__(pronote_url)
-        self.periods_ = self.periods()
-
     def periods(self):
         """
         Get all of the periods of the year.
@@ -355,16 +190,116 @@ class ClientStudent(Client):
         h_list = response.json()['donneesSec']['donnees']['ListeTravauxAFaire']['V']
         return [dataClasses.Homework(self, h) for h in h_list]
 
+    def keep_alive(self):
+        """
+        Returns a context manager to keep the connection alive. When inside the context manager,
+        it sends a "Presence" packet to the server after 5 minutes of inactivity from another thread.
+        """
+        return _KeepAlive(self)
 
-class ClientTeacher(Client):
-    """Teacher client. Not many uses yet."""
-    def __init__(self, pronote_url):
-        super(ClientTeacher, self).__init__(pronote_url)
+
+class _Communication(object):
+    def __init__(self, site, cookies=None):
+        """Handles all communication with the PRONOTE servers"""
+        self.root_site, self.html_page = self.get_root_address(site)
+        self.session = requests.Session()
+        self.encryption = _Encryption()
+        self.attributes = {}
+        self.request_number = 1
+        self.cookies = cookies
+        self.last_ping = 0
+        self.authorized_onglets = []
+
+    def initialise(self):
+        """
+        Initialisation of the communication. Sets up the encryption and sends the IV for AES to PRONOTE.
+        From this point, everything is encrypted with the communicated IV.
+        """
+        # some headers to be real
+        headers = {
+            'connection': 'keep-alive',
+            'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:73.0) Gecko/20100101 Firefox/73.0'}
+
+        # get rsa keys and session id
+        get_response = self.session.request('GET', f'{self.root_site}/{self.html_page}', headers=headers, cookies=self.cookies)
+        self.attributes = self._parse_html(get_response.content)
+        # uuid
+        self.encryption.rsa_keys = {'MR': self.attributes['MR'], 'ER': self.attributes['ER']}
+        uuid = base64.b64encode(self.encryption.rsa_encrypt(self.encryption.aes_iv_temp)).decode()
+        # post
+        json_post = {'Uuid': uuid}
+        initial_response = self.post('FonctionParametres', {'donnees': json_post})
+        self.encryption.aes_set_iv()
+        return self.attributes, initial_response
+
+    def post(self, function_name: str, data: dict):
+        """
+        Handler for all POST requests by the api to PRONOTE servers. Automatically provides all needed data for the
+        verification of posts. Session id and order numbers are preserved.
+
+        :param function_name:the name of the function (ex.: Authentification)
+        :param data:the data that will be sent in the donneesSec dictionary.
+        """
+        if type(data) != dict:
+            raise PronoteAPIError('POST error: donnees not dict')
+        elif '_Signature_' in data and data['_Signature_'].get('onglet') not in self.authorized_onglets:
+            raise PronoteAPIError('Action not permitted. (onglet is not normally accessible)')
+
+        r_number = self.encryption.aes_encrypt(str(self.request_number).encode()).hex()
+        json = {'session': int(self.attributes['h']), 'numeroOrdre': r_number, 'nom': function_name,
+                'donneesSec': data}
+        p_site = self.root_site + '/appelfonction/' + self.attributes['a'] + '/' + self.attributes['h'] + '/' + r_number
+        response = self.session.request('POST', p_site, json=json, cookies=self.cookies)
+        self.request_number += 2
+        self.last_ping = time()
+
+        # error protection
+        if not response.ok:
+            raise requests.HTTPError(f'Status code: {response.status_code}')
+        if 'Erreur' in response.json():
+            raise PronoteAPIError(f'PRONOTE server returned error code: {response.json()["Erreur"]["G"]} | {response.json()["Erreur"]["Titre"]}')
+
+        return response
+
+    def after_auth(self, auth_response, auth_key):
+        """
+        Key change after the authentification was successful.
+        :param auth_response:the authentification response from the server
+        :param auth_key:authentification key used to calculate the challenge. (from password of the user)
+        """
+        self.encryption.aes_key = auth_key
+        if not self.cookies:
+            self.cookies = auth_response.cookies
+        self.authorized_onglets = _prepare_onglets(auth_response.json()['donneesSec']['donnees']['listeOnglets'])
+        work = self.encryption.aes_decrypt(bytes.fromhex(auth_response.json()['donneesSec']['donnees']['cle']))
+        # ok
+        key = MD5.new(_enBytes(work.decode()))
+        key = key.digest()
+        self.encryption.aes_key = key
+
+    @staticmethod
+    def _parse_html(html):
+        """Parses the html for the RSA keys"""
+        parsed = BeautifulSoup(html, "html.parser")
+        onload = parsed.find(id='id_body')
+        if onload:
+            onload_c = onload['onload'][14:-37]
+        else:
+            raise PronoteAPIError("The html parser couldn't find the json data.")
+        attributes = {}
+        for attr in onload_c.split(','):
+            key, value = attr.split(':')
+            attributes[key] = value.replace("'", '')
+        return attributes
+
+    @staticmethod
+    def get_root_address(addr):
+        return '/'.join(addr.split('/')[:-1]), '/'.join(addr.split('/')[-1:])
 
 
 def _create_random_string(length):
     output = ''
-    for _ in range(length + 1):
+    for _ in range(length):
         j = random.choice('ABCDEFGHIJKLMNOPQRSTUVabcdefghijklmnopqrstuv123456789')
         output += j
     return output
@@ -384,12 +319,25 @@ def _enBytes(string: str):
     return bytes([int(i) for i in list_string])
 
 
+def _prepare_onglets(list_of_onglets):
+    output = []
+
+    if type(list_of_onglets) != list:
+        return [list_of_onglets]
+
+    for item in list_of_onglets:
+        if type(item) == dict:
+            item = list(item.values())
+        output.extend(_prepare_onglets(item))
+    return output
+
+
 class _Encryption(object):
     def __init__(self):
         """The encryption part of the API. You shouldn't have to use this normally."""
         # aes
         self.aes_iv = bytes(16)
-        self.aes_iv_temp = _create_random_string(15).encode()
+        self.aes_iv_temp = _create_random_string(16).encode()
         self.aes_key = MD5.new().digest()
         # rsa
         self.rsa_keys = {}
