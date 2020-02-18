@@ -49,7 +49,7 @@ class Client(object):
             "genreConnexion": 0,
             "genreEspace": int(self.options['a']),
             "identifiant": username,
-            "pourENT": False,
+            "pourENT": True,
             "enConnexionAuto": False,
             "demandeConnexionAuto": False,
             "demandeConnexionAppliMobile": False,
@@ -61,14 +61,14 @@ class Client(object):
 
         # creating the authentification data
         id_response = idr.json()
-        alea = id_response['donneesSec']['donnees']['alea']
         challenge = id_response['donneesSec']['donnees']['challenge']
         e = _Encryption()
         e.aes_set_iv(self.communication.encryption.aes_iv)
 
         # key gen
-        motdepasse = SHA256.new(str(alea + password).encode()).hexdigest().upper()
-        e.aes_key = MD5.new((username + motdepasse).encode()).digest()
+        alea = ''
+        motdepasse = SHA256.new(str(password).encode()).hexdigest().upper()
+        e.aes_key = MD5.new((motdepasse).encode()).digest()
         del password
 
         # challenge
@@ -179,8 +179,68 @@ class _Communication(object):
                    'Accept-Encoding': 'gzip, deflate, br',
                    'Accept-Language': 'en-GB,en-US;q=0.9,en;q=0.8,cs;q=0.7'}
 
+        # ENT Creds
+        username = 'ent_occitanie_username_here'
+        password = 'ent_occitanie_password_here'
+
+        # Required Headers
+        headers = {
+            'connection': 'keep-alive',
+            'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:73.0) Gecko/20100101 Firefox/73.0'}
+
+        # Login payload
+        payload = {
+            'auth_mode': 'BASIC',
+            'orig_url': '%2Ffim42%2Fsso%2FSSO%3FSPEntityID%3Dsp-ent-entmip-prod',
+            'user': username,
+            'password': password}
+
+        # ENT / PRONOTE required URLs
+        ent_login = 'https://famille.ac-montpellier.fr/login/ct_logon_vk.jsp?CT_ORIG_URL=/fim42/sso/SSO?SPEntityID=sp-ent-entmip-prod&ct_orig_uri=/fim42/sso/SSO?SPEntityID=sp-ent-entmip-prod'
+        ent_verif = 'https://famille.ac-montpellier.fr/aten-web/connexion/controlesConnexion?CT_ORIG_URL=%2Ffim42%2Fsso%2FSSO%3FSPEntityID%3Dsp-ent-entmip-prod&amp;ct_orig_uri=%2Ffim42%2Fsso%2FSSO%3FSPEntityID%3Dsp-ent-entmip-prod'
+
+        pronote_login = 'https://0300950v.index-education.net/pronote/eleve.html'
+        pronote_verif = 'https://cas.mon-ent-occitanie.fr/saml/SAMLAssertionConsumer'
+
+        # ENT Connection
+        session = requests.Session()
+        response = session.get(ent_login, headers=headers)
+
+        #print('(000)[ENT] Trying to log in with ' + username + ':' + password)
+        print('(' + str(response.status_code) + ')[ENT] GET -> ENT Login Page')
+
+        # Send user:pass to the ENT
+        cookies = requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
+        response = session.post(ent_login, headers=headers, data=payload, cookies=cookies)
+        print('(' + str(response.status_code) + ')[ENT] POST -> ENT Login Data')
+
+        # Get the CAS verification shit
+        cookies = requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
+        response = session.get(ent_verif, headers=headers, cookies=cookies)
+        print('(' + str(response.status_code) + ')[CAS] GET -> CAS Verification Page\n')
+
+        # Get the actual values
+        soup = BeautifulSoup(response.text, 'html.parser')
+        cas_infos = dict()
+        inputs = soup.findAll('input', {'type': 'hidden'})
+        for input in inputs:
+            cas_infos[input.get('name')] = input.get('value')
+
+        cookies = requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
+        session.cookies.update({'SERVERID': 'entmip-prod-web4', 'preselection': 'MONTP-ATS_parent_eleve'})
+        response = session.post(pronote_verif, headers=headers, data=cas_infos, cookies=cookies)
+        print('CAS data = ' + str(cas_infos))
+        print('\n(' + str(response.status_code) + ')[CAS] POST -> CAS Verification Data')
+
+        # Get Pronote RSA keys / UUID
+        cookies = requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
+        response = session.get(pronote_login, headers=headers, cookies=cookies)
+        print('(' + str(response.status_code) + ')[PRONOTE] GET -> Pronote RSA/UUID\n')
+
+        self.cookies = cookies
+
         # get rsa keys and session id
-        get_response = self.session.request('GET', f'{self.root_site}/{self.html_page}', headers=headers)
+        get_response = self.session.request('GET', f'{self.root_site}/{self.html_page}', cookies=cookies, headers=headers)
         self.attributes = self._parse_html(get_response.content)
         # uuid
         self.encryption.rsa_keys = {'MR': self.attributes['MR'], 'ER': self.attributes['ER']}
@@ -214,7 +274,7 @@ class _Communication(object):
         if not response.ok:
             raise requests.HTTPError(f'Status code: {response.status_code}')
         if 'Erreur' in response.json():
-            raise PronoteAPIError(f'PRONOTE server returned error code: {response.json()["Erreur"]["G"]}')
+            raise PronoteAPIError(f'PRONOTE server returned error code: {response.json()["Erreur"]["G"]} | {response.json()["Erreur"]["Titre"]}')
 
         return response
 
@@ -225,7 +285,7 @@ class _Communication(object):
         :param auth_key:authentification key used to calculate the challenge. (from password of the user)
         """
         self.encryption.aes_key = auth_key
-        self.cookies = auth_response.cookies
+        #self.cookies = auth_response.cookies
         work = self.encryption.aes_decrypt(bytes.fromhex(auth_response.json()['donneesSec']['donnees']['cle']))
         # ok
         key = MD5.new(_enBytes(work.decode()))
@@ -341,7 +401,7 @@ class _Encryption(object):
 
     def aes_decrypt(self, data: bytes):
         cipher = AES.new(self.aes_key, AES.MODE_CBC, self.aes_iv)
-        return Padding.unpad(cipher.decrypt(data), block_size=16)
+        return Padding.unpad(cipher.decrypt(data), 16)
 
     def aes_set_iv(self, iv=None):
         if iv is None:
