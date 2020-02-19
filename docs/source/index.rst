@@ -5,6 +5,7 @@ Introduction
 ------------
 
 This is a Python API wrapper for the PRONOTE student administration service. Every function was tested on a student account, but the API should support teacher, parent or any other account.
+
 .. note:: This project does **not** use the HYPERPLANNING API provided by PRONOTE, because its main goal is to make programming with PRONOTE a lot easier for students who are still learning.
 
 Dependencies
