@@ -12,7 +12,7 @@ This is a Python API wrapper for the PRONOTE student administration service. Eve
  - beautifulsoup4
  - requests
 
-### [Documentation](https://github.com/bain3/pronotepy/wiki)
+### [Documentation](https://dev-store.fr/pronotepy/doc/index.html)
 
 ## License
 

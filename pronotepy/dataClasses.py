@@ -12,7 +12,10 @@ class Util:
     def get(cls, iterable, **kwargs) -> list:
         """Gets items from the list with the attributes specified.
 
-        :param iterable:The iterable to loop over
+        **Attributes**
+
+        :param iterable: The iterable to loop over
+        :type iterable: int
         """
         output = []
         for i in iterable:
@@ -46,17 +49,20 @@ class Subject:
     """
     Represents a subject. You shouldn't have to create this class manually.
 
-    -- Attributes --
-    id: str = the id of the subject (used internally)
-    name: str = name of the subject
-    groups: bool = if the subject is in groups
-    average: str = users average in the subject
-    class_average: str = classes average in the subject
-    max: str = the highest grade in the class
-    min: str = the lowest grade in the class
-    out_of: str = the maximum amount of points
-    default_out_of: str = the default maximum amount of points"""
+    **Attributes**
+
+    :var id: the id of the subject (used internally)
+    :var name: name of the subject
+    :var groups: if the subject is in groups
+    :var average: users average in the subject
+    :var class_average: classes average in the subject
+    :var max: the highest grade in the class
+    :var min: the lowest grade in the class
+    :var out_of: the maximum amount of points
+    :var default_out_of: he default maximum amount of points
+    """
     __slots__ = ['id', 'name', 'groups', 'average', 'class_average', 'max', 'min', 'out_of', 'default_out_of']
+
     attribute_guide = {
         'moyEleve,V':                 ('average', str),
         'baremeMoyEleve,V':           ('out_of', str),
@@ -81,11 +87,13 @@ class Period:
     """
     Represents a period of the school year. You shouldn't have to create this class manually.
 
-    -- Attributes --
-    id: str = the id of the period (used internally)
-    name: str = name of the period
-    start: datetime.datetime = date on which the period starts
-    end: datetime.datetime = date on which the period ends"""
+    **Attributes**
+
+    :var id: the id of the period (used internally)
+    :var name: name of the period
+    :var start: date on which the period starts
+    :var end: date on which the period ends
+    """
 
     __slots__ = ['_client', 'id', 'name', 'start', 'end']
     instances = set()
@@ -118,18 +126,19 @@ class Period:
 class Grade:
     """Represents a grade. You shouldn't have to create this class manually.
 
-    -- Attributes --
-    id: str = the id of the grade (used internally)
-    grade: str = the actual grade
-    out_of: str = the maximum amount of points
-    default_out_of: str = the default maximum amount of points
-    date: datetime.datetime = the date on which the grade was given
-    subject: Subject = the subject in which the grade was given
-    period: Period = the period in which the grade was given
-    average: str = the average of the class
-    max: str = the highest grade of the test
-    min: str = the lowest grade of the test
-    coefficient: int = the coefficient of the grade"""
+    **Attributes**
+
+    :var id: the id of the grade (used internally)
+    :var grade: the actual grade
+    :var out_of: the maximum amount of points
+    :var default_out_of: the default maximum amount of points
+    :var date: the date on which the grade was given
+    :var subject: the subject in which the grade was given
+    :var period: the period in which the grade was given
+    :var average: the average of the class
+    :var max: the highest grade of the test
+    :var min: the lowest grade of the test
+    :var coefficient: the coefficient of the grade"""
     attribute_guide = {
         "N":                  ("id", str),
         "note,V":             ("grade", str),
@@ -161,9 +170,11 @@ class Grade:
 
 class Student:
     """Represents a class of students
-        -- Attributes --
-        id: str = ID of the class
-        name: str = name of the class"""
+
+    **Attributes**
+
+    :var id: ID of the class
+    :var name: name of the class"""
     attribute_guide = {
         'N': ('id', str),
         'L': ('name', str)
@@ -177,9 +188,11 @@ class Student:
 
 class StudentClass:
     """Represents a class of students
-    -- Attributes --
-    id: str = ID of the class
-    name: str = name of the class"""
+
+    **Attributes**
+
+    :var id: ID of the class
+    :var name: name of the class"""
     attribute_guide = {
         'N': ('id', str),
         'L': ('name', str)
@@ -197,16 +210,17 @@ class Lesson:
 
     !!If a lesson is a pedagogical outing, it will only have the "outing" and "start" attributes!!
 
-    -- Attributes --
-    id: str = the id of the lesson (used internally)
-    subject: Subject = the subject that the lesson is from
-    teacher_name: str = name of the teacher
-    classroom: str = name of the classroom
-    canceled: str = if the lesson is canceled
-    outing: bool = if it is a pedagogical outing
-    start: datetime.datetime = starting time of the lesson
-    group_name: str = Name of the group.
-    student_class: StudentClass = Teachers only. Class of the students"""
+    **Attributes**
+
+    :var id: the id of the lesson (used internally)
+    :var subject: the subject that the lesson is from
+    :var teacher_name: name of the teacher
+    :var classroom: name of the classroom
+    :var canceled: if the lesson is canceled
+    :var outing: if it is a pedagogical outing
+    :var start: starting time of the lesson
+    :var group_name: Name of the group.
+    :var student_class: Teachers only. Class of the students"""
     __slots__ = ['id', 'subject', 'teacher_name', 'classroom', 'start',
                  'canceled', 'detention', 'end', 'outing', 'group_name', 'student_class', '_client']
     attribute_guide = {
@@ -271,12 +285,13 @@ class Homework:
     """
     Represents a homework. You shouldn't have to create this class manually.
 
-    -- Attributes --
-    id: str = the id of the homework (used internally)
-    subject: Subject = the subject that the homework is for
-    description: str = the description of the homework
-    done: bool = if the homework is marked done
-    date: datetime.date = deadline"""
+    **Attributes**
+
+    :var id: the id of the homework (used internally)
+    :var subject: the subject that the homework is for
+    :var description: the description of the homework
+    :var done: if the homework is marked done
+    :var date: deadline"""
     __slots__ = ['id', 'subject', 'description', 'done', '_client', 'date']
     attribute_guide = {
         'N':            ('id', str),
@@ -296,7 +311,9 @@ class Homework:
     def set_done(self, status: bool):
         """
         Sets the status of the homework.
-        :param status:The status to which to change
+
+        :param status: The status to wich to change
+        :type status: bool
         """
         data = {'_Signature_': {'onglet': 88}, 'donnees': {'listeTAF': [
             {'N': self.id, 'TAFFait': status}
