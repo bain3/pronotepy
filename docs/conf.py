@@ -45,9 +45,9 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-#import sphinx_glpi_theme
-#html_theme = "glpi"
-#html_theme_path = sphinx_glpi_theme.get_html_themes_path()
+import sphinx_glpi_theme
+html_theme = "glpi"
+html_theme_path = sphinx_glpi_theme.get_html_themes_path()
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
