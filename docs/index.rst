@@ -4,7 +4,8 @@ Welcome to pronotepy's documentation!
 Introduction
 ------------
 
-.. note:: This is a Python API wrapper for the PRONOTE student administration service. Every function was tested on a student account, but the API should support teacher, parent or any other account. This project does **not** use the HYPERPLANNING API provided by PRONOTE, because its main goal is to make programming with PRONOTE a lot easier for students who are still learning.
+This is a Python API wrapper for the PRONOTE student administration service. Every function was tested on a student account, but the API should support teacher, parent or any other account.
+.. note:: This project does **not** use the HYPERPLANNING API provided by PRONOTE, because its main goal is to make programming with PRONOTE a lot easier for students who are still learning.
 
 Dependencies
 ^^^^^^^^^^^^
@@ -25,6 +26,14 @@ Guide
    :maxdepth: 3
 
    license
+
+PronotePy API documentation
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. toctree::
+   :maxdepth: 3
+
+   api/index
 
 Indices and tables
 ==================
