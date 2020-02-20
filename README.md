@@ -50,7 +50,7 @@ import pronotepy
 # Ex.: https://your-school.com/pronote/students <-- BAD
 #      https://0000000a.index-education.net/pronote/eleve.html <-- GOOD
 
-client = pronotepy.ClientStudent('https://demo.index-education.net/pronote/eleve.html')
+client = pronotepy.Client('https://demo.index-education.net/pronote/eleve.html')
 
 if client.login('demonstration', 'pronotevs'):  # login() returns bool that signifies if it successfully logged itself in
 
