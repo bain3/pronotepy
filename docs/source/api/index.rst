@@ -5,4 +5,3 @@ PronotePy API documentation
    :maxdepth: 2
 
    pronotepy
-   modules

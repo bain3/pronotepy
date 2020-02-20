@@ -122,6 +122,13 @@ class Period:
         crs = response.json()['donneesSec']['donnees']['listeServices']['V']
         return [Subject(c) for c in crs]
 
+    @property
+    def overall_average(self):
+        """Get overall average average from the period."""
+        json_data = {'donnees': {'Periode': {'N': self.id, 'L': self.name}}, "_Signature_": {"onglet": 198}}
+        response = self._client.communication.post('DernieresNotes', json_data)
+        average = response.json()['donneesSec']['donnees']['moyGenerale']['V']
+        return average
 
 class Grade:
     """Represents a grade. You shouldn't have to create this class manually.
