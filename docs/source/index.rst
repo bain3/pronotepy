@@ -1,6 +1,9 @@
 Welcome to pronotepy's documentation!
 =====================================
 
+.. image:: images/icon.png
+
+
 Introduction
 ------------
 
@@ -42,4 +45,3 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
-
