@@ -10,9 +10,6 @@
     An API wrapper for PRONOTE
     <br />
     <a href="https://pronotepy.readthedocs.io/en/latest"><strong>Explore the docs »</strong></a>
-    <br />
-    <br />
-    <a href="https://github.com/bain3/pronotepy/wiki">View wiki</a>
   </p>
 </p>
 
@@ -22,11 +19,53 @@
 
 This is a Python API wrapper for the PRONOTE student administration service. Every function was tested on a student account, but the API should support teacher, parent or any other account. This project does **not** use the HYPERPLANNING API provided by PRONOTE, because its main goal is to make programming with PRONOTE a lot easier for students who are still learning.
 
-## Dependencies
+## About
+
+### Dependencies
 
  - cryptodome
  - beautifulsoup4
  - requests
+
+### Installation
+**Stable**
+
+Install from pypi using pip: `pip install pronotepy` 
+
+**Latest**
+
+1. ~~clone this repository~~
+2. ~~run `pip install .` in the root directory~~
+
+I cannot assure that the latest version will be working.
+
+### Usage
+Here is an example script (example.py):
+```python
+import pronotepy
+
+# initialise the client
+# Note: the address should be a direct one (like the one below) usually the address shown by your school just redirects
+# you to the real one.
+# Ex.: https://your-school.com/pronote/students <-- BAD
+#      https://0000000a.index-education.net/pronote/eleve.html <-- GOOD
+
+client = pronotepy.ClientStudent('https://demo.index-education.net/pronote/eleve.html')
+
+if client.login('demonstration', 'pronotevs'):  # login() returns bool that signifies if it successfully logged itself in
+
+    # get the all the periods (may return multiple types like trimesters and semesters but it doesn't really matter
+    # the api will get it anyway)
+    periods = client.periods()
+
+    for period in periods:
+        for grade in period.grades:  # iterate over all the grades
+            print(f'{grade.grade}/{grade.out_of}')  # print out the grade in this style: 20/20
+```
+
+For any extra details, please see the [API Reference](https://github.com/bain3/pronotepy/wiki/API-Reference).
+
+If you are connecting from an ENT, please see [this code](https://github.com/bain3/pronotepy/blob/18131388c4d4bf0174cd9ef00418fe53e122c33a/pronotepy/pronoteAPI.py#L164) (line 164-240) to get an idea on how to do it. Unfortunately there is currently no other way to do it.
 
 ## License
 
