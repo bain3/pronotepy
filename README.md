@@ -10,6 +10,9 @@
     An API wrapper for PRONOTE
     <br />
     <a href="https://pronotepy.readthedocs.io/en/latest"><strong>Explore the docs »</strong></a>
+    <br />
+    <br />
+    <a href="https://github.com/bain3/pronotepy/wiki">View wiki</a>
   </p>
 </p>
 
