@@ -14,7 +14,7 @@ This is a Python API wrapper for the PRONOTE student administration service. Eve
  - beautifulsoup4
  - requests
 
-### [Documentation](https://dev-store.fr/pronotepy/doc/index.html)
+### [Documentation](https://pronotepy.readthedocs.io/en/latest/)
 
 ## License
 
