@@ -32,7 +32,7 @@ class Client(object):
     :var week: The current week of the school year
 
     .. _cookies_jar:
-        https://requests.readthedocs.io/en/latest/_modules/requests/cookies/
+        https://requests.readthedocs.io/en/latest/api/#api-cookies
 
     .. _datetime.date:
         https://docs.python.org/2/library/datetime.html#date-objects

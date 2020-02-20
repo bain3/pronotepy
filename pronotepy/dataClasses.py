@@ -12,10 +12,8 @@ class Util:
     def get(cls, iterable, **kwargs) -> list:
         """Gets items from the list with the attributes specified.
 
-        **Attributes**
-
         :param iterable: The iterable to loop over
-        :type iterable: int
+        :type iterable: list
         """
         output = []
         for i in iterable:
@@ -124,11 +122,34 @@ class Period:
 
     @property
     def overall_average(self):
-        """Get overall average average from the period."""
+        """Get overall average from the period. If the period average is not provided by pronote, then it's calculated.
+        Calculation may not be the same as the actual average. (max difference 0.01)"""
         json_data = {'donnees': {'Periode': {'N': self.id, 'L': self.name}}, "_Signature_": {"onglet": 198}}
         response = self._client.communication.post('DernieresNotes', json_data)
-        average = response.json()['donneesSec']['donnees']['moyGenerale']['V']
+        average = response.json()['donneesSec']['donnees'].get('moyGenerale')
+        if average:
+            average = average['V']
+        elif response.json()['donneesSec']['donnees']['listeServices']['V']:
+            a = 0
+            total = 0
+            services = response.json()['donneesSec']['donnees']['listeServices']['V']
+            for s in services:
+                avrg = s['moyEleve']['V'].replace(',', '.')
+                try:
+                    flt = float(avrg)
+                except ValueError:
+                    flt = False
+                if flt:
+                    a += flt
+                    total += 1
+            if total:
+                average = round(a/total, 2)
+            else:
+                average = -1
+        else:
+            average = -1
         return average
+
 
 class Grade:
     """Represents a grade. You shouldn't have to create this class manually.
