@@ -1,4 +1,17 @@
-# pronotepy
+<br />
+<p align="center">
+  <a href="https://github.com/bain3/pronotepy">
+    <img src="https://pronotepy.readthedocs.io/en/latest/_images/icon.png" alt="Logo" width="80" height="80">
+  </a>
+
+  <h3 align="center">pronotepy</h3>
+
+  <p align="center">
+    An API wrapper for PRONOTE
+    <br />
+    <a href="https://pronotepy.readthedocs.io/en/latest"><strong>Explore the docs »</strong></a>
+  </p>
+</p>
 
 [![Documentation Status](https://readthedocs.org/projects/pronotepy/badge/?version=latest)](https://pronotepy.readthedocs.io/en/latest/?badge=latest)
 
@@ -6,15 +19,11 @@
 
 This is a Python API wrapper for the PRONOTE student administration service. Every function was tested on a student account, but the API should support teacher, parent or any other account. This project does **not** use the HYPERPLANNING API provided by PRONOTE, because its main goal is to make programming with PRONOTE a lot easier for students who are still learning.
 
-## About
-
-### Dependencies
+## Dependencies
 
  - cryptodome
  - beautifulsoup4
  - requests
-
-### [Documentation](https://pronotepy.readthedocs.io/en/latest/)
 
 ## License
 
