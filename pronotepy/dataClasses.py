@@ -384,6 +384,12 @@ class File:
         self.url = client.communication.root_site+'/FichiersExternes/'+magic_stuff+'/'+quote(self.name, safe='~()*!.\'')+'?Session='+client.attributes['h']
 
     def save(self, file_name=None):
+        """
+        Saves the file.
+
+        :param file_name: file name
+        :type file_name: str
+        """
         response = self._client.communication.session.get(self.url)
         if not file_name:
             file_name = self.name
