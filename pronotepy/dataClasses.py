@@ -56,30 +56,16 @@ class Subject:
     :var id: the id of the subject (used internally)
     :var name: name of the subject
     :var groups: if the subject is in groups
-    :var average: users average in the subject
-    :var class_average: classes average in the subject
-    :var max: the highest grade in the class
-    :var min: the lowest grade in the class
-    :var out_of: the maximum amount of points
-    :var default_out_of: he default maximum amount of points
     """
-    __slots__ = ['id', 'name', 'groups', 'average', 'class_average', 'max', 'min', 'out_of', 'default_out_of']
+    __slots__ = ['id', 'name', 'groups']
 
     attribute_guide = {
-        'moyEleve,V':                 ('average', str),
-        'baremeMoyEleve,V':           ('out_of', str),
-        'baremeMoyEleveParDefault,V': ('default_out_of', str),
-        'moyClasse,V':                ('class_average', str),
-        'moyMin,V':                   ('min', str),
-        'moyMax,V':                   ('max', str),
         'N':                          ('id', str),
         'L':                          ('name', str),
         'estServiceEnGroupe':         ('groups', bool)
     }
 
     def __init__(self, parsed_json):
-        self.id = self.name = self.groups = self.average = self.class_average = \
-            self.max = self.min = self.out_of = self.default_out_of = None
         prepared_json = Util.prepare_json(self.__class__, parsed_json)
         for key in prepared_json:
             self.__setattr__(key, prepared_json[key])
@@ -122,7 +108,7 @@ class Period:
         json_data = {'donnees': {'Periode': {'N': self.id, 'L': self.name}}, "_Signature_": {"onglet": 198}}
         response = self._client.communication.post('DernieresNotes', json_data)
         crs = response.json()['donneesSec']['donnees']['listeServices']['V']
-        return [Subject(c) for c in crs]
+        return [Average(c) for c in crs]
 
     @property
     def overall_average(self):
@@ -153,6 +139,38 @@ class Period:
         else:
             average = -1
         return average
+
+
+class Average:
+    """
+    Represents an Average.
+
+    **Attributes**
+
+    :var student: students average in the subject
+    :var class: classes average in the subject
+    :var max: highest average in the class
+    :var min: lowest average in the class
+    :var out_of: maximum amount of points
+    :var default_out_of: he default maximum amount of points
+    :var subject: subject the average is from
+    """
+    attribute_guide = {
+        'moyEleve,V': ('student', str),
+        'baremeMoyEleve,V': ('out_of', str),
+        'baremeMoyEleveParDefault,V': ('default_out_of', str),
+        'moyClasse,V': ('class', str),
+        'moyMin,V': ('min', str),
+        'moyMax,V': ('max', str)
+    }
+    __slots__ = ['student', 'out_of', 'default_out_of', 'class', 'min', 'max', 'subject']
+
+    def __init__(self, parsed_json):
+        prepared_json = Util.prepare_json(self.__class__, parsed_json)
+        for key in prepared_json:
+            self.__setattr__(key, prepared_json[key])
+        self.subject = Subject(parsed_json)
+
 
 
 class Grade:
@@ -254,7 +272,7 @@ class Lesson:
     :var group_name: Name of the group.
     :var student_class: Teachers only. Class of the students"""
     __slots__ = ['id', 'subject', 'teacher_name', 'classroom', 'start',
-                 'canceled', 'detention', 'end', 'outing', 'group_name', 'student_class', '_client']
+                 'canceled', 'detention', 'end', 'outing', 'group_name', 'student_class', '_client', '_content']
     attribute_guide = {
         'DateDuCours,V':        ('start', lambda d: datetime.datetime.strptime(d, '%d/%m/%Y %H:%M:%S')),
         'N':                    ('id', str),
@@ -273,6 +291,7 @@ class Lesson:
 
     def __init__(self, client, parsed_json):
         self._client = client
+        self._content = None
         prepared_json = Util.prepare_json(self.__class__, parsed_json)
         for key in prepared_json:
             self.__setattr__(key, prepared_json[key])
@@ -312,6 +331,8 @@ class Lesson:
         Gets content of the lesson.
         .. note:: This property is very inefficient and will send a request to pronote, so don't use it often.
         """
+        if self._content:
+            return self._content
         week = self._client._get_week(self.start.date())
         data = {"_Signature_": {"onglet": 89}, "donnees": {"domaine": {"_T": 8, "V": f"[{week}..{week}]"}}}
         response = self._client.communication.post('PageCahierDeTexte', data)
@@ -322,7 +343,8 @@ class Lesson:
                 break
         if not contents:
             return None
-        return LessonContent(self._client, contents)
+        self._content = LessonContent(self._client, contents)
+        return self._content
 
 
 class LessonContent:
