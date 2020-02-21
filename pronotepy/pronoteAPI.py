@@ -122,6 +122,7 @@ class Client(object):
         self.auth_response = self.communication.post("Authentification", {'donnees': auth_json})
         if 'cle' in self.auth_response.json()['donneesSec']['donnees']:
             self.communication.after_auth(self.auth_response, e.aes_key)
+            self.encryption.aes_key = e.aes_key
             log.info(f'successfully logged in as {username}')
             return True
         else:

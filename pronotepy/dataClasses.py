@@ -1,5 +1,9 @@
 import datetime
 import re
+import json
+from urllib.parse import quote
+from . import pronoteAPI
+from Crypto.Util import Padding
 
 
 def _get_l(d): return d['L']
@@ -301,6 +305,100 @@ class Lesson:
                     'Date': {'_T': 7, 'V': self.start.strftime('%d/%m%Y 0:0:0')}
                 }}
         return Absences(self._client.communication.post("PageSaisieAbsences", data).json())
+
+    @property
+    def content(self):
+        """
+        Gets content of the lesson.
+        .. note:: This property is very inefficient and will send a request to pronote, so don't use it often.
+        """
+        week = self._client._get_week(self.start.date())
+        data = {"_Signature_": {"onglet": 89}, "donnees": {"domaine": {"_T": 8, "V": f"[{week}..{week}]"}}}
+        response = self._client.communication.post('PageCahierDeTexte', data)
+        contents = {}
+        for lesson in response.json()['donneesSec']['donnees']['ListeCahierDeTextes']['V']:
+            if lesson['cours']['V']['N'] == self.id:
+                contents = lesson['listeContenus']['V'][0]
+                break
+        if not contents:
+            return None
+        return LessonContent(self._client, contents)
+
+
+class LessonContent:
+    """
+    Represents the content of a lesson. You shouldn't have to create this class manually.
+
+    **Attributes**
+
+    :var title: title of the lesson content
+    :var description: description of the lesson content
+    """
+    attribute_guide = {
+        'L': ('title', str),
+        'descriptif,V': ('description', lambda d: re.sub(re.compile('<.*?>'), '', d)),
+        'ListePieceJointe,V': ('_files', tuple)
+    }
+
+    __slots__ = ['title', 'description', '_files', '_client']
+
+    def __init__(self, client, parsed_json):
+        prepared_json = Util.prepare_json(self.__class__, parsed_json)
+        for key in prepared_json:
+            self.__setattr__(key, prepared_json[key])
+        self._client = client
+
+    @property
+    def files(self):
+        """Get all the attached files from the lesson"""
+        return [File(self._client, jsn) for jsn in self._files]
+
+
+class File:
+    """
+    Represents a file uploaded to pronote.
+
+    **Attributes**
+
+    :var name: Name of the file.
+    :var id: id of the file (used internally and for url)
+    :var url: url of the file
+    """
+    attribute_guide = {
+        'L': ('name', str),
+        'N': ('id', str)
+    }
+
+    __slots__ = ['name', 'id', '_client', 'url']
+
+    def __init__(self, client, parsed_json):
+        e = pronoteAPI._Encryption()
+        e.aes_iv = client.encryption.aes_iv
+
+        prepared_json = Util.prepare_json(self.__class__, parsed_json)
+        for key in prepared_json:
+            self.__setattr__(key, prepared_json[key])
+        self._client = client
+        padd = Padding.pad(json.dumps({'N': self.id, 'Actif': True}).replace(' ', '').encode(), 16)
+        magic_stuff = client.communication.encryption.aes_encrypt(padd).hex()
+        self.url = client.communication.root_site+'/FichiersExternes/'+magic_stuff+'/'+quote(self.name, safe='~()*!.\'')+'?Session='+client.attributes['h']
+
+    def save(self, file_name=None):
+        response = self._client.communication.session.get(self.url)
+        if not file_name:
+            file_name = self.name
+        if response.status_code == 200:
+            with open(file_name, 'wb') as handle:
+                for block in response.iter_content(1024):
+                    handle.write(block)
+        else:
+            raise FileNotFoundError("The file was not found on pronote. The url may be badly formed.")
+
+    @property
+    def data(self):
+        """Gets the raw file data."""
+        response = self._client.communication.session.get(self.url)
+        return response.content
 
 
 class Absences:
