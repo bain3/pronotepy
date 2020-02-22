@@ -321,9 +321,7 @@ class _Communication(object):
         Key change after the authentification was successful.
 
         :param auth_response: The authentification response from the server
-        :type auth_response: str
         :param auth_key: AES authentification key used to calculate the challenge (From password of the user)
-        :type auth_key: str
         """
         self.encryption.aes_key = auth_key
         if not self.cookies:

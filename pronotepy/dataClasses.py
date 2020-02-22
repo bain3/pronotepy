@@ -2,7 +2,6 @@ import datetime
 import re
 import json
 from urllib.parse import quote
-from . import pronoteAPI
 from Crypto.Util import Padding
 
 
@@ -170,7 +169,6 @@ class Average:
         for key in prepared_json:
             self.__setattr__(key, prepared_json[key])
         self.subject = Subject(parsed_json)
-
 
 
 class Grade:
@@ -391,12 +389,9 @@ class File:
         'N': ('id', str)
     }
 
-    __slots__ = ['name', 'id', '_client', 'url']
+    __slots__ = ['name', 'id', '_client', 'url', '_data']
 
     def __init__(self, client, parsed_json):
-        e = pronoteAPI._Encryption()
-        e.aes_iv = client.encryption.aes_iv
-
         prepared_json = Util.prepare_json(self.__class__, parsed_json)
         for key in prepared_json:
             self.__setattr__(key, prepared_json[key])
@@ -404,10 +399,11 @@ class File:
         padd = Padding.pad(json.dumps({'N': self.id, 'Actif': True}).replace(' ', '').encode(), 16)
         magic_stuff = client.communication.encryption.aes_encrypt(padd).hex()
         self.url = client.communication.root_site+'/FichiersExternes/'+magic_stuff+'/'+quote(self.name, safe='~()*!.\'')+'?Session='+client.attributes['h']
+        self._data = None
 
     def save(self, file_name=None):
         """
-        Saves the file.
+        Saves the file on to local storage.
 
         :param file_name: file name
         :type file_name: str
@@ -425,6 +421,8 @@ class File:
     @property
     def data(self):
         """Gets the raw file data."""
+        if self._data:
+            return self._data
         response = self._client.communication.session.get(self.url)
         return response.content
 
