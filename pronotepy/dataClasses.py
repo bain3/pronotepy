@@ -390,7 +390,7 @@ class File:
     }
 
     __slots__ = ['name', 'id', '_client', 'url', '_data']
-
+    
     def __init__(self, client, parsed_json):
         prepared_json = Util.prepare_json(self.__class__, parsed_json)
         for key in prepared_json:

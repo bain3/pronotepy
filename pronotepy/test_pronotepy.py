@@ -71,3 +71,7 @@ class TestLessonContent(TestCase):
 
     def test_files(self):
         self.assertIsNotNone(self.lessonContent.files)
+
+
+if __name__ == '__main__':
+    unittest.main()
