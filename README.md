@@ -30,14 +30,19 @@ This is a Python API wrapper for the PRONOTE student administration service. Eve
 ### Installation
 **Stable**
 
-Install from pypi using pip: `pip install pronotepy` 
+Install directly from pypi using pip: `pip install pronotepy` 
 
 **Latest**
 
-1. ~~clone this repository~~
-2. ~~run `pip install .` in the root directory~~
+1. clone this repository
+2. run `pip install .` in the root directory
 
 I cannot assure that the latest version will be working.
+
+#### Testing the package
+To self test pronotepy run this command:
+
+`python -m pronotepy.test_pronotepy`
 
 ### Usage
 Here is an example script (example.py):
@@ -56,7 +61,7 @@ if client.login('demonstration', 'pronotevs'):  # login() returns bool that sign
 
     # get the all the periods (may return multiple types like trimesters and semesters but it doesn't really matter
     # the api will get it anyway)
-    periods = client.periods()
+    periods = client.periods
 
     for period in periods:
         for grade in period.grades:  # iterate over all the grades
@@ -65,7 +70,7 @@ if client.login('demonstration', 'pronotevs'):  # login() returns bool that sign
 
 For any extra details, please see the [API Reference](https://github.com/bain3/pronotepy/wiki/API-Reference).
 
-If you are connecting from an ENT, please see [this code](https://github.com/bain3/pronotepy/blob/18131388c4d4bf0174cd9ef00418fe53e122c33a/pronotepy/pronoteAPI.py#L164) (line 164-240) to get an idea on how to do it. Unfortunately there is currently no other way to do it.
+*If you are connecting from an ENT, please see [this code](https://github.com/bain3/pronotepy/blob/18131388c4d4bf0174cd9ef00418fe53e122c33a/pronotepy/pronoteAPI.py#L164) (line 164-240) to get an idea on how to do it. Unfortunately there is currently no other way to do it.*
 
 ## License
 

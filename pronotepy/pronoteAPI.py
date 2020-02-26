@@ -65,7 +65,7 @@ class Client(object):
             self.func_options.json()['donneesSec']['donnees']['General']['ListeHeuresFin']['V'][0]['L'], '%Hh%M')
         self.one_hour_duration = hour_end - hour_start
 
-        self.periods_ = self.periods()
+        self.periods_ = self.periods
 
     def login(self, username='', password=''):
         """
@@ -194,11 +194,12 @@ class Client(object):
             output.append(dataClasses.Lesson(self, lesson))
         return output
 
+    @property
     def periods(self):
         """
         Get all of the periods of the year.
 
-        :return: All the priods of the year
+        :return: All the periods of the year
         :rtype: list
         """
         if hasattr(self, 'periods_'):
@@ -206,13 +207,11 @@ class Client(object):
         json = self.func_options.json()['donneesSec']['donnees']['General']['ListePeriodes']
         return [dataClasses.Period(self, j) for j in json]
 
-    def current_periods(self):
-        """Get the current period(s)."""
-        output = []
-        for p in self.periods_:
-            if p.start < self.date < p.end:
-                output.append(p)
-        return output
+    @property
+    def current_period(self):
+        """Get the current period."""
+        id_period = self.auth_response.json()['donneesSec']['donnees']['ressource']['listeOngletsPourPeriodes']['V'][0]['periodeParDefaut']['V']['N']
+        return dataClasses.Util.get(self.periods_, id=id_period)[0]
 
     def homework(self, date_from: datetime.date, date_to: datetime.date = None):
         """
@@ -222,7 +221,7 @@ class Client(object):
         :type date_from: `datetime.date`_
         :param date_to: The second date
         :type date_to: `datetime.date`_
-        :return: Homework bewteen two given points
+        :return: Homework between two given points
         :rtype: list
 
         .. _datetime.date:
