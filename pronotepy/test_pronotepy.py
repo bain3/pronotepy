@@ -1,5 +1,4 @@
 import unittest
-from unittest import TestCase
 
 import pronotepy
 import datetime
@@ -34,7 +33,7 @@ class TestClient(unittest.TestCase):
             client.homework(client.start_day.date(), (client.start_day + datetime.timedelta(days=8)).date()))
 
 
-class TestPeriod(TestCase):
+class TestPeriod(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         global client
@@ -50,7 +49,7 @@ class TestPeriod(TestCase):
         self.assertIsNotNone(self.period.overall_average)
 
 
-class TestLesson(TestCase):
+class TestLesson(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         global client
@@ -63,7 +62,7 @@ class TestLesson(TestCase):
         self.assertIsInstance(self.lesson.content, pronotepy.LessonContent)
 
 
-class TestLessonContent(TestCase):
+class TestLessonContent(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         global client

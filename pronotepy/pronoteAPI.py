@@ -249,6 +249,18 @@ class Client(object):
         """
         return _KeepAlive(self)
 
+    def messages(self):
+        """
+        Gets all the discussions in the discussions tab
+
+        :return: Messages
+        :rtype: list
+        """
+        messages = self.communication.post('ListeMessagerie', {'donnees': {'avecMessage': True, 'avecLu': True},
+                                                               '_Signature_': {'onglet': 131}})
+        print('test')
+        return [dataClasses.Message(self, m) for m in messages.json()['donneesSec']['donnees']['listeMessagerie']['V'] if not m.get('estUneDiscussion')]
+
 
 class _Communication(object):
     def __init__(self, site, cookies=None):

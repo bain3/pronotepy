@@ -444,13 +444,14 @@ class Homework:
     :var description: the description of the homework
     :var done: if the homework is marked done
     :var date: deadline"""
-    __slots__ = ['id', 'subject', 'description', 'done', '_client', 'date']
+    __slots__ = ['id', 'subject', 'description', 'done', '_client', 'date', '_files']
     attribute_guide = {
         'N':            ('id', str),
         'descriptif,V': ('description', lambda d: re.sub(re.compile('<.*?>'), '', d)),
         'TAFFait':      ('done', bool),
         'Matiere,V':    ('subject', Subject),
-        'PourLe,V':     ('date', lambda d: datetime.datetime.strptime(d, '%d/%m/%Y').date())
+        'PourLe,V':     ('date', lambda d: datetime.datetime.strptime(d, '%d/%m/%Y').date()),
+        'ListePieceJointe,V': ('_files', tuple)
     }
 
     def __init__(self, client, parsed_json):
@@ -464,7 +465,7 @@ class Homework:
         """
         Sets the status of the homework.
 
-        :param status: The status to wich to change
+        :param status: The status to which to change
         :type status: bool
         """
         data = {'_Signature_': {'onglet': 88}, 'donnees': {'listeTAF': [
@@ -472,6 +473,54 @@ class Homework:
         ]}}
         if self._client.communication.post("SaisieTAFFaitEleve", data):
             self.done = status
+
+    @property
+    def files(self):
+        """Get all the files attached to the homework"""
+        return [File(self._client, jsn) for jsn in self._files]
+
+
+class Message:
+    """
+    Represents a message in a discussion.
+
+    **Attributes**
+
+    :var id: the id of the message (used internally)
+    :var author: author of the message
+    :var recipients: Recipitents of the message. ! May be just ['# recipients'] !
+    :var seen: if the message was seen
+    :var date: the date when the message was sent"""
+    __slots__ = ['id', 'author', 'recipients', 'seen', 'date', '_client', '_listePM']
+    attribute_guide = {
+        'N': ('id', str),
+        'public_gauche': ('author', str),
+        'listePublic': ('recipients', list),
+        'lu': ('seen', bool),
+        'libelleDate': ('date', lambda d: datetime.datetime.strptime(' '.join(d.split()[1:]), '%d/%m/%y %Hh%M'))
+    }
+
+    def __init__(self, client, json_):
+        self._client = client
+        self._listePM = json_['listePossessionsMessages']['V']
+        print(json_)
+        prepared_json = Util.prepare_json(self.__class__, json_)
+        for key in prepared_json:
+            self.__setattr__(key, prepared_json[key])
+
+    @property
+    def content(self):
+        """Returns the content of the message"""
+        data = {'donnees': {'message': {'N': self.id},
+                            'marquerCommeLu': False,
+                            'estNonPossede': False,
+                            'listePossessionsMessages': self._listePM},
+                '_Signature_': {'onglet': 131}}
+        resp = self._client.communication.post('ListeMessages', data)
+        for m in resp.json()['donneesSec']['donnees']['listeMessages']['V']:
+            if m['N'] == self.id:
+                return re.sub(re.compile('<.*?>'), '', m['contenu']['V'])
+        return None
 
 
 class DataError(Exception):
