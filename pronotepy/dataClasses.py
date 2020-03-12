@@ -519,7 +519,10 @@ class Message:
         resp = self._client.communication.post('ListeMessages', data)
         for m in resp.json()['donneesSec']['donnees']['listeMessages']['V']:
             if m['N'] == self.id:
-                return re.sub(re.compile('<.*?>'), '', m['contenu']['V'])
+                if type(m['contenu']) == dict:
+                    return re.sub(re.compile('<.*?>'), '', m['contenu']['V'])
+                else:
+                    return m['contenu']
         return None
 
 
