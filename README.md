@@ -70,7 +70,7 @@ if client.login('demonstration', 'pronotevs'):  # login() returns bool that sign
             print(f'{grade.grade}/{grade.out_of}')  # print out the grade in this style: 20/20
 ```
 
-For any extra details, please see the [API Reference](https://github.com/bain3/pronotepy/wiki/API-Reference).
+For any extra details, please see the [docs](https://pronotepy.readthedocs.io/en/stable/index.html).
 
 *If you are connecting from an ENT, please see [this code](https://github.com/bain3/pronotepy/blob/18131388c4d4bf0174cd9ef00418fe53e122c33a/pronotepy/pronoteAPI.py#L164) (line 164-240) to get an idea on how to do it. Unfortunately there is currently no other way to do it.*
 
