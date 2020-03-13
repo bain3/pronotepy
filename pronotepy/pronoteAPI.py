@@ -37,6 +37,7 @@ class Client(object):
     .. _datetime.date:
         https://docs.python.org/2/library/datetime.html#date-objects
     """
+
     def __init__(self, pronote_url, ent: bool = False, cookies=None):
         log.info('INIT')
         # start communication session
@@ -107,9 +108,13 @@ class Client(object):
             motdepasse = SHA256.new(str(password).encode()).hexdigest().upper()
             e.aes_key = MD5.new(motdepasse.encode()).digest()
         else:
+            u = username
+            p = password
+            if idr['donneesSec']['donnees']['modeCompLog']: u = u.lower()
+            if idr['donneesSec']['donnees']['modeCompMdp']: p = p.lower()
             alea = idr['donneesSec']['donnees']['alea']
-            motdepasse = SHA256.new(str(alea + password.lower()).encode()).hexdigest().upper()
-            e.aes_key = MD5.new((username.lower() + motdepasse).encode()).digest()
+            motdepasse = SHA256.new(str(alea + p).encode()).hexdigest().upper()
+            e.aes_key = MD5.new((u + motdepasse).encode()).digest()
         del password
 
         # challenge
@@ -210,7 +215,8 @@ class Client(object):
     @property
     def current_period(self):
         """Get the current period."""
-        id_period = self.auth_response.json()['donneesSec']['donnees']['ressource']['listeOngletsPourPeriodes']['V'][0]['periodeParDefaut']['V']['N']
+        id_period = self.auth_response.json()['donneesSec']['donnees']['ressource']['listeOngletsPourPeriodes']['V'][0][
+            'periodeParDefaut']['V']['N']
         return dataClasses.Util.get(self.periods_, id=id_period)[0]
 
     def homework(self, date_from: datetime.date, date_to: datetime.date = None):
@@ -259,7 +265,8 @@ class Client(object):
         messages = self.communication.post('ListeMessagerie', {'donnees': {'avecMessage': True, 'avecLu': True},
                                                                '_Signature_': {'onglet': 131}})
         print('test')
-        return [dataClasses.Message(self, m) for m in messages.json()['donneesSec']['donnees']['listeMessagerie']['V'] if not m.get('estUneDiscussion')]
+        return [dataClasses.Message(self, m) for m in messages.json()['donneesSec']['donnees']['listeMessagerie']['V']
+                if not m.get('estUneDiscussion')]
 
 
 class _Communication(object):
@@ -285,7 +292,8 @@ class _Communication(object):
             'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:73.0) Gecko/20100101 Firefox/73.0'}
 
         # get rsa keys and session id
-        get_response = self.session.request('GET', f'{self.root_site}/{self.html_page}', headers=headers, cookies=self.cookies)
+        get_response = self.session.request('GET', f'{self.root_site}/{self.html_page}', headers=headers,
+                                            cookies=self.cookies)
         self.attributes = self._parse_html(get_response.content)
         # uuid
         self.encryption.rsa_keys = {'MR': self.attributes['MR'], 'ER': self.attributes['ER']}
@@ -323,7 +331,8 @@ class _Communication(object):
         if not response.ok:
             raise requests.HTTPError(f'Status code: {response.status_code}')
         if 'Erreur' in response.json():
-            raise PronoteAPIError(f'PRONOTE server returned error code: {response.json()["Erreur"]["G"]} | {response.json()["Erreur"]["Titre"]}')
+            raise PronoteAPIError(
+                f'PRONOTE server returned error code: {response.json()["Erreur"]["G"]} | {response.json()["Erreur"]["Titre"]}')
 
         return response
 
@@ -443,7 +452,7 @@ class _KeepAlive(threading.Thread):
 
     def alive(self):
         while self.keep_alive:
-            if time()-self._connection.last_ping >= 300:
+            if time() - self._connection.last_ping >= 300:
                 self._connection.post('Presence', {'_Signature_': {'onglet': 7}})
             sleep(1)
 
