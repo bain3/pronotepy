@@ -7,6 +7,12 @@ log.setLevel(logging.DEBUG)
 
 
 def atrium_sud(username, password):
+    """
+    ENT for Atrium Sud
+    :param username:
+    :param password:
+    :return:
+    """
     # ENT / PRONOTE required URLs
     ent_login = 'https://www.atrium-sud.fr/connexion/login?service=https:%2F%2F0060013G.index-education.net%2Fpronote%2F'
 
@@ -44,6 +50,12 @@ def atrium_sud(username, password):
 
 
 def occitanie_montpellier(username, password):
+    """
+    ENT for Occitanie Montpellier
+    :param username:
+    :param password:
+    :return:
+    """
     # Required Headers
     headers = {
         'connection': 'keep-alive',
