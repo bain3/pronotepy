@@ -2,6 +2,6 @@ PronotePy API documentation
 ===========================
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
    pronotepy
