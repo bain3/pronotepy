@@ -4,6 +4,7 @@ chardet
 docopt
 idna
 pyasn1
+numpydoc
 pycryptodome
 requests
 soupsieve
