@@ -18,6 +18,13 @@ pronotepy.pronoteAPI module
    :members:
    :show-inheritance:
 
+pronotepy.ent module
+---------------------------
+
+.. automodule:: pronotepy.ent
+   :members:
+   :show-inheritance:
+
 
 Module contents
 ---------------
