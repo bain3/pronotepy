@@ -70,13 +70,13 @@ if client.login('demonstration', 'pronotevs'):  # login() returns bool that sign
             print(f'{grade.grade}/{grade.out_of}')  # print out the grade in this style: 20/20
 ```
 
-For any extra details, please see the [docs](https://pronotepy.readthedocs.io/en/stable/index.html).
+For any extra details, please see the documentation linked above.
 
 *If you are connecting from an ENT, please see [this code](https://github.com/bain3/pronotepy/blob/18131388c4d4bf0174cd9ef00418fe53e122c33a/pronotepy/pronoteAPI.py#L164) (line 164-240) to get an idea on how to do it. Unfortunately there is currently no other way to do it.*
 
 ## License
 
-Copyright (c) 2020 bain
+Copyright (c) 2020 bain, Xiloe
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
@@ -84,5 +84,8 @@ The above copyright notice and this permission notice shall be included in all c
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-## Contact
-discord: `bain#5038`
+## Contact (discord)
+```plaintext
+bain#5038
+Xiloe#3042 (Contact me for ENT issues)
+```
