@@ -10,9 +10,17 @@ def atrium_sud(username, password):
     """
     ENT for Atrium Sud
 
-    :param username: username
-    :param password: password
-    :return: cookies
+    Parameters
+    ----------
+    username : str
+        username
+    password : str
+        password
+    
+    Returns
+    -------
+    cookies : cookies
+        returns the ent session cookies
     """
     # ENT / PRONOTE required URLs
     ent_login = 'https://www.atrium-sud.fr/connexion/login?service=https:%2F%2F0060013G.index-education.net%2Fpronote%2F'
@@ -54,9 +62,17 @@ def occitanie_montpellier(username, password):
     """
     ENT for Occitanie Montpellier
 
-    :param username: username
-    :param password: password
-    :return: cookies
+    Parameters
+    ----------
+    username : str
+        username
+    password : str
+        password
+    
+    Returns
+    -------
+    cookies : cookies
+        returns the ent session cookies
     """
     # Required Headers
     headers = {

@@ -21,21 +21,21 @@ class Client(object):
     """
     A PRONOTE client.
 
-    :param pronote_url: URL of the server
-    :type pronote_url: string
-    :param ent: If the connection is from an ENT
-    :type ent: bool
-    :param cookies: Cookies for ENT connections
-    :type cookies: `cookies_jar`_
+    Parameters
+    ----------
+    pronote_url : str
+        URL of the server
+    ent : bool
+        If the connection is from an ENT
+    cookies : cookies
+        Cookies for ENT connections
 
-    :var start_day: The first day of the school year
-    :var week: The current week of the school year
-
-    .. _cookies_jar:
-        https://requests.readthedocs.io/en/latest/api/#api-cookies
-
-    .. _datetime.date:
-        https://docs.python.org/2/library/datetime.html#date-objects
+    Attributes
+    ----------
+    start_day : str
+        The first day of the school year
+    week : str
+        The current week of the school year
     """
 
     def __init__(self, pronote_url, ent: bool = False, cookies=None, username: str = None, password: str = None):
@@ -78,12 +78,17 @@ class Client(object):
         """
         Logs in the user.
 
-        :param username: Username
-        :type username: str
-        :param password: Password
-        :type password: str
-        :return: True if logged in, False if not
-        :rtype: bool
+        Parameters
+        ----------
+        username : str
+            Username
+        password : str
+            Password
+
+        Returns
+        -------
+        bool
+            True if logged in, False if not
         """
         if self.ent is True:
             username = self.attributes['e']
@@ -143,10 +148,12 @@ class Client(object):
 
     def _get_homepage_info(self):
         """
-        .. warning:: Old function, not used
+        Old function, not used
 
-        :return: The response of the page
-        :rtype: json
+        Returns
+        -------
+        json
+            The response of the page
         """
         dta_nav = {"_Signature_": {"onglet": 7}, "donnees": {"onglet": 7, "ongletPrec": 7}}
         self.communication.post('Navigation', dta_nav)
@@ -177,15 +184,17 @@ class Client(object):
         """
         Gets all lessons in a given timespan.
 
-        :param date_from: The first date
-        :type date_from: `datetime.date`_
-        :param date_to: The second date
-        :type date_to: `datetime.date`_
-        :return: Lessons list in a given timespan
-        :rtype: list
+        Parameters
+        ----------
+        date_from : datetime
+            The first date
+        date_to : datetime
+            The second date
 
-        .. _datetime.date:
-            https://docs.python.org/2/library/datetime.html#date-objects
+        Returns
+        -------
+        list
+            Lessons list in a given timespan    
         """
         user = self.auth_response.json()['donneesSec']['donnees']['ressource']
         data = {"_Signature_": {"onglet": 16},
@@ -211,8 +220,10 @@ class Client(object):
         """
         Get all of the periods of the year.
 
-        :return: All the periods of the year
-        :rtype: list
+        Returns
+        -------
+        list
+            All the periods of the year
         """
         if hasattr(self, 'periods_'):
             return self.periods_
@@ -230,15 +241,15 @@ class Client(object):
         """
         Get homework between two given points.
 
-        :param date_from: The first date
-        :type date_from: `datetime.date`_
-        :param date_to: The second date
-        :type date_to: `datetime.date`_
-        :return: Homework between two given points
-        :rtype: list
+        date_from : datetime
+            The first date
+        date_to : datetime
+            The second date
 
-        .. _datetime.date:
-            https://docs.python.org/2/library/datetime.html#date-objects
+        Returns
+        -------
+        list
+            Homework between two given points
         """
         if not date_to:
             date_to = datetime.datetime.strptime(
@@ -266,8 +277,10 @@ class Client(object):
         """
         Gets all the discussions in the discussions tab
 
-        :return: Messages
-        :rtype: list
+        Returns
+        -------
+        list
+            Messages
         """
         messages = self.communication.post('ListeMessagerie', {'donnees': {'avecMessage': True, 'avecLu': True},
                                                                '_Signature_': {'onglet': 131}})
@@ -315,10 +328,12 @@ class _Communication(object):
         Handler for all POST requests by the api to PRONOTE servers. Automatically provides all needed data for the
         verification of posts. Session id and order numbers are preserved.
 
-        :param function_name: The name of the function (eg. Authentification)
-        :type function_name: str
-        :param data: The date that will be sent in the donneesSec dictionary
-        :type data: dict
+        Parameters
+        ----------
+        function_name : str
+            The name of the function (eg. Authentification)
+        data: dict
+            The date that will be sent in the donneesSec dictionary
         """
         if type(data) != dict:
             raise PronoteAPIError('POST error: donnees not dict')
@@ -346,8 +361,12 @@ class _Communication(object):
         """
         Key change after the authentification was successful.
 
-        :param auth_response: The authentification response from the server
-        :param auth_key: AES authentification key used to calculate the challenge (From password of the user)
+        Parameters
+        ----------
+        auth_response : str
+            The authentification response from the server
+        auth_key : str
+            AES authentification key used to calculate the challenge (From password of the user)
         """
         self.encryption.aes_key = auth_key
         if not self.cookies:
@@ -363,8 +382,10 @@ class _Communication(object):
     def _parse_html(html):
         """Parses the html for the RSA keys
 
-        :return: HTML attributes
-        :rtype: dict
+        Returns
+        -------
+        dict
+            HTML attributes
         """
         parsed = BeautifulSoup(html, "html.parser")
         onload = parsed.find(id='id_body')
