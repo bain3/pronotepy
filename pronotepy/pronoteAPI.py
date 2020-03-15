@@ -371,7 +371,9 @@ class _Communication(object):
         if onload:
             onload_c = onload['onload'][14:-37]
         else:
-            raise PronoteAPIError("The html parser couldn't find the json data.")
+            if 'IP' in html:
+                raise PronoteAPIError('Your IP address is suspended.')
+            raise PronoteAPIError("Page html is different than expected. Be sure that pronote_url is the direct url to your pronote page.")
         attributes = {}
         for attr in onload_c.split(','):
             key, value = attr.split(':')

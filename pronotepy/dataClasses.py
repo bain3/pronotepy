@@ -10,6 +10,7 @@ def _get_l(d): return d['L']
 
 class Util:
     """Utilities for the API wrapper"""
+    grade_translate = ['Absent', 'Dispense', 'NonNote', 'Inapte', 'NonRendu', 'AbsentZero', 'NonRenduZero', 'Felicitations']
 
     @classmethod
     def get(cls, iterable, **kwargs) -> list:
@@ -44,6 +45,13 @@ class Util:
             else:
                 output[attribute_dict[key][0]] = attribute_dict[key][1](out)
         return output
+
+    @classmethod
+    def grade_parse(cls, string):
+        if '|' in string:
+            return cls.grade_translate[int(string[1])-1]
+        else:
+            return string
 
 
 class Subject:
@@ -155,12 +163,12 @@ class Average:
     :var subject: subject the average is from
     """
     attribute_guide = {
-        'moyEleve,V': ('student', str),
-        'baremeMoyEleve,V': ('out_of', str),
-        'baremeMoyEleveParDefault,V': ('default_out_of', str),
-        'moyClasse,V': ('class', str),
-        'moyMin,V': ('min', str),
-        'moyMax,V': ('max', str)
+        'moyEleve,V': ('student', Util.grade_parse),
+        'baremeMoyEleve,V': ('out_of', Util.grade_parse),
+        'baremeMoyEleveParDefault,V': ('default_out_of', Util.grade_parse),
+        'moyClasse,V': ('class', Util.grade_parse),
+        'moyMin,V': ('min', Util.grade_parse),
+        'moyMax,V': ('max', Util.grade_parse)
     }
     __slots__ = ['student', 'out_of', 'default_out_of', 'class', 'min', 'max', 'subject']
 
@@ -171,6 +179,7 @@ class Average:
         self.subject = Subject(parsed_json)
 
 
+# noinspection PyTypeChecker
 class Grade:
     """Represents a grade. You shouldn't have to create this class manually.
 
@@ -186,18 +195,19 @@ class Grade:
     :var average: the average of the class
     :var max: the highest grade of the test
     :var min: the lowest grade of the test
-    :var coefficient: the coefficient of the grade"""
+    :var coefficient: the coefficient of the grade
+    """
     attribute_guide = {
         "N":                  ("id", str),
-        "note,V":             ("grade", str),
-        "bareme,V":           ("out_of", str),
-        "baremeParDefault,V": ("default_out_of", str),
+        "note,V":             ("grade", Util.grade_parse),
+        "bareme,V":           ("out_of", Util.grade_parse),
+        "baremeParDefault,V": ("default_out_of", Util.grade_parse),
         "date,V":             ("date", lambda d: datetime.datetime.strptime(d, '%d/%m/%Y').date()),
         "service,V":          ("subject", Subject),
         "periode,V,N":        ("period", lambda p: Util.get(Period.instances, id=p)),
-        "moyenne,V":          ("average", str),
-        "noteMax,V":          ("max", str),
-        "noteMin,V":          ("min", str),
+        "moyenne,V":          ("average", Util.grade_parse),
+        "noteMax,V":          ("max", Util.grade_parse),
+        "noteMin,V":          ("min", Util.grade_parse),
         "coefficient":        ("coefficient", int),
         "commentaire":        ("comment", str)
     }
@@ -212,42 +222,6 @@ class Grade:
             raise IncorrectJson('The json received was not the same as expected.')
         prepared_json = Util.prepare_json(self.__class__, parsed_json)
         self.coefficient = 1
-        for key in prepared_json:
-            self.__setattr__(key, prepared_json[key])
-
-
-class Student:
-    """Represents a class of students
-
-    **Attributes**
-
-    :var id: ID of the class
-    :var name: name of the class"""
-    attribute_guide = {
-        'N': ('id', str),
-        'L': ('name', str)
-    }
-
-    def __init__(self, parsed_json):
-        prepared_json = Util.prepare_json(self.__class__, parsed_json)
-        for key in prepared_json:
-            self.__setattr__(key, prepared_json[key])
-
-
-class StudentClass:
-    """Represents a class of students
-
-    **Attributes**
-
-    :var id: ID of the class
-    :var name: name of the class"""
-    attribute_guide = {
-        'N': ('id', str),
-        'L': ('name', str)
-    }
-
-    def __init__(self, parsed_json):
-        prepared_json = Util.prepare_json(self.__class__, parsed_json)
         for key in prepared_json:
             self.__setattr__(key, prepared_json[key])
 
@@ -267,8 +241,7 @@ class Lesson:
     :var canceled: if the lesson is canceled
     :var outing: if it is a pedagogical outing
     :var start: starting time of the lesson
-    :var group_name: Name of the group.
-    :var student_class: Teachers only. Class of the students"""
+    :var group_name: Name of the group."""
     __slots__ = ['id', 'subject', 'teacher_name', 'classroom', 'start',
                  'canceled', 'detention', 'end', 'outing', 'group_name', 'student_class', '_client', '_content']
     attribute_guide = {
@@ -283,8 +256,7 @@ class Lesson:
         16: ('subject', Subject),
         3:  ('teacher_name', _get_l),
         17: ('classroom', _get_l),
-        2:  ('group_name', _get_l),
-        1:  ('student_class', StudentClass)
+        2:  ('group_name', _get_l)
     }
 
     def __init__(self, client, parsed_json):
@@ -308,20 +280,6 @@ class Lesson:
         if self.detention is None and self.outing is None:
             return True
         return False
-
-    @property
-    def absences(self):
-        """
-        Teachers only. Get the absences from the lesson.
-        """
-        user = self._client.auth_response.json()['donneesSec']['donnees']['ressource']
-        data = {'_Signature_': {'onglet': 113},
-                'donnees': {
-                    'Professeur': user,
-                    'Ressource': {'N': self.id},
-                    'Date': {'_T': 7, 'V': self.start.strftime('%d/%m%Y 0:0:0')}
-                }}
-        return Absences(self._client.communication.post("PageSaisieAbsences", data).json())
 
     @property
     def content(self):
@@ -425,12 +383,6 @@ class File:
             return self._data
         response = self._client.communication.session.get(self.url)
         return response.content
-
-
-class Absences:
-    """Teachers only. Represents the absences in a class."""
-    def __init__(self, parsed_json):
-        self.json = parsed_json
 
 
 class Homework:
