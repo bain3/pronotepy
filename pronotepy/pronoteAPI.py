@@ -38,7 +38,7 @@ class Client(object):
         https://docs.python.org/2/library/datetime.html#date-objects
     """
 
-    def __init__(self, pronote_url, ent: bool = False, cookies=None):
+    def __init__(self, pronote_url, ent: bool = False, cookies=None, username: str = None, password: str = None):
         log.info('INIT')
         # start communication session
         self.ent = ent
@@ -67,6 +67,12 @@ class Client(object):
         self.one_hour_duration = hour_end - hour_start
 
         self.periods_ = self.periods
+        if username and password:
+            self.logged_in = self.login(username, password)
+        elif ent and cookies:
+            self.logged_in = self.login()
+        else:
+            self.logged_in = False
 
     def login(self, username='', password=''):
         """
