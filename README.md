@@ -15,7 +15,7 @@
 
 [![pypi version](https://img.shields.io/pypi/v/pronotepy.svg)](https://pypi.org/project/pronotepy/)
 [![python version](https://img.shields.io/pypi/pyversions/pronotepy.svg)](https://pypi.org/project/pronotepy/)
-[![license](https://img.shields.io/pypi/l/pronotepy.svg)]]
+[![license](https://img.shields.io/pypi/l/pronotepy.svg)]
 [![Documentation Status](https://readthedocs.org/projects/pronotepy/badge/?version=latest)](https://pronotepy.readthedocs.io/en/latest/?badge=latest)
 
 ## Introduction
