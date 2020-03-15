@@ -9,7 +9,7 @@
   <p align="center">
     An API wrapper for PRONOTE
     <br />
-    <a href="https://pronotepy.readthedocs.io/en/latest"><strong>Explore the docs »</strong></a>
+    <a href="https://pronotepy.readthedocs.io/en/stable"><strong>Explore the docs »</strong></a>
   </p>
 </p>
 
