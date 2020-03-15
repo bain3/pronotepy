@@ -72,8 +72,6 @@ if client.login('demonstration', 'pronotevs'):  # login() returns bool that sign
 
 For any extra details, please see the documentation linked above.
 
-*If you are connecting from an ENT, please see [this code](https://github.com/bain3/pronotepy/blob/18131388c4d4bf0174cd9ef00418fe53e122c33a/pronotepy/pronoteAPI.py#L164) (line 164-240) to get an idea on how to do it. Unfortunately there is currently no other way to do it.*
-
 ### ENT
 
 Pronotepy has builtin functions for getting cookies from some ENTs (if you want your ENT to be supported please contact Xiloe (see contact)). You can use those functions like this:
