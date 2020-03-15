@@ -28,7 +28,10 @@ author = 'Bain, Xiloe'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 extensions = [
-	'sphinx.ext.autodoc'
+	'numpydoc',
+	'sphinx.ext.autodoc',
+	'sphinx.ext.coverage',
+	'sphinx.ext.napoleon',
 ]
 
 # Master documentation file.
