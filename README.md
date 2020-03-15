@@ -1,4 +1,21 @@
-# pronotepy
+<br />
+<p align="center">
+  <a href="https://github.com/bain3/pronotepy">
+    <img src="https://pronotepy.readthedocs.io/en/latest/_images/icon.png" alt="Logo" width="80" height="80">
+  </a>
+
+  <h3 align="center">pronotepy</h3>
+
+  <p align="center">
+    An API wrapper for PRONOTE
+    <br />
+    <a href="https://pronotepy.readthedocs.io/en/stable"><strong>Explore the docs »</strong></a>
+  </p>
+</p>
+
+[![Documentation Status](https://readthedocs.org/projects/pronotepy/badge/?version=latest)](https://pronotepy.readthedocs.io/en/latest/?badge=latest)
+[![pypi version](https://img.shields.io/pypi/v/pronotepy.svg)](https://pypi.org/project/pronotepy/)
+[![python version](https://img.shields.io/pypi/pyversions/pronotepy.svg)](https://pypi.org/project/pronotepy/)
 
 ## Introduction
 
@@ -8,22 +25,29 @@ This is a Python API wrapper for the PRONOTE student administration service. Eve
 
 ### Dependencies
 
- - cryptodome
+ - pycryptodome
  - beautifulsoup4
  - requests
 
 ### Installation
- - **Stable**
- 
-   install with pip: `pip install pronotepy`
- - **Latest**
-   1. clone this repository
-   2. run `pip install .`
+**Stable**
 
-### Small example
+Install directly from pypi using pip: `pip install pronotepy` 
 
-This is an example code of the user accessing all of his grades:
+**Latest**
 
+1. clone this repository
+2. run `pip install .` in the root directory
+
+I cannot assure that the latest version will be working.
+
+#### Testing the package
+To self test pronotepy run this command:
+
+`python -m pronotepy.test_pronotepy`
+
+### Usage
+Here is an example script (example.py):
 ```python
 import pronotepy
 
@@ -33,20 +57,22 @@ import pronotepy
 # Ex.: https://your-school.com/pronote/students <-- BAD
 #      https://0000000a.index-education.net/pronote/eleve.html <-- GOOD
 
-client = pronotepy.ClientStudent('https://demo.index-education.net/pronote/eleve.html')
+client = pronotepy.Client('https://demo.index-education.net/pronote/eleve.html')
 
 if client.login('demonstration', 'pronotevs'):  # login() returns bool that signifies if it successfully logged itself in
 
-    # get all the periods (may return multiple types like trimesters and semesters but it doesn't really matter
+    # get the all the periods (may return multiple types like trimesters and semesters but it doesn't really matter
     # the api will get it anyway)
-    periods = client.periods()
+    periods = client.periods
 
     for period in periods:
         for grade in period.grades:  # iterate over all the grades
             print(f'{grade.grade}/{grade.out_of}')  # print out the grade in this style: 20/20
 ```
 
-### [API Reference](https://github.com/bain3/pronotepy/wiki)
+For any extra details, please see the [docs](https://pronotepy.readthedocs.io/en/stable/index.html).
+
+*If you are connecting from an ENT, please see [this code](https://github.com/bain3/pronotepy/blob/18131388c4d4bf0174cd9ef00418fe53e122c33a/pronotepy/pronoteAPI.py#L164) (line 164-240) to get an idea on how to do it. Unfortunately there is currently no other way to do it.*
 
 ## License
 

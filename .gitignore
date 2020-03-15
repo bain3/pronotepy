@@ -1,5 +1,4 @@
 # Project exclude paths
 /hidden/
-/api-tests.py
 /venv/
 /api.log

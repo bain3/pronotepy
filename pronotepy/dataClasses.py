@@ -1,5 +1,8 @@
 import datetime
 import re
+import json
+from urllib.parse import quote
+from Crypto.Util import Padding
 
 
 def _get_l(d): return d['L']
@@ -12,7 +15,8 @@ class Util:
     def get(cls, iterable, **kwargs) -> list:
         """Gets items from the list with the attributes specified.
 
-        :param iterable:The iterable to loop over
+        :param iterable: The iterable to loop over
+        :type iterable: list
         """
         output = []
         for i in iterable:
@@ -46,32 +50,21 @@ class Subject:
     """
     Represents a subject. You shouldn't have to create this class manually.
 
-    -- Attributes --
-    id: str = the id of the subject (used internally)
-    name: str = name of the subject
-    groups: bool = if the subject is in groups
-    average: str = users average in the subject
-    class_average: str = classes average in the subject
-    max: str = the highest grade in the class
-    min: str = the lowest grade in the class
-    out_of: str = the maximum amount of points
-    default_out_of: str = the default maximum amount of points"""
-    __slots__ = ['id', 'name', 'groups', 'average', 'class_average', 'max', 'min', 'out_of', 'default_out_of']
+    **Attributes**
+
+    :var id: the id of the subject (used internally)
+    :var name: name of the subject
+    :var groups: if the subject is in groups
+    """
+    __slots__ = ['id', 'name', 'groups']
+
     attribute_guide = {
-        'moyEleve,V':                 ('average', str),
-        'baremeMoyEleve,V':           ('out_of', str),
-        'baremeMoyEleveParDefault,V': ('default_out_of', str),
-        'moyClasse,V':                ('class_average', str),
-        'moyMin,V':                   ('min', str),
-        'moyMax,V':                   ('max', str),
         'N':                          ('id', str),
         'L':                          ('name', str),
         'estServiceEnGroupe':         ('groups', bool)
     }
 
     def __init__(self, parsed_json):
-        self.id = self.name = self.groups = self.average = self.class_average = \
-            self.max = self.min = self.out_of = self.default_out_of = None
         prepared_json = Util.prepare_json(self.__class__, parsed_json)
         for key in prepared_json:
             self.__setattr__(key, prepared_json[key])
@@ -81,11 +74,13 @@ class Period:
     """
     Represents a period of the school year. You shouldn't have to create this class manually.
 
-    -- Attributes --
-    id: str = the id of the period (used internally)
-    name: str = name of the period
-    start: datetime.datetime = date on which the period starts
-    end: datetime.datetime = date on which the period ends"""
+    **Attributes**
+
+    :var id: the id of the period (used internally)
+    :var name: name of the period
+    :var start: date on which the period starts
+    :var end: date on which the period ends
+    """
 
     __slots__ = ['_client', 'id', 'name', 'start', 'end']
     instances = set()
@@ -112,24 +107,86 @@ class Period:
         json_data = {'donnees': {'Periode': {'N': self.id, 'L': self.name}}, "_Signature_": {"onglet": 198}}
         response = self._client.communication.post('DernieresNotes', json_data)
         crs = response.json()['donneesSec']['donnees']['listeServices']['V']
-        return [Subject(c) for c in crs]
+        return [Average(c) for c in crs]
+
+    @property
+    def overall_average(self):
+        """Get overall average from the period. If the period average is not provided by pronote, then it's calculated.
+        Calculation may not be the same as the actual average. (max difference 0.01)"""
+        json_data = {'donnees': {'Periode': {'N': self.id, 'L': self.name}}, "_Signature_": {"onglet": 198}}
+        response = self._client.communication.post('DernieresNotes', json_data)
+        average = response.json()['donneesSec']['donnees'].get('moyGenerale')
+        if average:
+            average = average['V']
+        elif response.json()['donneesSec']['donnees']['listeServices']['V']:
+            a = 0
+            total = 0
+            services = response.json()['donneesSec']['donnees']['listeServices']['V']
+            for s in services:
+                avrg = s['moyEleve']['V'].replace(',', '.')
+                try:
+                    flt = float(avrg)
+                except ValueError:
+                    flt = False
+                if flt:
+                    a += flt
+                    total += 1
+            if total:
+                average = round(a/total, 2)
+            else:
+                average = -1
+        else:
+            average = -1
+        return average
+
+
+class Average:
+    """
+    Represents an Average.
+
+    **Attributes**
+
+    :var student: students average in the subject
+    :var class: classes average in the subject
+    :var max: highest average in the class
+    :var min: lowest average in the class
+    :var out_of: maximum amount of points
+    :var default_out_of: he default maximum amount of points
+    :var subject: subject the average is from
+    """
+    attribute_guide = {
+        'moyEleve,V': ('student', str),
+        'baremeMoyEleve,V': ('out_of', str),
+        'baremeMoyEleveParDefault,V': ('default_out_of', str),
+        'moyClasse,V': ('class', str),
+        'moyMin,V': ('min', str),
+        'moyMax,V': ('max', str)
+    }
+    __slots__ = ['student', 'out_of', 'default_out_of', 'class', 'min', 'max', 'subject']
+
+    def __init__(self, parsed_json):
+        prepared_json = Util.prepare_json(self.__class__, parsed_json)
+        for key in prepared_json:
+            self.__setattr__(key, prepared_json[key])
+        self.subject = Subject(parsed_json)
 
 
 class Grade:
     """Represents a grade. You shouldn't have to create this class manually.
 
-    -- Attributes --
-    id: str = the id of the grade (used internally)
-    grade: str = the actual grade
-    out_of: str = the maximum amount of points
-    default_out_of: str = the default maximum amount of points
-    date: datetime.datetime = the date on which the grade was given
-    subject: Subject = the subject in which the grade was given
-    period: Period = the period in which the grade was given
-    average: str = the average of the class
-    max: str = the highest grade of the test
-    min: str = the lowest grade of the test
-    coefficient: int = the coefficient of the grade"""
+    **Attributes**
+
+    :var id: the id of the grade (used internally)
+    :var grade: the actual grade
+    :var out_of: the maximum amount of points
+    :var default_out_of: the default maximum amount of points
+    :var date: the date on which the grade was given
+    :var subject: the subject in which the grade was given
+    :var period: the period in which the grade was given
+    :var average: the average of the class
+    :var max: the highest grade of the test
+    :var min: the lowest grade of the test
+    :var coefficient: the coefficient of the grade"""
     attribute_guide = {
         "N":                  ("id", str),
         "note,V":             ("grade", str),
@@ -161,9 +218,11 @@ class Grade:
 
 class Student:
     """Represents a class of students
-        -- Attributes --
-        id: str = ID of the class
-        name: str = name of the class"""
+
+    **Attributes**
+
+    :var id: ID of the class
+    :var name: name of the class"""
     attribute_guide = {
         'N': ('id', str),
         'L': ('name', str)
@@ -177,9 +236,11 @@ class Student:
 
 class StudentClass:
     """Represents a class of students
-    -- Attributes --
-    id: str = ID of the class
-    name: str = name of the class"""
+
+    **Attributes**
+
+    :var id: ID of the class
+    :var name: name of the class"""
     attribute_guide = {
         'N': ('id', str),
         'L': ('name', str)
@@ -197,18 +258,19 @@ class Lesson:
 
     !!If a lesson is a pedagogical outing, it will only have the "outing" and "start" attributes!!
 
-    -- Attributes --
-    id: str = the id of the lesson (used internally)
-    subject: Subject = the subject that the lesson is from
-    teacher_name: str = name of the teacher
-    classroom: str = name of the classroom
-    canceled: str = if the lesson is canceled
-    outing: bool = if it is a pedagogical outing
-    start: datetime.datetime = starting time of the lesson
-    group_name: str = Name of the group.
-    student_class: StudentClass = Teachers only. Class of the students"""
+    **Attributes**
+
+    :var id: the id of the lesson (used internally)
+    :var subject: the subject that the lesson is from
+    :var teacher_name: name of the teacher
+    :var classroom: name of the classroom
+    :var canceled: if the lesson is canceled
+    :var outing: if it is a pedagogical outing
+    :var start: starting time of the lesson
+    :var group_name: Name of the group.
+    :var student_class: Teachers only. Class of the students"""
     __slots__ = ['id', 'subject', 'teacher_name', 'classroom', 'start',
-                 'canceled', 'detention', 'end', 'outing', 'group_name', 'student_class', '_client']
+                 'canceled', 'detention', 'end', 'outing', 'group_name', 'student_class', '_client', '_content']
     attribute_guide = {
         'DateDuCours,V':        ('start', lambda d: datetime.datetime.strptime(d, '%d/%m/%Y %H:%M:%S')),
         'N':                    ('id', str),
@@ -227,6 +289,7 @@ class Lesson:
 
     def __init__(self, client, parsed_json):
         self._client = client
+        self._content = None
         prepared_json = Util.prepare_json(self.__class__, parsed_json)
         for key in prepared_json:
             self.__setattr__(key, prepared_json[key])
@@ -260,6 +323,109 @@ class Lesson:
                 }}
         return Absences(self._client.communication.post("PageSaisieAbsences", data).json())
 
+    @property
+    def content(self):
+        """
+        Gets content of the lesson.
+        .. note:: This property is very inefficient and will send a request to pronote, so don't use it often.
+        """
+        if self._content:
+            return self._content
+        week = self._client._get_week(self.start.date())
+        data = {"_Signature_": {"onglet": 89}, "donnees": {"domaine": {"_T": 8, "V": f"[{week}..{week}]"}}}
+        response = self._client.communication.post('PageCahierDeTexte', data)
+        contents = {}
+        for lesson in response.json()['donneesSec']['donnees']['ListeCahierDeTextes']['V']:
+            if lesson['cours']['V']['N'] == self.id:
+                contents = lesson['listeContenus']['V'][0]
+                break
+        if not contents:
+            return None
+        self._content = LessonContent(self._client, contents)
+        return self._content
+
+
+class LessonContent:
+    """
+    Represents the content of a lesson. You shouldn't have to create this class manually.
+
+    **Attributes**
+
+    :var title: title of the lesson content
+    :var description: description of the lesson content
+    """
+    attribute_guide = {
+        'L': ('title', str),
+        'descriptif,V': ('description', lambda d: re.sub(re.compile('<.*?>'), '', d)),
+        'ListePieceJointe,V': ('_files', tuple)
+    }
+
+    __slots__ = ['title', 'description', '_files', '_client']
+
+    def __init__(self, client, parsed_json):
+        prepared_json = Util.prepare_json(self.__class__, parsed_json)
+        for key in prepared_json:
+            self.__setattr__(key, prepared_json[key])
+        self._client = client
+
+    @property
+    def files(self):
+        """Get all the attached files from the lesson"""
+        return [File(self._client, jsn) for jsn in self._files]
+
+
+class File:
+    """
+    Represents a file uploaded to pronote.
+
+    **Attributes**
+
+    :var name: Name of the file.
+    :var id: id of the file (used internally and for url)
+    :var url: url of the file
+    """
+    attribute_guide = {
+        'L': ('name', str),
+        'N': ('id', str)
+    }
+
+    __slots__ = ['name', 'id', '_client', 'url', '_data']
+    
+    def __init__(self, client, parsed_json):
+        prepared_json = Util.prepare_json(self.__class__, parsed_json)
+        for key in prepared_json:
+            self.__setattr__(key, prepared_json[key])
+        self._client = client
+        padd = Padding.pad(json.dumps({'N': self.id, 'Actif': True}).replace(' ', '').encode(), 16)
+        magic_stuff = client.communication.encryption.aes_encrypt(padd).hex()
+        self.url = client.communication.root_site+'/FichiersExternes/'+magic_stuff+'/'+quote(self.name, safe='~()*!.\'')+'?Session='+client.attributes['h']
+        self._data = None
+
+    def save(self, file_name=None):
+        """
+        Saves the file on to local storage.
+
+        :param file_name: file name
+        :type file_name: str
+        """
+        response = self._client.communication.session.get(self.url)
+        if not file_name:
+            file_name = self.name
+        if response.status_code == 200:
+            with open(file_name, 'wb') as handle:
+                for block in response.iter_content(1024):
+                    handle.write(block)
+        else:
+            raise FileNotFoundError("The file was not found on pronote. The url may be badly formed.")
+
+    @property
+    def data(self):
+        """Gets the raw file data."""
+        if self._data:
+            return self._data
+        response = self._client.communication.session.get(self.url)
+        return response.content
+
 
 class Absences:
     """Teachers only. Represents the absences in a class."""
@@ -271,19 +437,21 @@ class Homework:
     """
     Represents a homework. You shouldn't have to create this class manually.
 
-    -- Attributes --
-    id: str = the id of the homework (used internally)
-    subject: Subject = the subject that the homework is for
-    description: str = the description of the homework
-    done: bool = if the homework is marked done
-    date: datetime.date = deadline"""
-    __slots__ = ['id', 'subject', 'description', 'done', '_client', 'date']
+    **Attributes**
+
+    :var id: the id of the homework (used internally)
+    :var subject: the subject that the homework is for
+    :var description: the description of the homework
+    :var done: if the homework is marked done
+    :var date: deadline"""
+    __slots__ = ['id', 'subject', 'description', 'done', '_client', 'date', '_files']
     attribute_guide = {
         'N':            ('id', str),
         'descriptif,V': ('description', lambda d: re.sub(re.compile('<.*?>'), '', d)),
         'TAFFait':      ('done', bool),
         'Matiere,V':    ('subject', Subject),
-        'PourLe,V':     ('date', lambda d: datetime.datetime.strptime(d, '%d/%m/%Y').date())
+        'PourLe,V':     ('date', lambda d: datetime.datetime.strptime(d, '%d/%m/%Y').date()),
+        'ListePieceJointe,V': ('_files', tuple)
     }
 
     def __init__(self, client, parsed_json):
@@ -296,13 +464,65 @@ class Homework:
     def set_done(self, status: bool):
         """
         Sets the status of the homework.
-        :param status:The status to which to change
+
+        :param status: The status to which to change
+        :type status: bool
         """
         data = {'_Signature_': {'onglet': 88}, 'donnees': {'listeTAF': [
             {'N': self.id, 'TAFFait': status}
         ]}}
         if self._client.communication.post("SaisieTAFFaitEleve", data):
             self.done = status
+
+    @property
+    def files(self):
+        """Get all the files attached to the homework"""
+        return [File(self._client, jsn) for jsn in self._files]
+
+
+class Message:
+    """
+    Represents a message in a discussion.
+
+    **Attributes**
+
+    :var id: the id of the message (used internally)
+    :var author: author of the message
+    :var recipients: Recipitents of the message. ! May be just ['# recipients'] !
+    :var seen: if the message was seen
+    :var date: the date when the message was sent"""
+    __slots__ = ['id', 'author', 'recipients', 'seen', 'date', '_client', '_listePM']
+    attribute_guide = {
+        'N': ('id', str),
+        'public_gauche': ('author', str),
+        'listePublic': ('recipients', list),
+        'lu': ('seen', bool),
+        'libelleDate': ('date', lambda d: datetime.datetime.strptime(' '.join(d.split()[1:]), '%d/%m/%y %Hh%M'))
+    }
+
+    def __init__(self, client, json_):
+        self._client = client
+        self._listePM = json_['listePossessionsMessages']['V']
+        prepared_json = Util.prepare_json(self.__class__, json_)
+        for key in prepared_json:
+            self.__setattr__(key, prepared_json[key])
+
+    @property
+    def content(self):
+        """Returns the content of the message"""
+        data = {'donnees': {'message': {'N': self.id},
+                            'marquerCommeLu': False,
+                            'estNonPossede': False,
+                            'listePossessionsMessages': self._listePM},
+                '_Signature_': {'onglet': 131}}
+        resp = self._client.communication.post('ListeMessages', data)
+        for m in resp.json()['donneesSec']['donnees']['listeMessages']['V']:
+            if m['N'] == self.id:
+                if type(m['contenu']) == dict:
+                    return re.sub(re.compile('<.*?>'), '', m['contenu']['V'])
+                else:
+                    return m['contenu']
+        return None
 
 
 class DataError(Exception):
