@@ -503,7 +503,6 @@ class Message:
     def __init__(self, client, json_):
         self._client = client
         self._listePM = json_['listePossessionsMessages']['V']
-        print(json_)
         prepared_json = Util.prepare_json(self.__class__, json_)
         for key in prepared_json:
             self.__setattr__(key, prepared_json[key])

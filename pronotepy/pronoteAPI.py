@@ -99,6 +99,7 @@ class Client(object):
 
         # creating the authentification data
         idr = idr.json()
+        log.debug(str(idr['donneesSec']['donnees']))
         challenge = idr['donneesSec']['donnees']['challenge']
         e = _Encryption()
         e.aes_set_iv(self.communication.encryption.aes_iv)
@@ -264,7 +265,6 @@ class Client(object):
         """
         messages = self.communication.post('ListeMessagerie', {'donnees': {'avecMessage': True, 'avecLu': True},
                                                                '_Signature_': {'onglet': 131}})
-        print('test')
         return [dataClasses.Message(self, m) for m in messages.json()['donneesSec']['donnees']['listeMessagerie']['V']
                 if not m.get('estUneDiscussion')]
 
@@ -429,7 +429,10 @@ class _Encryption(object):
 
     def aes_decrypt(self, data: bytes):
         cipher = AES.new(self.aes_key, AES.MODE_CBC, self.aes_iv)
-        return Padding.unpad(cipher.decrypt(data), 16)
+        try:
+            return Padding.unpad(cipher.decrypt(data), 16)
+        except ValueError:
+            raise CryptoError('Decryption failed while trying to un pad. (probably bad decryption key/iv)')
 
     def aes_set_iv(self, iv=None):
         if iv is None:
@@ -468,4 +471,9 @@ class PronoteAPIError(Exception):
     """
     Base exception for any pronote api errors
     """
+    pass
+
+
+class CryptoError(PronoteAPIError):
+    """Exception for known errors in the encryption."""
     pass
