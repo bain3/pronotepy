@@ -1,6 +1,9 @@
 Submodules
 ==========
 
-pronotepy.dataClasses
-pronotepy.pronoteAPI
-pronotepy.ent
+.. toctree::
+   :maxdepth: 3
+
+   pronotepy.dataClasses
+   pronotepy.pronoteAPI
+   pronotepy.ent
