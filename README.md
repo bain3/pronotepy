@@ -74,6 +74,24 @@ For any extra details, please see the documentation linked above.
 
 *If you are connecting from an ENT, please see [this code](https://github.com/bain3/pronotepy/blob/18131388c4d4bf0174cd9ef00418fe53e122c33a/pronotepy/pronoteAPI.py#L164) (line 164-240) to get an idea on how to do it. Unfortunately there is currently no other way to do it.*
 
+### ENT
+
+Pronotepy has builtin functions for getting cookies from some ENTs (if you want your ENT to be supported please contact Xiloe (see contact)). You can use those functions like this:
+```python
+import pronotepy
+from pronotepy.ent import occitanie_montpellier
+
+# creating the client and using the occitanie_montpellier function to automatically get cookies from ENT
+client = pronotepy.Client('https://somepronote.index-education.net/pronote/eleve.html', ent=True, cookies=occitanie_montpellier('user', 'pass'))
+
+# check if sucessfully logged in
+if client.logged_in:
+    print(len(client.messages())) # printing number of messages that the user has
+else:
+    print('no login')
+```
+All the functions return cookies needed to connect to pronote (use docs to see if your ENT is supported).
+
 ## License
 
 Copyright (c) 2020 bain, Xiloe
