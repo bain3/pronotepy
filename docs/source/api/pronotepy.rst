@@ -1,34 +1,23 @@
-pronotepy package
-=================
-
 Submodules
-----------
+==========
 
-pronotepy.dataClasses module
+pronotepy.dataClasses
 ----------------------------
 
 .. automodule:: pronotepy.dataClasses
    :members:
    :show-inheritance:
 
-pronotepy.pronoteAPI module
+pronotepy.pronoteAPI
 ---------------------------
 
 .. automodule:: pronotepy.pronoteAPI
    :members:
    :show-inheritance:
 
-pronotepy.ent module
+pronotepy.ent
 ---------------------------
 
 .. automodule:: pronotepy.ent
-   :members:
-   :show-inheritance:
-
-
-Module contents
----------------
-
-.. automodule:: pronotepy
    :members:
    :show-inheritance:
