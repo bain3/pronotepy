@@ -1,13 +1,7 @@
-PronotePy API documentation
-===========================
-
-Submodules
-----------
+pronotepy
+=========
 
 .. toctree::
    :maxdepth: 3
 
-   dataClasses
-   pronoteAPI
-   ent
-
+   pronotepy
