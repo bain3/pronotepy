@@ -5,7 +5,6 @@ docopt
 idna
 pyasn1
 numpydoc
-sphinxcontrib-apidoc
 pycryptodome
 requests
 soupsieve

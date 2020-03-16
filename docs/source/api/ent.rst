@@ -1,5 +1,5 @@
-pronotepy.ent module
-====================
+pronotepy.ent
+---------------------------
 
 .. automodule:: pronotepy.ent
    :members:

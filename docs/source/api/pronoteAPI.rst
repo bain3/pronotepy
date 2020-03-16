@@ -1,5 +1,5 @@
-pronotepy.pronoteAPI module
-===========================
+pronotepy.pronoteAPI
+---------------------------
 
 .. automodule:: pronotepy.pronoteAPI
    :members:

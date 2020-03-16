@@ -1,5 +1,5 @@
-pronotepy.dataClasses module
-============================
+pronotepy.dataClasses
+----------------------------
 
 .. automodule:: pronotepy.dataClasses
    :members:

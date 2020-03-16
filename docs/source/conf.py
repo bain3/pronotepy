@@ -18,8 +18,8 @@ sys.path.insert(0, os.path.abspath('../..'))
 # -- Project information -----------------------------------------------------
 
 project = 'pronotepy'
-copyright = '2020, bain, Xiloe'
-author = 'bain, Xiloe'
+copyright = '2020, Bain, Xiloe'
+author = 'Bain, Xiloe'
 
 
 # -- General configuration ---------------------------------------------------
@@ -32,14 +32,7 @@ extensions = [
 	'sphinx.ext.autodoc',
 	'sphinx.ext.coverage',
 	'sphinx.ext.napoleon',
-	'sphinxcontrib.apidoc'
 ]
-
-# -- API Doc ------------------------------------------------------------------
-apidoc_module_dir = '../../pronotepy'
-apidoc_output_dir = 'api'
-apidoc_toc_file = "index"
-apidoc_separate_modules = True
 
 # Master documentation file.
 master_doc = 'index'
