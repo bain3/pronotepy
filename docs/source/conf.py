@@ -40,10 +40,6 @@ apidoc_module_dir = '../../pronotepy'
 apidoc_output_dir = 'api'
 apidoc_toc_file = "index"
 apidoc_separate_modules = True
-apidoc_extra_args = [
-	'f',
-	'd 3',
-]
 
 # Master documentation file.
 master_doc = 'index'
