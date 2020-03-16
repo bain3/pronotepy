@@ -16,5 +16,4 @@ Module contents
 
 .. automodule:: pronotepy
    :members:
-   :undoc-members:
    :show-inheritance:
