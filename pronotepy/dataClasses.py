@@ -271,6 +271,8 @@ class Lesson:
         name of the classroom
     canceled : bool
         if the lesson is canceled
+    status : str
+        status of the lesson
     outing : bool
         if it is a pedagogical outing
     start : str
@@ -283,6 +285,7 @@ class Lesson:
         'DateDuCours,V':        ('start', lambda d: datetime.datetime.strptime(d, '%d/%m/%Y %H:%M:%S')),
         'N':                    ('id', str),
         'estAnnule':            ('canceled', bool),
+        'statut':            ('status', str),
         'estRetenue':           ('detention', bool),
         'duree':                ('end', int),
         'estSortiePedagogique': ('outing', bool)
