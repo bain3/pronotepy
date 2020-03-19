@@ -271,6 +271,8 @@ class Lesson:
         name of the classroom
     canceled : bool
         if the lesson is canceled
+    status : str
+        status of the lesson
     outing : bool
         if it is a pedagogical outing
     start : str
@@ -278,11 +280,12 @@ class Lesson:
     group_name : str
         Name of the group."""
     __slots__ = ['id', 'subject', 'teacher_name', 'classroom', 'start',
-                 'canceled', 'detention', 'end', 'outing', 'group_name', 'student_class', '_client', '_content']
+                 'canceled', 'status', 'detention', 'end', 'outing', 'group_name', 'student_class', '_client', '_content']
     attribute_guide = {
         'DateDuCours,V':        ('start', lambda d: datetime.datetime.strptime(d, '%d/%m/%Y %H:%M:%S')),
         'N':                    ('id', str),
         'estAnnule':            ('canceled', bool),
+        'Statut':            ('status', str),
         'estRetenue':           ('detention', bool),
         'duree':                ('end', int),
         'estSortiePedagogique': ('outing', bool)
