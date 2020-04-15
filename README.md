@@ -47,6 +47,8 @@ To self test pronotepy run this command:
 
 `python -m pronotepy.test_pronotepy`
 
+*Please keep in mind that this uses the demo version of pronote
+and so it can't test every function.*
 ### Usage
 Here is an example script (example.py):
 ```python
@@ -90,6 +92,12 @@ else:
     print('no login')
 ```
 All the functions return cookies needed to connect to pronote (use docs to see if your ENT is supported).
+
+### Long Term Usage
+
+Pronotepy will try and reconnect when the old session expires, but **PRONOTE changes all of its ids** every session
+so every object that was created more than 10 min. ago will probably be expired too. To preven this, please make new 
+requests if you have long breaks between your activities.
 
 ## License
 

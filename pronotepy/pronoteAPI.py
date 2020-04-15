@@ -16,6 +16,10 @@ from time import time, sleep
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
+error_messages = {
+    22: '[ERROR 22] The object was from a previous session. Please read the "Long Term Usage" section in README on github.'
+}
+
 
 class Client(object):
     """
@@ -42,7 +46,10 @@ class Client(object):
         log.info('INIT')
         # start communication session
         self.ent = ent
-        self.communication = _Communication(pronote_url, cookies)
+        self.username = username
+        self.password = password
+        self.pronote_url = pronote_url
+        self.communication = _Communication(pronote_url, cookies, self)
         self.attributes, self.func_options = self.communication.initialise()
 
         # set up encryption
@@ -109,8 +116,9 @@ class Client(object):
         log.debug('indentification')
 
         # creating the authentification data
+        log.debug(idr.status_code)
         idr = idr.json()
-        log.debug(str(idr['donneesSec']['donnees']))
+        log.debug(str(idr))
         challenge = idr['donneesSec']['donnees']['challenge']
         e = _Encryption()
         e.aes_set_iv(self.communication.encryption.aes_iv)
@@ -122,12 +130,13 @@ class Client(object):
         else:
             u = username
             p = password
-            if idr['donneesSec']['donnees']['modeCompLog']: u = u.lower()
-            if idr['donneesSec']['donnees']['modeCompMdp']: p = p.lower()
+            if idr['donneesSec']['donnees']['modeCompLog']:
+                u = u.lower()
+            if idr['donneesSec']['donnees']['modeCompMdp']:
+                p = p.lower()
             alea = idr['donneesSec']['donnees']['alea']
             motdepasse = SHA256.new(str(alea + p).encode()).hexdigest().upper()
             e.aes_key = MD5.new((u + motdepasse).encode()).digest()
-        del password
 
         # challenge
         dec = e.aes_decrypt(bytes.fromhex(challenge))
@@ -225,7 +234,7 @@ class Client(object):
         list
             All the periods of the year
         """
-        if hasattr(self, 'periods_'):
+        if hasattr(self, 'periods_') and self.periods_:
             return self.periods_
         json = self.func_options.json()['donneesSec']['donnees']['General']['ListePeriodes']
         return [dataClasses.Period(self, j) for j in json]
@@ -287,9 +296,26 @@ class Client(object):
         return [dataClasses.Message(self, m) for m in messages.json()['donneesSec']['donnees']['listeMessagerie']['V']
                 if not m.get('estUneDiscussion')]
 
+    def _refresh(self):
+        """
+        Now this is the true jank part of this program. It refreshes the connection if something went wrong.
+        This is the classical procedure if something is broken.
+        :return:
+        """
+        logging.debug('Reinitialisation')
+        self.communication = _Communication(self.pronote_url, None, self)
+        self.attributes, self.func_options = self.communication.initialise()
+
+        # set up encryption
+        self.encryption = _Encryption()
+        self.encryption.aes_iv = self.communication.encryption.aes_iv
+        self.login(self.username, self.password)
+        self.periods_ = None
+        self.periods_ = self.periods
+
 
 class _Communication(object):
-    def __init__(self, site, cookies=None):
+    def __init__(self, site, cookies, client):
         """Handles all communication with the PRONOTE servers"""
         self.root_site, self.html_page = self.get_root_address(site)
         self.session = requests.Session()
@@ -299,6 +325,7 @@ class _Communication(object):
         self.cookies = cookies
         self.last_ping = 0
         self.authorized_onglets = []
+        self.client = client
 
     def initialise(self):
         """
@@ -323,7 +350,7 @@ class _Communication(object):
         self.encryption.aes_set_iv()
         return self.attributes, initial_response
 
-    def post(self, function_name: str, data: dict):
+    def post(self, function_name: str, data: dict, recursive: bool = False):
         """
         Handler for all POST requests by the api to PRONOTE servers. Automatically provides all needed data for the
         verification of posts. Session id and order numbers are preserved.
@@ -334,6 +361,8 @@ class _Communication(object):
             The name of the function (eg. Authentification)
         data: dict
             The date that will be sent in the donneesSec dictionary
+        recursive: bool
+            Cursed recursion
         """
         if type(data) != dict:
             raise PronoteAPIError('POST error: donnees not dict')
@@ -352,8 +381,12 @@ class _Communication(object):
         if not response.ok:
             raise requests.HTTPError(f'Status code: {response.status_code}')
         if 'Erreur' in response.json():
-            raise PronoteAPIError(
-                f'PRONOTE server returned error code: {response.json()["Erreur"]["G"]} | {response.json()["Erreur"]["Titre"]}')
+            if recursive:
+                raise PronoteAPIError(error_messages.get(response.json()["Erreur"]["G"],
+                                                         f'PRONOTE server returned error code: {response.json()["Erreur"]["G"]} | {response.json()["Erreur"]["Titre"]}'))
+            log.info(f'Have you tried turning it off and on again? ERROR: {response.json()["Erreur"]["G"]} | {response.json()["Erreur"]["Titre"]}')
+            self.client._refresh()
+            return self.client.communication.post(function_name, data, True)
 
         return response
 
@@ -363,9 +396,9 @@ class _Communication(object):
 
         Parameters
         ----------
-        auth_response : str
+        auth_response
             The authentification response from the server
-        auth_key : str
+        auth_key
             AES authentification key used to calculate the challenge (From password of the user)
         """
         self.encryption.aes_key = auth_key
@@ -504,5 +537,5 @@ class PronoteAPIError(Exception):
 
 
 class CryptoError(PronoteAPIError):
-    """Exception for known errors in the encryption."""
+    """Exception for known errors in the cryptography."""
     pass
