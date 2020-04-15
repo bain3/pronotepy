@@ -272,6 +272,10 @@ class Lesson:
         name of the classroom
     canceled : bool
         if the lesson is canceled
+    status : str
+        status of the lesson
+    background_color : str
+        background color of the lesson
     outing : bool
         if it is a pedagogical outing
     start : str
@@ -279,11 +283,13 @@ class Lesson:
     group_name : str
         Name of the group."""
     __slots__ = ['id', 'subject', 'teacher_name', 'classroom', 'start',
-                 'canceled', 'detention', 'end', 'outing', 'group_name', 'student_class', '_client', '_content']
+                 'canceled', 'status', 'background_color', 'detention', 'end', 'outing', 'group_name', 'student_class', '_client', '_content']
     attribute_guide = {
         'DateDuCours,V':        ('start', lambda d: datetime.datetime.strptime(d, '%d/%m/%Y %H:%M:%S')),
         'N':                    ('id', str),
         'estAnnule':            ('canceled', bool),
+        'Statut':            ('status', str),
+        'CouleurFond':            ('background_color', str),
         'estRetenue':           ('detention', bool),
         'duree':                ('end', int),
         'estSortiePedagogique': ('outing', bool)
@@ -443,17 +449,20 @@ class Homework:
         the subject that the homework is for
     description : str
         the description of the homework
+    background_color : str
+        the background color of the homework 
     done : bool
         if the homework is marked done
     date : str
         deadline
     """
-    __slots__ = ['id', 'subject', 'description', 'done', '_client', 'date', '_files']
+    __slots__ = ['id', 'subject', 'description', 'done', 'background_color', '_client', 'date', '_files']
     attribute_guide = {
         'N':            ('id', str),
         'descriptif,V': ('description', lambda d: unescape(re.sub(re.compile('<.*?>'), '', d))),
         'TAFFait':      ('done', bool),
         'Matiere,V':    ('subject', Subject),
+        'CouleurFond':  ('background_color', str),
         'PourLe,V':     ('date', lambda d: datetime.datetime.strptime(d, '%d/%m/%Y').date()),
         'ListePieceJointe,V': ('_files', tuple)
     }
