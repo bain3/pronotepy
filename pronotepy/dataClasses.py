@@ -3,6 +3,7 @@ import re
 import json
 from urllib.parse import quote
 from Crypto.Util import Padding
+from html import unescape
 
 
 def _get_l(d): return d['L']
@@ -354,7 +355,7 @@ class LessonContent:
     """
     attribute_guide = {
         'L': ('title', str),
-        'descriptif,V': ('description', lambda d: re.sub(re.compile('<.*?>'), '', d)),
+        'descriptif,V': ('description', lambda d: unescape(re.sub(re.compile('<.*?>'), '', d))),
         'ListePieceJointe,V': ('_files', tuple)
     }
 
@@ -450,7 +451,7 @@ class Homework:
     __slots__ = ['id', 'subject', 'description', 'done', '_client', 'date', '_files']
     attribute_guide = {
         'N':            ('id', str),
-        'descriptif,V': ('description', lambda d: re.sub(re.compile('<.*?>'), '', d)),
+        'descriptif,V': ('description', lambda d: unescape(re.sub(re.compile('<.*?>'), '', d))),
         'TAFFait':      ('done', bool),
         'Matiere,V':    ('subject', Subject),
         'PourLe,V':     ('date', lambda d: datetime.datetime.strptime(d, '%d/%m/%Y').date()),
@@ -530,7 +531,7 @@ class Message:
         for m in resp.json()['donneesSec']['donnees']['listeMessages']['V']:
             if m['N'] == self.id:
                 if type(m['contenu']) == dict:
-                    return re.sub(re.compile('<.*?>'), '', m['contenu']['V'])
+                    return unescape(re.sub(re.compile('<.*?>'), '', m['contenu']['V']))
                 else:
                     return m['contenu']
         return None
