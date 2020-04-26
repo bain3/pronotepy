@@ -112,5 +112,5 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 ## Contact (discord)
 ```plaintext
 bain#5038
-Xiloe#3042 (Contact me for ENT issues)
+Xiloe#9854 (Contact me for ENT issues)
 ```
