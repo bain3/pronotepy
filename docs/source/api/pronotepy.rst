@@ -4,20 +4,12 @@ pronotepy package
 Submodules
 ----------
 
-pronotepy.dataClasses module
-----------------------------
+.. toctree::
 
-.. automodule:: pronotepy.dataClasses
-   :members:
-   :show-inheritance:
-
-pronotepy.pronoteAPI module
----------------------------
-
-.. automodule:: pronotepy.pronoteAPI
-   :members:
-   :show-inheritance:
-
+   pronotepy.dataClasses
+   pronotepy.ent
+   pronotepy.pronoteAPI
+   pronotepy.test_pronotepy
 
 Module contents
 ---------------

@@ -13,9 +13,10 @@
   </p>
 </p>
 
-[![Documentation Status](https://readthedocs.org/projects/pronotepy/badge/?version=latest)](https://pronotepy.readthedocs.io/en/latest/?badge=latest)
 [![pypi version](https://img.shields.io/pypi/v/pronotepy.svg)](https://pypi.org/project/pronotepy/)
 [![python version](https://img.shields.io/pypi/pyversions/pronotepy.svg)](https://pypi.org/project/pronotepy/)
+[![license](https://img.shields.io/pypi/l/pronotepy.svg)](https://pypi.org/project/pronotepy/)
+[![Documentation Status](https://readthedocs.org/projects/pronotepy/badge/?version=latest)](https://pronotepy.readthedocs.io/en/latest/?badge=latest)
 
 ## Introduction
 
@@ -46,6 +47,8 @@ To self test pronotepy run this command:
 
 `python -m pronotepy.test_pronotepy`
 
+*Please keep in mind that this uses the demo version of pronote
+and so it can't test every function.*
 ### Usage
 Here is an example script (example.py):
 ```python
@@ -70,13 +73,35 @@ if client.login('demonstration', 'pronotevs'):  # login() returns bool that sign
             print(f'{grade.grade}/{grade.out_of}')  # print out the grade in this style: 20/20
 ```
 
-For any extra details, please see the [docs](https://pronotepy.readthedocs.io/en/stable/index.html).
+For any extra details, please see the documentation linked above.
 
-*If you are connecting from an ENT, please see [this code](https://github.com/bain3/pronotepy/blob/18131388c4d4bf0174cd9ef00418fe53e122c33a/pronotepy/pronoteAPI.py#L164) (line 164-240) to get an idea on how to do it. Unfortunately there is currently no other way to do it.*
+### ENT
+
+Pronotepy has builtin functions for getting cookies from some ENTs (if you want your ENT to be supported please contact Xiloe (see contact)). You can use those functions like this:
+```python
+import pronotepy
+from pronotepy.ent import occitanie_montpellier
+
+# creating the client and using the occitanie_montpellier function to automatically get cookies from ENT
+client = pronotepy.Client('https://somepronote.index-education.net/pronote/eleve.html', ent=True, cookies=occitanie_montpellier('user', 'pass'))
+
+# check if sucessfully logged in
+if client.logged_in:
+    print(len(client.messages())) # printing number of messages that the user has
+else:
+    print('no login')
+```
+All the functions return cookies needed to connect to pronote (use docs to see if your ENT is supported).
+
+### Long Term Usage
+
+Pronotepy will try and reconnect when the old session expires, but **PRONOTE changes all of its ids** every session
+so every object that was created more than 10 min. ago will probably be expired too. To preven this, please make new 
+requests if you have long breaks between your activities.
 
 ## License
 
-Copyright (c) 2020 bain
+Copyright (c) 2020 bain, Xiloe
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
 
@@ -84,5 +109,8 @@ The above copyright notice and this permission notice shall be included in all c
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-## Contact
-discord: `bain#5038`
+## Contact (discord)
+```plaintext
+bain#5038
+Xiloe#9854 (Contact me for ENT issues)
+```
