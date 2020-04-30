@@ -33,7 +33,7 @@ This is a Python API wrapper for the PRONOTE student administration service. Eve
 ### Installation
 **Stable**
 
-Install directly from pypi using pip: `pip install pronotepy` 
+Install directly from pypi using pip: `pip install pronotepy` (If you are on windows and have trouble with this command, use this one assuming you are using python 3.x.x installed on your computer: `py -3 -m pip install pronotepy`)
 
 **Latest**
 
