@@ -95,9 +95,7 @@ All the functions return cookies needed to connect to pronote (use docs to see i
 
 ### Long Term Usage
 
-Pronotepy will try and reconnect when the old session expires, but **PRONOTE changes all of its ids** every session
-so every object that was created more than 10 min. ago will probably be expired too. To preven this, please make new 
-requests if you have long breaks between your activities.
+Pronotepy will try and reconnect when the old session expires, but it cannot assure that the old objects will still be working. To prevent having problems with expired objects, please make sure that you're requesting new ones when you have long pauses in between requests to pronote.
 
 ## License
 
