@@ -31,6 +31,11 @@ Guide
 
    license
 
+.. toctree::
+   :maxdepth: 3
+
+   quickstart
+
 PronotePy API documentation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
