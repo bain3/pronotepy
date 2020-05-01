@@ -50,6 +50,11 @@ To self test pronotepy run this command:
 *Please keep in mind that this uses the demo version of pronote
 and so it can't test every function.*
 ### Usage
+
+```diff
+- !! The usage part of this readme is for the latest version, if you're installing from pypi, please see the documentation !!
+```
+
 Here is an example script (example.py):
 ```python
 import pronotepy
