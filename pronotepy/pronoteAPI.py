@@ -390,7 +390,7 @@ class _Communication(object):
         if 'Erreur' in response.json():
             if recursive:
                 raise PronoteAPIError(error_messages.get(response.json()["Erreur"]["G"],
-                                                         f'PRONOTE server returned error code: {response.json()["Erreur"]["G"]} | {response.json()["Erreur"]["Titre"]}'))
+                                                         f'Unknown error from pronote: {response.json()["Erreur"]["G"]} | {response.json()["Erreur"]["Titre"]}'))
             log.info(f'Have you tried turning it off and on again? ERROR: {response.json()["Erreur"]["G"]} | {response.json()["Erreur"]["Titre"]}')
             self.client.refresh()
             return self.client.communication.post(function_name, data, True)
