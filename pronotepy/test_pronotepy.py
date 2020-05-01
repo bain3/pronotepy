@@ -28,6 +28,7 @@ class TestClient(unittest.TestCase):
 
     def test_refresh(self):
         client.refresh()
+        self.assertEqual(client.session_check(), True)
 
 
 class TestPeriod(unittest.TestCase):
