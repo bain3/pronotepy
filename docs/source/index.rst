@@ -26,15 +26,12 @@ Dependencies
 Guide
 ~~~~~
 
+:ref: quickstart
+
 .. toctree::
    :maxdepth: 3
 
    license
-
-.. toctree::
-   :maxdepth: 3
-
-   quickstart
 
 PronotePy API documentation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
