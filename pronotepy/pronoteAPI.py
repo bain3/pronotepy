@@ -37,13 +37,10 @@ class Client(object):
 
     Attributes
     ----------
-    start_day : str
+    start_day : datetime.datetime
         The first day of the school year
-    week : str
+    week : int
         The current week of the school year
-    refresh_hander : function
-        This function is ran every time pronotepy reconnects to pronote. It doesn't get passed anything and shouldn't
-        return anything.
     logged_in : bool
         If the user is successfully logged in
 
@@ -69,7 +66,6 @@ class Client(object):
         self.encryption.aes_iv = self.communication.encryption.aes_iv
 
         # some other attribute creation
-        self.refresh_handler = self._dud
         self._last_ping = time()
 
         self.auth_response = self.auth_cookie = None
@@ -88,6 +84,7 @@ class Client(object):
 
         self.periods_ = self.periods
         self.logged_in = self._login()
+        self._expired = False
 
     def _login(self):
         """
@@ -315,10 +312,15 @@ class Client(object):
         self.periods_ = None
         self.periods_ = self.periods
         self.week = self._get_week(datetime.date.today())
-        self.refresh_handler()
+        self._expired = True
 
-    def _dud(self):
-        pass
+    def session_check(self) -> bool:
+        """Checks if the session has expired and refreshes it if it had (returns bool signifying if it was expired)"""
+        self.communication.post('Presence', {'_Signature_': {'onglet': 7}})
+        if self._expired:
+            self._expired = False
+            return True
+        return False
 
 
 class _Communication(object):
@@ -388,10 +390,15 @@ class _Communication(object):
         if not response.ok:
             raise requests.HTTPError(f'Status code: {response.status_code}')
         if 'Erreur' in response.json():
+            r_json = response.json()
+            if r_json["Erreur"]["G"] == 22:
+                raise ExpiredObject(error_messages.get(22))
             if recursive:
-                raise PronoteAPIError(error_messages.get(response.json()["Erreur"]["G"],
-                                                         f'Unknown error from pronote: {response.json()["Erreur"]["G"]} | {response.json()["Erreur"]["Titre"]}'))
-            log.info(f'Have you tried turning it off and on again? ERROR: {response.json()["Erreur"]["G"]} | {response.json()["Erreur"]["Titre"]}')
+
+                raise PronoteAPIError(error_messages.get(r_json["Erreur"]["G"],
+                                                         f'Unknown error from pronote: {r_json["Erreur"]["G"]} | {r_json["Erreur"]["Titre"]}'))
+
+            log.info(f'Have you tried turning it off and on again? ERROR: {r_json["Erreur"]["G"]} | {r_json["Erreur"]["Titre"]}')
             self.client.refresh()
             return self.client.communication.post(function_name, data, True)
 
@@ -545,4 +552,9 @@ class PronoteAPIError(Exception):
 
 class CryptoError(PronoteAPIError):
     """Exception for known errors in the cryptography."""
+    pass
+
+
+class ExpiredObject(PronoteAPIError):
+    """Raised when pronote returns error 22. (unknown object reference)"""
     pass
