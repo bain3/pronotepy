@@ -3,13 +3,7 @@ import unittest
 import pronotepy
 import datetime
 
-client = None
-
-
-def setUpModule():
-    global client
-    client = pronotepy.Client('https://demo.index-education.net/pronote/eleve.html')
-    client.login(username='demonstration', password='pronotevs')
+client = pronotepy.Client('https://demo.index-education.net/pronote/eleve.html', 'demonstration', 'pronotevs')
 
 
 class TestClient(unittest.TestCase):
@@ -31,6 +25,9 @@ class TestClient(unittest.TestCase):
     def test_homework(self):
         self.assertIsNotNone(
             client.homework(client.start_day.date(), (client.start_day + datetime.timedelta(days=8)).date()))
+
+    def test_refresh(self):
+        client.refresh()
 
 
 class TestPeriod(unittest.TestCase):

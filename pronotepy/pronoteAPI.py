@@ -17,7 +17,8 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 error_messages = {
-    22: '[ERROR 22] The object was from a previous session. Please read the "Long Term Usage" section in README on github.'
+    22: '[ERROR 22] The object was from a previous session. Please read the "Long Term Usage" section in README on github.',
+    10: '[ERROR 10] Session has expired and pronotepy was not able to reinitialise the connection.'
 }
 
 
@@ -29,8 +30,8 @@ class Client(object):
     ----------
     pronote_url : str
         URL of the server
-    ent : bool
-        If the connection is from an ENT
+    username : str
+    password : str
     cookies : cookies
         Cookies for ENT connections
 
@@ -40,23 +41,35 @@ class Client(object):
         The first day of the school year
     week : str
         The current week of the school year
+    refresh_hander : function
+        This function is ran every time pronotepy reconnects to pronote. It doesn't get passed anything and shouldn't
+        return anything.
+    logged_in : bool
+        If the user is successfully logged in
+
     """
 
-    def __init__(self, pronote_url, ent: bool = False, cookies=None, username: str = None, password: str = None):
+    def __init__(self, pronote_url, username: str = '', password: str = '', cookies=None):
         log.info('INIT')
         # start communication session
-        self.ent = ent
+        if not cookies and password == '' and username == '':
+            raise PronoteAPIError('Please provide login credentials. Cookies are None, and username and password are empty.')
         self.username = username
         self.password = password
         self.pronote_url = pronote_url
         self.communication = _Communication(pronote_url, cookies, self)
         self.attributes, self.func_options = self.communication.initialise()
+        if 'e' in self.attributes and 'f' in self.attributes:
+            self.ent = True
+        else:
+            self.ent = False
 
         # set up encryption
         self.encryption = _Encryption()
         self.encryption.aes_iv = self.communication.encryption.aes_iv
 
         # some other attribute creation
+        self.refresh_handler = self._dud
         self._last_ping = time()
 
         self.auth_response = self.auth_cookie = None
@@ -74,23 +87,11 @@ class Client(object):
         self.one_hour_duration = hour_end - hour_start
 
         self.periods_ = self.periods
-        if username and password:
-            self.logged_in = self.login(username, password)
-        elif ent and cookies:
-            self.logged_in = self.login()
-        else:
-            self.logged_in = False
+        self.logged_in = self._login()
 
-    def login(self, username='', password=''):
+    def _login(self):
         """
         Logs in the user.
-
-        Parameters
-        ----------
-        username : str
-            Username
-        password : str
-            Password
 
         Returns
         -------
@@ -98,13 +99,14 @@ class Client(object):
             True if logged in, False if not
         """
         if self.ent is True:
-            username = self.attributes['e']
-            password = self.attributes['f']
+            print('ent is true')
+            self.username = self.attributes['e']
+            self.password = self.attributes['f']
         # identification phase
         ident_json = {
             "genreConnexion": 0,
             "genreEspace": int(self.attributes['a']),
-            "identifiant": username,
+            "identifiant": self.username,
             "pourENT": self.ent,
             "enConnexionAuto": False,
             "demandeConnexionAuto": False,
@@ -125,17 +127,17 @@ class Client(object):
 
         # key gen
         if self.ent is True:
-            motdepasse = SHA256.new(str(password).encode()).hexdigest().upper()
+            motdepasse = SHA256.new(str(self.password).encode()).hexdigest().upper()
             e.aes_key = MD5.new(motdepasse.encode()).digest()
         else:
-            u = username
-            p = password
+            u = self.username
+            p = self.password
             if idr['donneesSec']['donnees']['modeCompLog']:
                 u = u.lower()
             if idr['donneesSec']['donnees']['modeCompMdp']:
                 p = p.lower()
             alea = idr['donneesSec']['donnees']['alea']
-            motdepasse = SHA256.new(str(alea + p).encode()).hexdigest().upper()
+            motdepasse = SHA256.new((alea + p).encode()).hexdigest().upper()
             e.aes_key = MD5.new((u + motdepasse).encode()).digest()
 
         # challenge
@@ -149,7 +151,7 @@ class Client(object):
         if 'cle' in self.auth_response.json()['donneesSec']['donnees']:
             self.communication.after_auth(self.auth_response, e.aes_key)
             self.encryption.aes_key = e.aes_key
-            log.info(f'successfully logged in as {username}')
+            log.info(f'successfully logged in as {self.username}')
             return True
         else:
             log.info('login failed')
@@ -296,22 +298,27 @@ class Client(object):
         return [dataClasses.Message(self, m) for m in messages.json()['donneesSec']['donnees']['listeMessagerie']['V']
                 if not m.get('estUneDiscussion')]
 
-    def _refresh(self):
+    def refresh(self):
         """
         Now this is the true jank part of this program. It refreshes the connection if something went wrong.
         This is the classical procedure if something is broken.
-        :return:
         """
         logging.debug('Reinitialisation')
+        self.communication.session.close()
         self.communication = _Communication(self.pronote_url, None, self)
         self.attributes, self.func_options = self.communication.initialise()
 
         # set up encryption
         self.encryption = _Encryption()
         self.encryption.aes_iv = self.communication.encryption.aes_iv
-        self.login(self.username, self.password)
+        self._login()
         self.periods_ = None
         self.periods_ = self.periods
+        self.week = self._get_week(datetime.date.today())
+        self.refresh_handler()
+
+    def _dud(self):
+        pass
 
 
 class _Communication(object):
@@ -385,7 +392,7 @@ class _Communication(object):
                 raise PronoteAPIError(error_messages.get(response.json()["Erreur"]["G"],
                                                          f'PRONOTE server returned error code: {response.json()["Erreur"]["G"]} | {response.json()["Erreur"]["Titre"]}'))
             log.info(f'Have you tried turning it off and on again? ERROR: {response.json()["Erreur"]["G"]} | {response.json()["Erreur"]["Titre"]}')
-            self.client._refresh()
+            self.client.refresh()
             return self.client.communication.post(function_name, data, True)
 
         return response
