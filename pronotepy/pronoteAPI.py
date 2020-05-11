@@ -439,7 +439,7 @@ class _Communication(object):
         if onload:
             onload_c = onload['onload'][14:-37]
         else:
-            if 'IP' in html:
+            if b'IP' in html:
                 raise PronoteAPIError('Your IP address is suspended.')
             raise PronoteAPIError("Page html is different than expected. Be sure that pronote_url is the direct url to your pronote page.")
         attributes = {}
@@ -451,14 +451,6 @@ class _Communication(object):
     @staticmethod
     def get_root_address(addr):
         return '/'.join(addr.split('/')[:-1]), '/'.join(addr.split('/')[-1:])
-
-
-def _create_random_string(length):
-    output = ''
-    for _ in range(length):
-        j = random.choice('ABCDEFGHIJKLMNOPQRSTUVabcdefghijklmnopqrstuv123456789')
-        output += j
-    return output
 
 
 def _enleverAlea(text):
@@ -493,7 +485,7 @@ class _Encryption(object):
         """The encryption part of the API. You shouldn't have to use this normally."""
         # aes
         self.aes_iv = bytes(16)
-        self.aes_iv_temp = _create_random_string(16).encode()
+        self.aes_iv_temp = bytearray([random.randint(0, 255) for _ in range(16)])
         self.aes_key = MD5.new().digest()
         # rsa
         self.rsa_keys = {}
