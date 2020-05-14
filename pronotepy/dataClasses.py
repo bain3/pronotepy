@@ -116,7 +116,7 @@ class Period:
         """Get grades from the period."""
         json_data = {'donnees': {'Periode': {'N': self.id, 'L': self.name}}, "_Signature_": {"onglet": 198}}
         response = self._client.communication.post('DernieresNotes', json_data)
-        grades = response.json()['donneesSec']['donnees']['listeDevoirs']['V']
+        grades = response['donneesSec']['donnees']['listeDevoirs']['V']
         return [Grade(g) for g in grades]
 
     @property
@@ -124,7 +124,7 @@ class Period:
         """Get averages from the period."""
         json_data = {'donnees': {'Periode': {'N': self.id, 'L': self.name}}, "_Signature_": {"onglet": 198}}
         response = self._client.communication.post('DernieresNotes', json_data)
-        crs = response.json()['donneesSec']['donnees']['listeServices']['V']
+        crs = response['donneesSec']['donnees']['listeServices']['V']
         return [Average(c) for c in crs]
 
     @property
@@ -133,13 +133,13 @@ class Period:
         Calculation may not be the same as the actual average. (max difference 0.01)"""
         json_data = {'donnees': {'Periode': {'N': self.id, 'L': self.name}}, "_Signature_": {"onglet": 198}}
         response = self._client.communication.post('DernieresNotes', json_data)
-        average = response.json()['donneesSec']['donnees'].get('moyGenerale')
+        average = response['donneesSec']['donnees'].get('moyGenerale')
         if average:
             average = average['V']
-        elif response.json()['donneesSec']['donnees']['listeServices']['V']:
+        elif response['donneesSec']['donnees']['listeServices']['V']:
             a = 0
             total = 0
-            services = response.json()['donneesSec']['donnees']['listeServices']['V']
+            services = response['donneesSec']['donnees']['listeServices']['V']
             for s in services:
                 avrg = s['moyEleve']['V'].replace(',', '.')
                 try:
@@ -326,7 +326,7 @@ class Lesson:
     @property
     def content(self):
         """
-        Gets content of the lesson.
+        Gets content of the lesson. May be None if there is no description.
         
         Notes
         -----
@@ -338,7 +338,7 @@ class Lesson:
         data = {"_Signature_": {"onglet": 89}, "donnees": {"domaine": {"_T": 8, "V": f"[{week}..{week}]"}}}
         response = self._client.communication.post('PageCahierDeTexte', data)
         contents = {}
-        for lesson in response.json()['donneesSec']['donnees']['ListeCahierDeTextes']['V']:
+        for lesson in response['donneesSec']['donnees']['ListeCahierDeTextes']['V']:
             if lesson['cours']['V']['N'] == self.id:
                 contents = lesson['listeContenus']['V'][0]
                 break
@@ -537,7 +537,7 @@ class Message:
                             'listePossessionsMessages': self._listePM},
                 '_Signature_': {'onglet': 131}}
         resp = self._client.communication.post('ListeMessages', data)
-        for m in resp.json()['donneesSec']['donnees']['listeMessages']['V']:
+        for m in resp['donneesSec']['donnees']['listeMessages']['V']:
             if m['N'] == self.id:
                 if type(m['contenu']) == dict:
                     return unescape(re.sub(re.compile('<.*?>'), '', m['contenu']['V']))

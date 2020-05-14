@@ -9,9 +9,11 @@ import base64
 import logging
 import datetime
 from math import floor
-from . import dataClasses
+from pronotepy import dataClasses
 import threading
 from time import time, sleep
+import zlib
+import json as jsn
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -50,7 +52,8 @@ class Client(object):
         log.info('INIT')
         # start communication session
         if not cookies and password == '' and username == '':
-            raise PronoteAPIError('Please provide login credentials. Cookies are None, and username and password are empty.')
+            raise PronoteAPIError(
+                'Please provide login credentials. Cookies are None, and username and password are empty.')
         self.username = username
         self.password = password
         self.pronote_url = pronote_url
@@ -72,14 +75,14 @@ class Client(object):
 
         self.date = datetime.datetime.now()
         self.start_day = datetime.datetime.strptime(
-            self.func_options.json()['donneesSec']['donnees']['General']['PremierLundi']['V'], '%d/%m/%Y')
+            self.func_options['donneesSec']['donnees']['General']['PremierLundi']['V'], '%d/%m/%Y')
         self.week = self._get_week(datetime.date.today())
 
         # get the length of one hour
         hour_start = datetime.datetime.strptime(
-            self.func_options.json()['donneesSec']['donnees']['General']['ListeHeures']['V'][0]['L'], '%Hh%M')
+            self.func_options['donneesSec']['donnees']['General']['ListeHeures']['V'][0]['L'], '%Hh%M')
         hour_end = datetime.datetime.strptime(
-            self.func_options.json()['donneesSec']['donnees']['General']['ListeHeuresFin']['V'][0]['L'], '%Hh%M')
+            self.func_options['donneesSec']['donnees']['General']['ListeHeuresFin']['V'][0]['L'], '%Hh%M')
         self.one_hour_duration = hour_end - hour_start
 
         self.periods_ = self.periods
@@ -115,8 +118,6 @@ class Client(object):
         log.debug('indentification')
 
         # creating the authentification data
-        log.debug(idr.status_code)
-        idr = idr.json()
         log.debug(str(idr))
         challenge = idr['donneesSec']['donnees']['challenge']
         e = _Encryption()
@@ -145,45 +146,14 @@ class Client(object):
         # send
         auth_json = {"connexion": 0, "challenge": ch, "espace": int(self.attributes['a'])}
         self.auth_response = self.communication.post("Authentification", {'donnees': auth_json})
-        if 'cle' in self.auth_response.json()['donneesSec']['donnees']:
-            self.communication.after_auth(self.auth_response, e.aes_key)
+        if 'cle' in self.auth_response['donneesSec']['donnees']:
+            self.communication.after_auth(self.communication.last_response, self.auth_response, e.aes_key)
             self.encryption.aes_key = e.aes_key
             log.info(f'successfully logged in as {self.username}')
             return True
         else:
             log.info('login failed')
             return False
-
-    def _get_homepage_info(self):
-        """
-        Old function, not used
-
-        Returns
-        -------
-        json
-            The response of the page
-        """
-        dta_nav = {"_Signature_": {"onglet": 7}, "donnees": {"onglet": 7, "ongletPrec": 7}}
-        self.communication.post('Navigation', dta_nav)
-        date_str = self.date.strftime('%d/%m/%Y 0:0:0')
-        dta = {"_Signature_": {"onglet": 7},
-               "donnees": {
-                   "avecConseilDeClasse": True,
-                   "dateGrille": {"_T": 7, "V": date_str},
-                   "numeroSemaine": self.week,
-                   "AppelNonFait": {"date": {"_T": 7, "V": date_str}},
-                   "CDTNonSaisi": {"numeroSemaine": self.week},
-                   "coursNonAssures": {"numeroSemaine": self.week},
-                   "personnelsAbsents": {"numeroSemaine": self.week},
-                   "incidents": {"numeroSemaine": self.week},
-                   "donneesVS": {"numeroSemaine": self.week},
-                   "donneesProfs": {"numeroSemaine": self.week},
-                   "EDT": {"date": {"_T": 7, "V": date_str}, "numeroSemaine": self.week},
-                   "menuDeLaCantine": {"date": {"_T": 7, "V": date_str}},
-                   "partenaireCDI": {"CDI": {}}}}
-        p_a_response = self.communication.post('PageAccueil', dta)
-        log.info('successfully got data')
-        return p_a_response.json()
 
     def _get_week(self, date: datetime.date):
         return int(1 + floor((date - self.start_day.date()).days / 7))
@@ -204,7 +174,7 @@ class Client(object):
         list
             Lessons list in a given timespan    
         """
-        user = self.auth_response.json()['donneesSec']['donnees']['ressource']
+        user = self.auth_response['donneesSec']['donnees']['ressource']
         data = {"_Signature_": {"onglet": 16},
                 "donnees": {"ressource": user,
                             "dateDebut": {"_T": 7, 'V': date_from.strftime('%d/%m/%Y 0:0:0')},
@@ -218,7 +188,7 @@ class Client(object):
             data['donnees']['dateFin'] = data['donnees']['DateFin'] = {"_T": 7, 'V': date_to.strftime('%d/%m/%Y 0:0:0')}
         output = []
         response = self.communication.post('PageEmploiDuTemps', data)
-        l_list = response.json()['donneesSec']['donnees']['ListeCours']
+        l_list = response['donneesSec']['donnees']['ListeCours']
         for lesson in l_list:
             output.append(dataClasses.Lesson(self, lesson))
         return output
@@ -235,13 +205,13 @@ class Client(object):
         """
         if hasattr(self, 'periods_') and self.periods_:
             return self.periods_
-        json = self.func_options.json()['donneesSec']['donnees']['General']['ListePeriodes']
+        json = self.func_options['donneesSec']['donnees']['General']['ListePeriodes']
         return [dataClasses.Period(self, j) for j in json]
 
     @property
     def current_period(self):
         """Get the current period."""
-        id_period = self.auth_response.json()['donneesSec']['donnees']['ressource']['listeOngletsPourPeriodes']['V'][0][
+        id_period = self.auth_response['donneesSec']['donnees']['ressource']['listeOngletsPourPeriodes']['V'][0][
             'periodeParDefaut']['V']['N']
         return dataClasses.Util.get(self.periods_, id=id_period)[0]
 
@@ -261,12 +231,12 @@ class Client(object):
         """
         if not date_to:
             date_to = datetime.datetime.strptime(
-                self.func_options.json()['donneesSec']['donnees']['General']['DerniereDate']['V'], '%d/%m/%Y').date()
+                self.func_options['donneesSec']['donnees']['General']['DerniereDate']['V'], '%d/%m/%Y').date()
         json_data = {'donnees': {
             'domaine': {'_T': 8, 'V': f"[{self._get_week(date_from)}..{self._get_week(date_to)}]"}},
             '_Signature_': {'onglet': 88}}
         response = self.communication.post('PageCahierDeTexte', json_data)
-        h_list = response.json()['donneesSec']['donnees']['ListeTravauxAFaire']['V']
+        h_list = response['donneesSec']['donnees']['ListeTravauxAFaire']['V']
         out = []
         for h in h_list:
             hw = dataClasses.Homework(self, h)
@@ -292,7 +262,7 @@ class Client(object):
         """
         messages = self.communication.post('ListeMessagerie', {'donnees': {'avecMessage': True, 'avecLu': True},
                                                                '_Signature_': {'onglet': 131}})
-        return [dataClasses.Message(self, m) for m in messages.json()['donneesSec']['donnees']['listeMessagerie']['V']
+        return [dataClasses.Message(self, m) for m in messages['donneesSec']['donnees']['listeMessagerie']['V']
                 if not m.get('estUneDiscussion')]
 
     def refresh(self):
@@ -335,6 +305,9 @@ class _Communication(object):
         self.last_ping = 0
         self.authorized_onglets = []
         self.client = client
+        self.compress_requests = False
+        self.encrypt_requests = False
+        self.last_response = None
 
     def initialise(self):
         """
@@ -355,11 +328,16 @@ class _Communication(object):
         uuid = base64.b64encode(self.encryption.rsa_encrypt(self.encryption.aes_iv_temp)).decode()
         # post
         json_post = {'Uuid': uuid}
-        initial_response = self.post('FonctionParametres', {'donnees': json_post})
-        self.encryption.aes_set_iv()
+        print(self.attributes)
+        self.encrypt_requests = not self.attributes.get("sCrA", False)
+        self.compress_requests = not self.attributes.get("sCoA", False)
+
+        # we need to catch this exception. the iv was not yet set and we need to decrypt it with the correct iv.
+        initial_response = self.post('FonctionParametres', {'donnees': json_post}, decryption_change={'iv': MD5.new(self.encryption.aes_iv_temp).digest()})
+        print(initial_response)
         return self.attributes, initial_response
 
-    def post(self, function_name: str, data: dict, recursive: bool = False):
+    def post(self, function_name: str, data: dict, recursive: bool = False, decryption_change=None):
         """
         Handler for all POST requests by the api to PRONOTE servers. Automatically provides all needed data for the
         verification of posts. Session id and order numbers are preserved.
@@ -372,12 +350,29 @@ class _Communication(object):
             The date that will be sent in the donneesSec dictionary
         recursive: bool
             Cursed recursion
+        decryption_change
+            If the decryption key or iv is changing in the middle of the request, you can set it here
         """
-        if type(data) != dict:
-            raise PronoteAPIError('POST error: donnees not dict')
-        elif '_Signature_' in data and data['_Signature_'].get('onglet') not in self.authorized_onglets:
+        if '_Signature_' in data and data['_Signature_'].get('onglet') not in self.authorized_onglets:
             raise PronoteAPIError('Action not permitted. (onglet is not normally accessible)')
 
+        # this part is for some pronotes who need to have good encryption even if they're communicating over https
+        print(jsn.dumps(data))
+        if self.compress_requests:
+            log.debug(f"[_Communication.post] compressing data")
+            data = jsn.dumps(data).encode()  # get bytes in utf8
+            data = data.hex()  # get hex of data
+            log.debug(data)
+            data = zlib.compress(data.encode(), level=6)[2:-4]  # actual compression
+            print("compressed:", data.hex())
+            log.debug(f"[_Communication.post] data compressed")
+        if self.encrypt_requests:
+            log.debug("[_Communication.post] encrypt data")
+            if type(data) == dict:
+                data = str(data).encode()
+            data = self.encryption.aes_encrypt(data).hex().upper()
+
+        # sending the actual request. adding some headers
         r_number = self.encryption.aes_encrypt(str(self.request_number).encode()).hex()
         json = {'session': int(self.attributes['h']), 'numeroOrdre': r_number, 'nom': function_name,
                 'donneesSec': data}
@@ -385,6 +380,8 @@ class _Communication(object):
         response = self.session.request('POST', p_site, json=json, cookies=self.cookies)
         self.request_number += 2
         self.last_ping = time()
+
+        self.last_response = response
 
         # error protection
         if not response.ok:
@@ -394,17 +391,41 @@ class _Communication(object):
             if r_json["Erreur"]["G"] == 22:
                 raise ExpiredObject(error_messages.get(22))
             if recursive:
-
                 raise PronoteAPIError(error_messages.get(r_json["Erreur"]["G"],
                                                          f'Unknown error from pronote: {r_json["Erreur"]["G"]} | {r_json["Erreur"]["Titre"]}'))
 
-            log.info(f'Have you tried turning it off and on again? ERROR: {r_json["Erreur"]["G"]} | {r_json["Erreur"]["Titre"]}')
+            log.info(
+                f'Have you tried turning it off and on again? ERROR: {r_json["Erreur"]["G"]} | {r_json["Erreur"]["Titre"]}')
             self.client.refresh()
             return self.client.communication.post(function_name, data, True)
 
-        return response
+        # checking for decryption change
+        if decryption_change:
+            log.debug("decryption change")
+            if 'iv' in decryption_change:
+                self.encryption.aes_iv = decryption_change['iv']
+            if 'key' in decryption_change:
+                self.encryption.aes_key = decryption_change['key']
 
-    def after_auth(self, auth_response, auth_key):
+        response_data = response.json()
+        print(response_data)
+        # decryption part of their "super strong" bullshit
+        if self.encrypt_requests:
+            log.debug("[_Communication.post] decrypting")
+            response_data['donneesSec'] = self.encryption.aes_decrypt(bytes.fromhex(response_data['donneesSec']))
+            log.debug(f"decrypted: {response_data['donneesSec'].hex()}")
+        if self.compress_requests:
+            log.debug("[_Communication.post] decompressing")
+            response_data['donneesSec'] = zlib.decompress(response_data['donneesSec'], wbits=-15).decode()
+        if type(response_data['donneesSec']) == str:
+            try:
+                response_data['donneesSec'] = jsn.loads(response_data['donneesSec'])
+            except jsn.JSONDecodeError:
+                raise PronoteAPIError("JSONDecodeError while requesting from pronote.")
+
+        return response_data
+
+    def after_auth(self, auth_response, data, auth_key):
         """
         Key change after the authentification was successful.
 
@@ -414,12 +435,14 @@ class _Communication(object):
             The authentification response from the server
         auth_key
             AES authentification key used to calculate the challenge (From password of the user)
+        data
+            Data from the request
         """
         self.encryption.aes_key = auth_key
         if not self.cookies:
             self.cookies = auth_response.cookies
-        self.authorized_onglets = _prepare_onglets(auth_response.json()['donneesSec']['donnees']['listeOnglets'])
-        work = self.encryption.aes_decrypt(bytes.fromhex(auth_response.json()['donneesSec']['donnees']['cle']))
+        self.authorized_onglets = _prepare_onglets(data['donneesSec']['donnees']['listeOnglets'])
+        work = self.encryption.aes_decrypt(bytes.fromhex(data['donneesSec']['donnees']['cle']))
         # ok
         key = MD5.new(_enBytes(work.decode()))
         key = key.digest()
@@ -441,7 +464,8 @@ class _Communication(object):
         else:
             if b'IP' in html:
                 raise PronoteAPIError('Your IP address is suspended.')
-            raise PronoteAPIError("Page html is different than expected. Be sure that pronote_url is the direct url to your pronote page.")
+            raise PronoteAPIError(
+                "Page html is different than expected. Be sure that pronote_url is the direct url to your pronote page.")
         attributes = {}
         for attr in onload_c.split(','):
             key, value = attr.split(':')
