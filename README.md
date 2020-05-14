@@ -103,6 +103,14 @@ All the functions return cookies needed to connect to pronote (use docs to see i
 
 Pronotepy will try and reconnect when the old session expires, but it cannot assure that the old objects will still be working. To prevent having problems with expired objects, please make sure that you're requesting new ones when you have long pauses in between requests to pronote.
 
+## Contributing
+
+Feel free to contribute anything. Any help is appreciated. To contribute, please create a pull request with your changes.
+
+## Adding content
+
+Pronotepy has most of the essential features covered, but if you need anything that is not yet implemented, you can [create an issue](https://github.com/bain3/pronotepy/issues/new) with your request. (or you can contribute by adding it yourself)
+
 ## License
 
 Copyright (c) 2020 bain, Xiloe
@@ -114,6 +122,7 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ## Contact (discord)
+You can contact us by discord if you need help with pronotepy, but creating an issue is better for everyone. You don't have to have discord, we don't need to guess who's making the new friend request and everyone else can learn from your questions in the future.
 ```plaintext
 bain#5038
 Xiloe#9854 (Contact me for ENT issues)
