@@ -99,7 +99,6 @@ class Client(object):
             True if logged in, False if not
         """
         if self.ent is True:
-            print('ent is true')
             self.username = self.attributes['e']
             self.password = self.attributes['f']
         # identification phase
@@ -328,13 +327,11 @@ class _Communication(object):
         uuid = base64.b64encode(self.encryption.rsa_encrypt(self.encryption.aes_iv_temp)).decode()
         # post
         json_post = {'Uuid': uuid}
-        print(self.attributes)
         self.encrypt_requests = not self.attributes.get("sCrA", False)
         self.compress_requests = not self.attributes.get("sCoA", False)
 
         # we need to catch this exception. the iv was not yet set and we need to decrypt it with the correct iv.
         initial_response = self.post('FonctionParametres', {'donnees': json_post}, decryption_change={'iv': MD5.new(self.encryption.aes_iv_temp).digest()})
-        print(initial_response)
         return self.attributes, initial_response
 
     def post(self, function_name: str, data: dict, recursive: bool = False, decryption_change=None):
@@ -357,14 +354,12 @@ class _Communication(object):
             raise PronoteAPIError('Action not permitted. (onglet is not normally accessible)')
 
         # this part is for some pronotes who need to have good encryption even if they're communicating over https
-        print(jsn.dumps(data))
         if self.compress_requests:
             log.debug(f"[_Communication.post] compressing data")
             data = jsn.dumps(data).encode()  # get bytes in utf8
             data = data.hex()  # get hex of data
             log.debug(data)
             data = zlib.compress(data.encode(), level=6)[2:-4]  # actual compression
-            print("compressed:", data.hex())
             log.debug(f"[_Communication.post] data compressed")
         if self.encrypt_requests:
             log.debug("[_Communication.post] encrypt data")
@@ -408,7 +403,6 @@ class _Communication(object):
                 self.encryption.aes_key = decryption_change['key']
 
         response_data = response.json()
-        print(response_data)
         # decryption part of their "super strong" bullshit
         if self.encrypt_requests:
             log.debug("[_Communication.post] decrypting")
