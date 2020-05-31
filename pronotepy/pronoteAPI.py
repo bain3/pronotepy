@@ -1,6 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
-import random
+import secrets
 from Crypto.Hash import MD5, SHA256
 from Crypto.Cipher import AES, PKCS1_v1_5
 from Crypto.Util import Padding
@@ -8,7 +8,6 @@ from Crypto.PublicKey import RSA
 import base64
 import logging
 import datetime
-from math import floor
 from pronotepy import dataClasses
 import threading
 from time import time, sleep
@@ -155,7 +154,7 @@ class Client(object):
             return False
 
     def _get_week(self, date: datetime.date):
-        return int(1 + floor((date - self.start_day.date()).days / 7))
+        return 1 + int((date - self.start_day.date()).days / 7)
 
     def lessons(self, date_from: datetime.date, date_to: datetime.date = None):
         """
@@ -503,7 +502,7 @@ class _Encryption(object):
         """The encryption part of the API. You shouldn't have to use this normally."""
         # aes
         self.aes_iv = bytes(16)
-        self.aes_iv_temp = bytearray([random.randint(0, 255) for _ in range(16)])
+        self.aes_iv_temp = secrets.token_bytes(16)
         self.aes_key = MD5.new().digest()
         # rsa
         self.rsa_keys = {}
