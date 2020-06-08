@@ -125,5 +125,5 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 You can contact us by discord if you need help with pronotepy, but creating an issue is better for everyone. You don't have to have discord, we don't need to guess who's making the new friend request and everyone else can learn from your questions in the future.
 ```plaintext
 bain#5038
-Xiloe#9854 (Contact me for ENT issues)
+Xiloe#1337 (Contact me for ENT issues)
 ```
