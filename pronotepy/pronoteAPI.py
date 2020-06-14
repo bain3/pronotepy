@@ -17,8 +17,6 @@ import json as jsn
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
-# pls run unit tests
-
 error_messages = {
     22: '[ERROR 22] The object was from a previous session. Please read the "Long Term Usage" section in README on github.',
     10: '[ERROR 10] Session has expired and pronotepy was not able to reinitialise the connection.'
