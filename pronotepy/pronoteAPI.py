@@ -8,7 +8,7 @@ from Crypto.PublicKey import RSA
 import base64
 import logging
 import datetime
-from pronotepy import dataClasses
+from . import dataClasses
 import threading
 from time import time, sleep
 import zlib
