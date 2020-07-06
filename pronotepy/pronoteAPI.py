@@ -180,21 +180,28 @@ class Client(object):
         user = self.parametres_utilisateur['donneesSec']['donnees']['ressource']
         data = {"_Signature_": {"onglet": 16},
                 "donnees": {"ressource": user,
-                            "dateDebut": {"_T": 7, 'V': date_from.strftime('%d/%m/%Y 0:0:0')},
-                            "DateDebut": {"_T": 7, 'V': date_from.strftime('%d/%m/%Y 0:0:0')},
                             "avecAbsencesEleve": False, "avecConseilDeClasse": True,
                             "estEDTPermanence": False, "avecAbsencesRessource": True,
                             "avecDisponibilites": True, "avecInfosPrefsGrille": True,
                             "Ressource": user}}
-        if date_to:
-            # noinspection PyTypeChecker
-            data['donnees']['dateFin'] = data['donnees']['DateFin'] = {"_T": 7, 'V': date_to.strftime('%d/%m/%Y 0:0:0')}
         output = []
-        response = self.communication.post('PageEmploiDuTemps', data)
-        l_list = response['donneesSec']['donnees']['ListeCours']
-        for lesson in l_list:
-            output.append(dataClasses.Lesson(self, lesson))
-        return output
+
+        first_week = self._get_week(date_from)
+        if not date_to:
+            date_to = date_from
+        last_week = self._get_week(date_to)
+
+        # getting lessons for all the weeks.
+        for week in range(first_week, last_week+1):
+            print("send")
+            data['NumeroSemaine'] = data['numeroSemaine'] = week
+            response = self.communication.post('PageEmploiDuTemps', data)
+            l_list = response['donneesSec']['donnees']['ListeCours']
+            for lesson in l_list:
+                output.append(dataClasses.Lesson(self, lesson))
+
+        # since we only have week precision, we need to make it more precise on our own
+        return [lesson for lesson in output if date_from <= lesson.start.date() <= date_to]
 
     @property
     def periods(self):
