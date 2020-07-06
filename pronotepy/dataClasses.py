@@ -226,6 +226,10 @@ class Grade:
     coefficient : str
         the coefficient of the grade
     """
+
+    id: str
+    """Id of the grade."""
+
     attribute_guide = {
         "N":                  ("id", str),
         "note,V":             ("grade", Util.grade_parse),
@@ -256,7 +260,6 @@ class Grade:
 
 
 class Lesson:
-
     """
     Represents a lesson with a given time. You shouldn't have to create this class manually.
 
@@ -286,6 +289,7 @@ class Lesson:
         Name of the group."""
 
     id: str
+    """Id of the lesson"""
     subject: Subject
     teacher_name: str
     classroom: str
