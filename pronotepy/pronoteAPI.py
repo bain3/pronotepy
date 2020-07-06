@@ -70,7 +70,7 @@ class Client(object):
         # some other attribute creation
         self._last_ping = time()
 
-        self.auth_response = self.auth_cookie = None
+        self.parametres_utilisateur = self.auth_cookie = None
 
         self.date = datetime.datetime.now()
         self.start_day = datetime.datetime.strptime(
@@ -143,11 +143,16 @@ class Client(object):
 
         # send
         auth_json = {"connexion": 0, "challenge": ch, "espace": int(self.attributes['a'])}
-        self.auth_response = self.communication.post("Authentification", {'donnees': auth_json})
-        if 'cle' in self.auth_response['donneesSec']['donnees']:
-            self.communication.after_auth(self.communication.last_response, self.auth_response, e.aes_key)
+        auth_response = self.communication.post("Authentification", {'donnees': auth_json})
+        if 'cle' in auth_response['donneesSec']['donnees']:
+            self.communication.after_auth(self.communication.last_response, auth_response, e.aes_key)
             self.encryption.aes_key = e.aes_key
             log.info(f'successfully logged in as {self.username}')
+
+            # getting listeOnglets separately because of pronote API change
+            self.parametres_utilisateur = self.communication.post('ParametresUtilisateur', {})
+            self.communication.authorized_onglets = _prepare_onglets(self.parametres_utilisateur['donneesSec']['donnees']['listeOnglets'])
+            log.info("got onglets data.")
             return True
         else:
             log.info('login failed')
@@ -172,7 +177,7 @@ class Client(object):
         list
             Lessons list in a given timespan    
         """
-        user = self.auth_response['donneesSec']['donnees']['ressource']
+        user = self.parametres_utilisateur['donneesSec']['donnees']['ressource']
         data = {"_Signature_": {"onglet": 16},
                 "donnees": {"ressource": user,
                             "dateDebut": {"_T": 7, 'V': date_from.strftime('%d/%m/%Y 0:0:0')},
@@ -209,7 +214,7 @@ class Client(object):
     @property
     def current_period(self):
         """Get the current period."""
-        id_period = self.auth_response['donneesSec']['donnees']['ressource']['listeOngletsPourPeriodes']['V'][0][
+        id_period = self.parametres_utilisateur['donneesSec']['donnees']['ressource']['listeOngletsPourPeriodes']['V'][0][
             'periodeParDefaut']['V']['N']
         return dataClasses.Util.get(self.periods_, id=id_period)[0]
 
@@ -325,7 +330,7 @@ class _Communication(object):
         self.encryption.rsa_keys = {'MR': self.attributes['MR'], 'ER': self.attributes['ER']}
         uuid = base64.b64encode(self.encryption.rsa_encrypt(self.encryption.aes_iv_temp)).decode()
         # post
-        json_post = {'Uuid': uuid}
+        json_post = {'Uuid': uuid, 'identifiantNav': None}
         self.encrypt_requests = not self.attributes.get("sCrA", False)
         self.compress_requests = not self.attributes.get("sCoA", False)
 
@@ -433,10 +438,8 @@ class _Communication(object):
         """
         self.encryption.aes_key = auth_key
         if not self.cookies:
-            self.cookies = auth_response.cookies
-        self.authorized_onglets = _prepare_onglets(data['donneesSec']['donnees']['listeOnglets'])
+            self.cookies = self.last_response.cookies
         work = self.encryption.aes_decrypt(bytes.fromhex(data['donneesSec']['donnees']['cle']))
-        # ok
         key = MD5.new(_enBytes(work.decode()))
         key = key.digest()
         self.encryption.aes_key = key
