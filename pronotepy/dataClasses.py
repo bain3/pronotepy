@@ -4,6 +4,7 @@ import json
 from urllib.parse import quote
 from Crypto.Util import Padding
 from html import unescape
+from typing import List
 
 
 def _get_l(d): return d['L']
@@ -255,6 +256,18 @@ class Grade:
 
 
 class Lesson:
+
+    id: str
+    subject: Subject
+    teacher_name: str
+    classroom: str
+    canceled: bool
+    status: str
+    background_color: str
+    outing: bool
+    start: datetime.datetime
+    group_name: str
+
     """
     Represents a lesson with a given time. You shouldn't have to create this class manually.
 
@@ -334,7 +347,7 @@ class Lesson:
         """
         if self._content:
             return self._content
-        week = self._client._get_week(self.start.date())
+        week = self._client.get_week(self.start.date())
         data = {"_Signature_": {"onglet": 89}, "donnees": {"domaine": {"_T": 8, "V": f"[{week}..{week}]"}}}
         response = self._client.communication.post('PageCahierDeTexte', data)
         contents = {}

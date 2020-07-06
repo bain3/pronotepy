@@ -13,6 +13,7 @@ import threading
 from time import time, sleep
 import zlib
 import json as jsn
+from typing import List
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -75,7 +76,7 @@ class Client(object):
         self.date = datetime.datetime.now()
         self.start_day = datetime.datetime.strptime(
             self.func_options['donneesSec']['donnees']['General']['PremierLundi']['V'], '%d/%m/%Y')
-        self.week = self._get_week(datetime.date.today())
+        self.week = self.get_week(datetime.date.today())
 
         # get the length of one hour
         hour_start = datetime.datetime.strptime(
@@ -158,12 +159,14 @@ class Client(object):
             log.info('login failed')
             return False
 
-    def _get_week(self, date: datetime.date):
+    def get_week(self, date: datetime.date):
         return 1 + int((date - self.start_day.date()).days / 7)
 
     def lessons(self, date_from: datetime.date, date_to: datetime.date = None):
         """
         Gets all lessons in a given timespan.
+
+        :returns: List[dataClasses.Lesson]
 
         Parameters
         ----------
@@ -172,10 +175,6 @@ class Client(object):
         date_to : datetime
             The second date
 
-        Returns
-        -------
-        list
-            Lessons list in a given timespan    
         """
         user = self.parametres_utilisateur['donneesSec']['donnees']['ressource']
         data = {"_Signature_": {"onglet": 16},
@@ -186,10 +185,10 @@ class Client(object):
                             "Ressource": user}}
         output = []
 
-        first_week = self._get_week(date_from)
+        first_week = self.get_week(date_from)
         if not date_to:
             date_to = date_from
-        last_week = self._get_week(date_to)
+        last_week = self.get_week(date_to)
 
         # getting lessons for all the weeks.
         for week in range(first_week, last_week+1):
@@ -243,7 +242,7 @@ class Client(object):
             date_to = datetime.datetime.strptime(
                 self.func_options['donneesSec']['donnees']['General']['DerniereDate']['V'], '%d/%m/%Y').date()
         json_data = {'donnees': {
-            'domaine': {'_T': 8, 'V': f"[{self._get_week(date_from)}..{self._get_week(date_to)}]"}},
+            'domaine': {'_T': 8, 'V': f"[{self.get_week(date_from)}..{self.get_week(date_to)}]"}},
             '_Signature_': {'onglet': 88}}
         response = self.communication.post('PageCahierDeTexte', json_data)
         h_list = response['donneesSec']['donnees']['ListeTravauxAFaire']['V']
@@ -291,7 +290,7 @@ class Client(object):
         self._login()
         self.periods_ = None
         self.periods_ = self.periods
-        self.week = self._get_week(datetime.date.today())
+        self.week = self.get_week(datetime.date.today())
         self._expired = True
 
     def session_check(self) -> bool:

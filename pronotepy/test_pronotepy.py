@@ -10,7 +10,7 @@ class TestClient(unittest.TestCase):
     global client
 
     def test__get_week(self):
-        self.assertEqual(client._get_week((client.start_day + datetime.timedelta(days=8)).date()), 2)
+        self.assertEqual(client.get_week((client.start_day + datetime.timedelta(days=8)).date()), 2)
 
     def test_lessons(self):
         self.assertIsNotNone(
@@ -51,7 +51,7 @@ class TestLesson(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         global client
-        cls.lesson = client.lessons((client.start_day+datetime.timedelta(days=1)).date())[0]
+        cls.lesson = client.lessons((client.start_day+datetime.timedelta(days=4)).date())[0]
 
     def test_normal(self):
         self.assertIsNotNone(self.lesson.normal)
@@ -64,7 +64,7 @@ class TestLessonContent(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         global client
-        cls.lessonContent = client.lessons((client.start_day+datetime.timedelta(days=1)).date())[0].content
+        cls.lessonContent = client.lessons((client.start_day+datetime.timedelta(days=4)).date())[0].content
 
     def test_files(self):
         self.assertIsNotNone(self.lessonContent.files)
