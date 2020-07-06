@@ -7,7 +7,7 @@ To make pronotepy's installation as easy as possible it is uploaded to pypi. To 
 
 ``pip install pronotepy``
 
-.. note:: You may have problems while installing the dependency pycryptodome. Unfortunately I haven't found a different cryptographic library, if you have an alternative then contact bain (see contact).
+.. note:: You may have problems while installing the dependency pycryptodome. Unfortunately I haven't found a different cryptographic library, if you have an alternative please contact bain (see contact).
 
 Usage
 -----
@@ -20,9 +20,13 @@ This will initialise the connection and log the user in. You can check if the cl
 .. code-block:: python
 
     import pronotepy
+    from pronotepy.ent import ac_reunion
+    # importing ent specific function, you do not need to import anything if you dont use an ent
+
     client = pronotepy.Client('https://demo.index-education.net/pronote/eleve.html',
                           username='demonstration',
-                          password='pronotevs')
+                          password='pronotevs',
+                          ent=ac_reunion) # ent specific
     if client.logged_in:
         # do stuff
 

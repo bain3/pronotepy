@@ -53,7 +53,9 @@ and so it can't test every function.*
 ### Usage
 
 ```diff
-- !! The usage part of this readme is for the latest version, if you're installing from pypi, please see the documentation !!
+- The usage part of this readme is for the latest version, 
+- if you're installing from pypi, please see the documentation. 
+- It is linked right on the top of this readme.
 ```
 
 Here is an example script (example.py):
@@ -84,14 +86,17 @@ For any extra details, please see the documentation linked above.
 
 ### ENT
 
-Pronotepy has builtin functions for getting cookies from some ENTs (if you want your ENT to be supported please contact Xiloe (see contact)). You can use those functions like this:
+Pronotepy has builtin functions for getting cookies from some ENTs (if you want your ENT to be supported please contact Xiloe (see contact)). 
+You can pass those functions to the client like this:
 ```python
 import pronotepy
 from pronotepy.ent import occitanie_montpellier
 
-# creating the client and using the occitanie_montpellier function to automatically get cookies from ENT
-client = pronotepy.Client('https://somepronote.index-education.net/pronote/eleve.html', cookies=occitanie_montpellier('user', 'pass'))
-
+# creating the client and passing the occitanie_montpellier function to automatically get cookies from ENT
+client = pronotepy.Client('https://0000000a.index-education.net/pronote/eleve.html',
+                          username='demonstration',
+                          password='pronotevs',
+                          ent=occitanie_montpellier)
 # check if sucessfully logged in
 if client.logged_in:
     print(len(client.messages())) # printing number of messages that the user has
@@ -107,6 +112,9 @@ Pronotepy will try and reconnect when the old session expires, but it cannot ass
 ## Contributing
 
 Feel free to contribute anything. Any help is appreciated. To contribute, please create a pull request with your changes.
+
+Setting up the development environment is just cloning the repository and making sure you have all the dependencies by
+running pip with the requirements.txt file.
 
 ## Adding content
 
