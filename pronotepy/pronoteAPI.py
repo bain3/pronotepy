@@ -1,19 +1,22 @@
-import requests
-from bs4 import BeautifulSoup
-import secrets
-from Crypto.Hash import MD5, SHA256
-from Crypto.Cipher import AES, PKCS1_v1_5
-from Crypto.Util import Padding
-from Crypto.PublicKey import RSA
 import base64
-import logging
 import datetime
-from . import dataClasses
-import threading
-from time import time, sleep
-import zlib
 import json as jsn
-from typing import List
+import logging
+import secrets
+import threading
+import zlib
+
+import requests
+from time import time, sleep
+from bs4 import BeautifulSoup
+from typing import Union, Callable
+
+from Crypto.Cipher import AES, PKCS1_v1_5
+from Crypto.Hash import MD5, SHA256
+from Crypto.PublicKey import RSA
+from Crypto.Util import Padding
+
+from . import dataClasses
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -28,41 +31,38 @@ class Client(object):
     """
     A PRONOTE client.
 
-    Parameters
-    ----------
-    pronote_url : str
-        URL of the server
-    username : str
-    password : str
-    cookies : cookies
-        Cookies for ENT connections
-
-    Attributes
-    ----------
-    start_day : datetime.datetime
-        The first day of the school year
-    week : int
-        The current week of the school year
-    logged_in : bool
-        If the user is successfully logged in
-
+    :param pronote_url: URL of the server
+    :param username: username
+    :param password: password
+    :param ent: The function that is used to connect with a ent. For example pronotepy.ent.ac_reunion. Leave None if you do not have an ent.
     """
 
-    def __init__(self, pronote_url, username: str = '', password: str = '', cookies=None):
+    start_day: datetime.datetime
+    """The first day of the school year"""
+    week: int
+    """The current week of the school year"""
+    logged_in: bool
+    """If the user is successfully logged in"""
+
+    def __init__(self, pronote_url, username: str = '', password: str = '', ent: Union[Callable, None] = None):
         log.info('INIT')
         # start communication session
-        if not cookies and password == '' and username == '':
+        if password == '' and username == '':
             raise PronoteAPIError(
-                'Please provide login credentials. Cookies are None, and username and password are empty.')
+                'Please provide login credentials. Username and password are empty.')
+
+        self.ent = ent
+
+        if ent:
+            cookies = ent(username, password)
+        else:
+            cookies = None
+
         self.username = username
         self.password = password
         self.pronote_url = pronote_url
         self.communication = _Communication(pronote_url, cookies, self)
         self.attributes, self.func_options = self.communication.initialise()
-        if 'e' in self.attributes and 'f' in self.attributes:
-            self.ent = True
-        else:
-            self.ent = False
 
         # set up encryption
         self.encryption = _Encryption()
@@ -76,7 +76,7 @@ class Client(object):
         self.date = datetime.datetime.now()
         self.start_day = datetime.datetime.strptime(
             self.func_options['donneesSec']['donnees']['General']['PremierLundi']['V'], '%d/%m/%Y')
-        self.week = self.get_week(datetime.date.today())
+        self.week = self._get_week(datetime.date.today())
 
         # get the length of one hour
         hour_start = datetime.datetime.strptime(
@@ -93,10 +93,8 @@ class Client(object):
         """
         Logs in the user.
 
-        Returns
-        -------
-        bool
-            True if logged in, False if not
+        :returns: bool
+        :return: Boolean signifying if the user is logged in.
         """
         if self.ent is True:
             self.username = self.attributes['e']
@@ -146,7 +144,7 @@ class Client(object):
         auth_json = {"connexion": 0, "challenge": ch, "espace": int(self.attributes['a'])}
         auth_response = self.communication.post("Authentification", {'donnees': auth_json})
         if 'cle' in auth_response['donneesSec']['donnees']:
-            self.communication.after_auth(self.communication.last_response, auth_response, e.aes_key)
+            self.communication.after_auth(auth_response, e.aes_key)
             self.encryption.aes_key = e.aes_key
             log.info(f'successfully logged in as {self.username}')
 
@@ -159,7 +157,7 @@ class Client(object):
             log.info('login failed')
             return False
 
-    def get_week(self, date: datetime.date):
+    def _get_week(self, date: datetime.date):
         return 1 + int((date - self.start_day.date()).days / 7)
 
     def lessons(self, date_from: datetime.date, date_to: datetime.date = None):
@@ -167,6 +165,7 @@ class Client(object):
         Gets all lessons in a given timespan.
 
         :returns: List[dataClasses.Lesson]
+        :return: List of Lessons within that period
 
         :param date_from: first date
         :param date_to: second date
@@ -180,14 +179,13 @@ class Client(object):
                             "Ressource": user}}
         output = []
 
-        first_week = self.get_week(date_from)
+        first_week = self._get_week(date_from)
         if not date_to:
             date_to = date_from
-        last_week = self.get_week(date_to)
+        last_week = self._get_week(date_to)
 
         # getting lessons for all the weeks.
         for week in range(first_week, last_week+1):
-            print("send")
             data['NumeroSemaine'] = data['numeroSemaine'] = week
             response = self.communication.post('PageEmploiDuTemps', data)
             l_list = response['donneesSec']['donnees']['ListeCours']
@@ -202,10 +200,7 @@ class Client(object):
         """
         Get all of the periods of the year.
 
-        Returns
-        -------
-        list
-            All the periods of the year
+        :returns: List[dataClasses.Period]
         """
         if hasattr(self, 'periods_') and self.periods_:
             return self.periods_
@@ -228,16 +223,13 @@ class Client(object):
         date_to : datetime
             The second date
 
-        Returns
-        -------
-        list
-            Homework between two given points
+        :returns: List[dataClasses.Homework]
         """
         if not date_to:
             date_to = datetime.datetime.strptime(
                 self.func_options['donneesSec']['donnees']['General']['DerniereDate']['V'], '%d/%m/%Y').date()
         json_data = {'donnees': {
-            'domaine': {'_T': 8, 'V': f"[{self.get_week(date_from)}..{self.get_week(date_to)}]"}},
+            'domaine': {'_T': 8, 'V': f"[{self._get_week(date_from)}..{self._get_week(date_to)}]"}},
             '_Signature_': {'onglet': 88}}
         response = self.communication.post('PageCahierDeTexte', json_data)
         h_list = response['donneesSec']['donnees']['ListeTravauxAFaire']['V']
@@ -259,10 +251,7 @@ class Client(object):
         """
         Gets all the discussions in the discussions tab
 
-        Returns
-        -------
-        list
-            Messages
+        :returns: List[dataClasses.Message]
         """
         messages = self.communication.post('ListeMessagerie', {'donnees': {'avecMessage': True, 'avecLu': True},
                                                                '_Signature_': {'onglet': 131}})
@@ -276,7 +265,12 @@ class Client(object):
         """
         logging.debug('Reinitialisation')
         self.communication.session.close()
-        self.communication = _Communication(self.pronote_url, None, self)
+        if self.ent:
+            cookies = self.ent(self.username, self.password)
+        else:
+            cookies = None
+
+        self.communication = _Communication(self.pronote_url, cookies, self)
         self.attributes, self.func_options = self.communication.initialise()
 
         # set up encryption
@@ -285,7 +279,7 @@ class Client(object):
         self._login()
         self.periods_ = None
         self.periods_ = self.periods
-        self.week = self.get_week(datetime.date.today())
+        self.week = self._get_week(datetime.date.today())
         self._expired = True
 
     def session_check(self) -> bool:
@@ -344,16 +338,10 @@ class _Communication(object):
         Handler for all POST requests by the api to PRONOTE servers. Automatically provides all needed data for the
         verification of posts. Session id and order numbers are preserved.
 
-        Parameters
-        ----------
-        function_name : str
-            The name of the function (eg. Authentification)
-        data: dict
-            The date that will be sent in the donneesSec dictionary
-        recursive: bool
-            Cursed recursion
-        decryption_change
-            If the decryption key or iv is changing in the middle of the request, you can set it here
+        :param function_name: The name of the function (eg. Authentification)
+        :param data: The date that will be sent in the donneesSec dictionary
+        :param recursive: Cursed recursion
+        :param decryption_change: If the decryption key or iv is changing in the middle of the request, you can set it here
         """
         if '_Signature_' in data and data['_Signature_'].get('onglet') not in self.authorized_onglets:
             raise PronoteAPIError('Action not permitted. (onglet is not normally accessible)')
@@ -424,18 +412,12 @@ class _Communication(object):
 
         return response_data
 
-    def after_auth(self, auth_response, data, auth_key):
+    def after_auth(self, data, auth_key):
         """
         Key change after the authentification was successful.
 
-        Parameters
-        ----------
-        auth_response
-            The authentification response from the server
-        auth_key
-            AES authentification key used to calculate the challenge (From password of the user)
-        data
-            Data from the request
+        :param data: Data from the request
+        :param auth_key: AES authentification key used to calculate the challenge (From password of the user)
         """
         self.encryption.aes_key = auth_key
         if not self.cookies:
@@ -449,10 +431,7 @@ class _Communication(object):
     def _parse_html(html):
         """Parses the html for the RSA keys
 
-        Returns
-        -------
-        dict
-            HTML attributes
+        :returns dict: HTML attributes
         """
         parsed = BeautifulSoup(html, "html.parser")
         onload = parsed.find(id='id_body')
@@ -557,9 +536,7 @@ class _KeepAlive(threading.Thread):
 
 
 class PronoteAPIError(Exception):
-    """
-    Base exception for any pronote api errors
-    """
+    """Base exception for any pronote api errors"""
     pass
 
 

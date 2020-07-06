@@ -10,7 +10,7 @@ class TestClient(unittest.TestCase):
     global client
 
     def test__get_week(self):
-        self.assertEqual(client.get_week((client.start_day + datetime.timedelta(days=8)).date()), 2)
+        self.assertEqual(client._get_week((client.start_day + datetime.timedelta(days=8)).date()), 2)
 
     def test_lessons(self):
         self.assertIsNotNone(

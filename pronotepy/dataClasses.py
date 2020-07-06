@@ -4,7 +4,7 @@ import json
 from urllib.parse import quote
 from Crypto.Util import Padding
 from html import unescape
-from typing import List
+from typing import Union
 
 
 def _get_l(d): return d['L']
@@ -18,10 +18,7 @@ class Util:
     def get(cls, iterable, **kwargs) -> list:
         """Gets items from the list with the attributes specified.
 
-        Parameters
-        ----------
-        iterable : list
-            The iterable to loop over
+        :param iterable: The iterable (ex. List) to loop over
         """
         output = []
         for i in iterable:
@@ -60,17 +57,16 @@ class Util:
 
 class Subject:
     """
-    Represents a subject. You shouldn't have to create this class manually.
-
-    Attributes
-    ----------
-    id : str
-        the id of the subject (used internally)
-    name : str
-        name of the subject
-    groups : bool
-        if the subject is in groups
+    Represents a subject.
     """
+
+    id: str
+    """the id of the subject (used internally)"""
+    name: str
+    """name of the subject"""
+    groups: bool
+    """if the subject is in groups"""
+
     __slots__ = ['id', 'name', 'groups']
 
     attribute_guide = {
@@ -87,19 +83,17 @@ class Subject:
 
 class Period:
     """
-    Represents a period of the school year. You shouldn't have to create this class manually.
-
-    Attributes
-    ----------
-    id : str
-        the id of the period (used internally)
-    name : str
-        name of the period
-    start : str
-        date on which the period starts
-    end : str
-        date on which the period ends
+    Represents a period of the school year.
     """
+
+    id: str
+    """the id of the period (used internally)"""
+    name: str
+    """name of the period"""
+    start: datetime.datetime
+    """date on which the period starts"""
+    end: datetime.datetime
+    """date on which the period ends"""
 
     __slots__ = ['_client', 'id', 'name', 'start', 'end']
     instances = set()
@@ -160,35 +154,32 @@ class Period:
 
 
 class Average:
-    """
-    Represents an Average.
+    """Represents an Average for a period."""
 
-    Attributes
-    ----------
-    student : str
-        students average in the subject
-    class : str
-        classes average in the subject
-    max : str
-        highest average in the class
-    min : str
-        lowest average in the class
-    out_of : str
-        maximum amount of points
-    default_out_of : str
-        the default maximum amount of points
-    subject : pronotepy.dataClasses.Subject
-        subject the average is from
-    """
+    student: str
+    """students average in the subject"""
+    class_average: str
+    """classes average in the subject"""
+    max: str
+    """highest average in the class"""
+    min: str
+    """lowest average in the class"""
+    out_of: str
+    """maximum amount of points"""
+    default_out_of: str
+    """the default maximum amount of points"""
+    subject: Subject
+    """subject the average is from"""
+
     attribute_guide = {
         'moyEleve,V': ('student', Util.grade_parse),
         'baremeMoyEleve,V': ('out_of', Util.grade_parse),
         'baremeMoyEleveParDefault,V': ('default_out_of', Util.grade_parse),
-        'moyClasse,V': ('class', Util.grade_parse),
+        'moyClasse,V': ('class_average', Util.grade_parse),
         'moyMin,V': ('min', Util.grade_parse),
         'moyMax,V': ('max', Util.grade_parse)
     }
-    __slots__ = ['student', 'out_of', 'default_out_of', 'class', 'min', 'max', 'subject']
+    __slots__ = ['student', 'out_of', 'default_out_of', 'class_average', 'min', 'max', 'subject']
 
     def __init__(self, parsed_json):
         prepared_json = Util.prepare_json(self.__class__, parsed_json)
@@ -199,36 +190,30 @@ class Average:
 
 # noinspection PyTypeChecker
 class Grade:
-    """Represents a grade. You shouldn't have to create this class manually.
-
-    Attributes
-    ----------
-    id : str
-        the id of the grade (used internally)
-    grade : str
-        the actual grade
-    out_of : str
-        the maximum amount of points
-    default_out_of : str
-        the default maximum amount of points
-    date : str
-        the date on which the grade was given
-    subject : pronotepy.dataClasses.Subject
-        the subject in which the grade was given
-    period : pronotepy.dataClasses.Period
-        the period in which the grade was given
-    average : str
-        the average of the class
-    max : str
-        the highest grade of the test
-    min : str
-        the lowest grade of the test
-    coefficient : str
-        the coefficient of the grade
-    """
+    """Represents a grade."""
 
     id: str
-    """Id of the grade."""
+    """the id of the grade (used internally)"""
+    grade: str
+    """the actual grade"""
+    out_of: str
+    """the maximum amount of points"""
+    default_out_of: str
+    """the default maximum amount of points"""
+    date: str
+    """the date on which the grade was given"""
+    subject: Subject
+    """the subject in which the grade was given"""
+    period: Period
+    """the period in which the grade was given"""
+    average: str
+    """the average of the class"""
+    max: str
+    """the highest grade of the test"""
+    min: str
+    """the lowest grade of the test"""
+    coefficient: str
+    """the coefficient of the grade"""
 
     attribute_guide = {
         "N":                  ("id", str),
@@ -261,44 +246,31 @@ class Grade:
 
 class Lesson:
     """
-    Represents a lesson with a given time. You shouldn't have to create this class manually.
+    Represents a lesson with a given time.
 
     !!If a lesson is a pedagogical outing, it will only have the "outing" and "start" attributes!!
-
-    Attributes
-    ----------
-    id : str
-        the id of the lesson (used internally)
-    subject : pronotepy.dataClasses.Subject
-        the subject that the lesson is from
-    teacher_name : str
-        name of the teacher
-    classroom : str
-        name of the classroom
-    canceled : bool
-        if the lesson is canceled
-    status : str
-        status of the lesson
-    background_color : str
-        background color of the lesson
-    outing : bool
-        if it is a pedagogical outing
-    start : str
-        starting time of the lesson
-    group_name : str
-        Name of the group."""
+    """
 
     id: str
     """Id of the lesson"""
-    subject: Subject
+    subject: Union[Subject, None]
+    """the subject that the lesson is from. It is None when the lesson is an outing."""
     teacher_name: str
+    """name of the teacher"""
     classroom: str
+    """name of the classroom"""
     canceled: bool
+    """if the lesson is canceled"""
     status: str
+    """status of the lesson"""
     background_color: str
+    """background color of the lesson"""
     outing: bool
+    """if it is a pedagogical outing"""
     start: datetime.datetime
+    """starting time of the lesson"""
     group_name: str
+    """Name of the group."""
 
     __slots__ = ['id', 'subject', 'teacher_name', 'classroom', 'start',
                  'canceled', 'status', 'background_color', 'detention', 'end', 'outing', 'group_name', 'student_class', '_client', '_content']
@@ -306,8 +278,8 @@ class Lesson:
         'DateDuCours,V':        ('start', lambda d: datetime.datetime.strptime(d, '%d/%m/%Y %H:%M:%S')),
         'N':                    ('id', str),
         'estAnnule':            ('canceled', bool),
-        'Statut':            ('status', str),
-        'CouleurFond':            ('background_color', str),
+        'Statut':               ('status', str),
+        'CouleurFond':          ('background_color', str),
         'estRetenue':           ('detention', bool),
         'duree':                ('end', int),
         'estSortiePedagogique': ('outing', bool)
@@ -327,7 +299,8 @@ class Lesson:
             self.__setattr__(key, prepared_json[key])
         if self.end:
             self.end = self.start + client.one_hour_duration * self.end
-        self.subject = self.teacher_name = self.classroom = self.group_name = self.student_class = None
+        self.subject = None
+        self.teacher_name = self.classroom = self.group_name = self.student_class = ''
         if 'ListeContenus' in parsed_json:
             for d in parsed_json['ListeContenus']['V']:
                 try:
@@ -348,11 +321,11 @@ class Lesson:
         
         Notes
         -----
-        This property is very inefficient and will send a request to pronote, so don't use it often.
+        This property is very inefficient and will send a request to pronote every time its called, so don't use it often.
         """
         if self._content:
             return self._content
-        week = self._client.get_week(self.start.date())
+        week = self._client._get_week(self.start.date())
         data = {"_Signature_": {"onglet": 89}, "donnees": {"domaine": {"_T": 8, "V": f"[{week}..{week}]"}}}
         response = self._client.communication.post('PageCahierDeTexte', data)
         contents = {}
@@ -368,15 +341,14 @@ class Lesson:
 
 class LessonContent:
     """
-    Represents the content of a lesson. You shouldn't have to create this class manually.
-
-    Attributes
-    ----------
-    title : str
-        title of the lesson content
-    description : str
-        description of the lesson content
+    Represents the content of a lesson.
     """
+
+    title: str
+    """title of the lesson content"""
+    description: str
+    """description of the lesson content"""
+
     attribute_guide = {
         'L': ('title', str),
         'descriptif,V': ('description', lambda d: unescape(re.sub(re.compile('<.*?>'), '', d))),
@@ -398,18 +370,15 @@ class LessonContent:
 
 
 class File:
-    """
-    Represents a file uploaded to pronote.
+    """Represents a file uploaded to pronote."""
 
-    Attributes
-    ----------
-    name : str
-        Name of the file.
-    id : str
-        id of the file (used internally and for url)
-    url : str
-        url of the file
-    """
+    name: str
+    """Name of the file."""
+    id: str
+    """id of the file (used internally and for url)"""
+    url: str
+    """url of the file"""
+
     attribute_guide = {
         'L': ('name', str),
         'N': ('id', str)
@@ -427,14 +396,11 @@ class File:
         self.url = client.communication.root_site+'/FichiersExternes/'+magic_stuff+'/'+quote(self.name, safe='~()*!.\'')+'?Session='+client.attributes['h']
         self._data = None
 
-    def save(self, file_name=None):
+    def save(self, file_name: str = ''):
         """
         Saves the file on to local storage.
 
-        Parameters
-        ----------
-        file_name : str
-            file name
+        :param file_name: File name
         """
         response = self._client.communication.session.get(self.url)
         if not file_name:
@@ -456,24 +422,21 @@ class File:
 
 
 class Homework:
-    """
-    Represents a homework. You shouldn't have to create this class manually.
+    """Represents a homework. You shouldn't have to create this class manually."""
 
-    Attributes
-    ----------
-    id : str
-        the id of the homework (used internally)
-    subject : pronotepy.dataClasses.Subject
-        the subject that the homework is for
-    description : str
-        the description of the homework
-    background_color : str
-        the background color of the homework 
-    done : bool
-        if the homework is marked done
-    date : str
-        deadline
-    """
+    id: str
+    """the id of the homework (used internally)"""
+    subject: Subject
+    """the subject that the homework is for"""
+    description: str
+    """the description of the homework"""
+    background_color: str
+    """the background color of the homework"""
+    done: bool
+    """if the homework is marked done"""
+    date: datetime.datetime
+    """deadline"""
+
     __slots__ = ['id', 'subject', 'description', 'done', 'background_color', '_client', 'date', '_files']
     attribute_guide = {
         'N':            ('id', str),
@@ -486,7 +449,6 @@ class Homework:
     }
 
     def __init__(self, client, parsed_json):
-        self.done = None
         self._client = client
         prepared_json = Util.prepare_json(self.__class__, parsed_json)
         for key in prepared_json:
@@ -496,10 +458,7 @@ class Homework:
         """
         Sets the status of the homework.
 
-        Parameters
-        ----------
-        status : bool
-            The status to which to change
+        :param status: The status to change
         """
         data = {'_Signature_': {'onglet': 88}, 'donnees': {'listeTAF': [
             {'N': self.id, 'TAFFait': status}
@@ -516,20 +475,19 @@ class Homework:
 class Message:
     """
     Represents a message in a discussion.
-
-    Attributes
-    ----------
-    id : str
-        the id of the message (used internally)
-    author : str
-        author of the message
-    recipients : list
-        Recipitents of the message. ! May be just ['# recipients'] !
-    seen : bool
-        if the message was seen
-    date : str
-        the date when the message was sent
     """
+
+    id: str
+    """the id of the message (used internally)"""
+    author: str
+    """author of the message"""
+    recipients: list
+    """Recipients of the message. ! May be just ['# recipients'] !"""
+    seen: bool
+    """if the message was seen"""
+    date: str
+    """the date when the message was sent"""
+
     __slots__ = ['id', 'author', 'recipients', 'seen', 'date', '_client', '_listePM']
     attribute_guide = {
         'N': ('id', str),
