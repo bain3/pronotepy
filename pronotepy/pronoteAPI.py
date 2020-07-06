@@ -168,13 +168,8 @@ class Client(object):
 
         :returns: List[dataClasses.Lesson]
 
-        Parameters
-        ----------
-        date_from : datetime
-            The first date
-        date_to : datetime
-            The second date
-
+        :param date_from: first date
+        :param date_to: second date
         """
         user = self.parametres_utilisateur['donneesSec']['donnees']['ressource']
         data = {"_Signature_": {"onglet": 16},

@@ -257,17 +257,6 @@ class Grade:
 
 class Lesson:
 
-    id: str
-    subject: Subject
-    teacher_name: str
-    classroom: str
-    canceled: bool
-    status: str
-    background_color: str
-    outing: bool
-    start: datetime.datetime
-    group_name: str
-
     """
     Represents a lesson with a given time. You shouldn't have to create this class manually.
 
@@ -295,6 +284,18 @@ class Lesson:
         starting time of the lesson
     group_name : str
         Name of the group."""
+
+    id: str
+    subject: Subject
+    teacher_name: str
+    classroom: str
+    canceled: bool
+    status: str
+    background_color: str
+    outing: bool
+    start: datetime.datetime
+    group_name: str
+
     __slots__ = ['id', 'subject', 'teacher_name', 'classroom', 'start',
                  'canceled', 'status', 'background_color', 'detention', 'end', 'outing', 'group_name', 'student_class', '_client', '_content']
     attribute_guide = {
