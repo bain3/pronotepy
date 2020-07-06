@@ -13,7 +13,7 @@ import threading
 from time import time, sleep
 import zlib
 import json as jsn
-from typing import List
+from typing import List, Callable, Union
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -34,7 +34,7 @@ class Client(object):
         URL of the server
     username : str
     password : str
-    cookies : cookies
+    ent : Callable
         Cookies for ENT connections
 
     Attributes
@@ -48,21 +48,24 @@ class Client(object):
 
     """
 
-    def __init__(self, pronote_url, username: str = '', password: str = '', cookies=None):
+    def __init__(self, pronote_url, username: str = '', password: str = '', ent: Union[Callable, None] = None):
         log.info('INIT')
         # start communication session
-        if not cookies and password == '' and username == '':
+        if not password == '' and username == '':
             raise PronoteAPIError(
                 'Please provide login credentials. Cookies are None, and username and password are empty.')
+
+        self.ent = ent
+        if ent:
+            cookies = ent(username, password)
+        else:
+            cookies = None
+
         self.username = username
         self.password = password
         self.pronote_url = pronote_url
         self.communication = _Communication(pronote_url, cookies, self)
         self.attributes, self.func_options = self.communication.initialise()
-        if 'e' in self.attributes and 'f' in self.attributes:
-            self.ent = True
-        else:
-            self.ent = False
 
         # set up encryption
         self.encryption = _Encryption()
@@ -89,7 +92,7 @@ class Client(object):
         self.logged_in = self._login()
         self._expired = False
 
-    def _login(self):
+    def _login(self) -> bool:
         """
         Logs in the user.
 
@@ -166,7 +169,8 @@ class Client(object):
         """
         Gets all lessons in a given timespan.
 
-        :returns: List[dataClasses.Lesson]
+        :rtype: List[dataClasses.Lesson]
+        :returns: List of lessons
 
         :param date_from: first date
         :param date_to: second date
@@ -187,7 +191,6 @@ class Client(object):
 
         # getting lessons for all the weeks.
         for week in range(first_week, last_week+1):
-            print("send")
             data['NumeroSemaine'] = data['numeroSemaine'] = week
             response = self.communication.post('PageEmploiDuTemps', data)
             l_list = response['donneesSec']['donnees']['ListeCours']
@@ -198,13 +201,13 @@ class Client(object):
         return [lesson for lesson in output if date_from <= lesson.start.date() <= date_to]
 
     @property
-    def periods(self):
+    def periods(self) -> List[dataClasses.Period]:
         """
         Get all of the periods of the year.
 
         Returns
         -------
-        list
+        List[Period]
             All the periods of the year
         """
         if hasattr(self, 'periods_') and self.periods_:
@@ -219,7 +222,7 @@ class Client(object):
             'periodeParDefaut']['V']['N']
         return dataClasses.Util.get(self.periods_, id=id_period)[0]
 
-    def homework(self, date_from: datetime.date, date_to: datetime.date = None):
+    def homework(self, date_from: datetime.date, date_to: datetime.date = None) -> List[dataClasses.Homework]:
         """
         Get homework between two given points.
 
@@ -230,7 +233,7 @@ class Client(object):
 
         Returns
         -------
-        list
+        List[Homework]
             Homework between two given points
         """
         if not date_to:
@@ -255,13 +258,13 @@ class Client(object):
         """
         return _KeepAlive(self)
 
-    def messages(self):
+    def messages(self) -> List[dataClasses.Message]:
         """
         Gets all the discussions in the discussions tab
 
         Returns
         -------
-        list
+        List[Messages]
             Messages
         """
         messages = self.communication.post('ListeMessagerie', {'donnees': {'avecMessage': True, 'avecLu': True},
@@ -276,10 +279,17 @@ class Client(object):
         """
         logging.debug('Reinitialisation')
         self.communication.session.close()
-        self.communication = _Communication(self.pronote_url, None, self)
+
+        if self.ent:
+            cookies = self.ent(self.username, self.password)
+        else:
+            cookies = None
+
+        self.communication = _Communication(self.pronote_url, cookies, self)
         self.attributes, self.func_options = self.communication.initialise()
 
         # set up encryption
+
         self.encryption = _Encryption()
         self.encryption.aes_iv = self.communication.encryption.aes_iv
         self._login()
