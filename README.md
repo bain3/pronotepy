@@ -49,13 +49,11 @@ To self test pronotepy run this command:
 `python -m pronotepy.test_pronotepy`
 
 *Please keep in mind that this uses the demo version of pronote
-and so it can't test every single function.*
+and so it can't test every function.*
 ### Usage
 
 ```diff
-- The usage part of this readme is for the latest version, 
-- if you're installing from pypi, please see the documentation. 
-- It is linked right on the top of this readme.
+- !! The usage part of this readme is for the latest version, if you're installing from pypi, please see the documentation !!
 ```
 
 Here is an example script (example.py):
@@ -86,17 +84,13 @@ For any extra details, please see the documentation linked above.
 
 ### ENT
 
-Pronotepy has builtin functions for getting cookies from some ENTs (if you want your ENT to be supported please 
-contact Xiloe (see contact)). You can pass those functions to the client like this:
+Pronotepy has builtin functions for getting cookies from some ENTs (if you want your ENT to be supported please contact Xiloe (see contact)). You can use those functions like this:
 ```python
 import pronotepy
 from pronotepy.ent import occitanie_montpellier
 
-# creating the client and passing the occitanie_montpellier function so pronotepy can identify the ent.
-client = pronotepy.Client('https://somepronote.index-education.net/pronote/eleve.html',
-                          username='demonstration',
-                          password='pronotevs',
-                          ent=occitanie_montpellier)
+# creating the client and using the occitanie_montpellier function to automatically get cookies from ENT
+client = pronotepy.Client('https://somepronote.index-education.net/pronote/eleve.html', cookies=occitanie_montpellier('user', 'pass'))
 
 # check if sucessfully logged in
 if client.logged_in:
@@ -108,21 +102,15 @@ All the functions return cookies needed to connect to pronote (use docs to see i
 
 ### Long Term Usage
 
-Pronotepy will try and reconnect when the old session expires, but it cannot assure that the old objects will still be working. 
-To prevent having problems with expired objects, please make sure that you're requesting new ones when you have 
-long pauses in between requests to pronote.
+Pronotepy will try and reconnect when the old session expires, but it cannot assure that the old objects will still be working. To prevent having problems with expired objects, please make sure that you're requesting new ones when you have long pauses in between requests to pronote.
 
 ## Contributing
 
 Feel free to contribute anything. Any help is appreciated. To contribute, please create a pull request with your changes.
-Setting up the development environment is just cloning the repository and making sure you have all the dependencies by
-running pip with the requirements.txt file.
 
 ## Adding content
 
-Pronotepy has most of the essential features covered, but if you need anything that is not yet implemented, 
-you can [create an issue](https://github.com/bain3/pronotepy/issues/new) with your request. (or you can contribute 
-by adding it yourself)
+Pronotepy has most of the essential features covered, but if you need anything that is not yet implemented, you can [create an issue](https://github.com/bain3/pronotepy/issues/new) with your request. (or you can contribute by adding it yourself)
 
 ## License
 
@@ -135,9 +123,7 @@ The above copyright notice and this permission notice shall be included in all c
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ## Contact (discord)
-You can contact us by discord if you need help with pronotepy, but **creating an issue is better for everyone**. 
-You don't have to have discord, we don't need to guess who's making the new friend request and everyone else 
-can learn from your questions in the future.
+You can contact us by discord if you need help with pronotepy, but creating an issue is better for everyone. You don't have to have discord, we don't need to guess who's making the new friend request and everyone else can learn from your questions in the future.
 ```plaintext
 bain#5038
 Xiloe#1337 (Contact me for ENT issues)
