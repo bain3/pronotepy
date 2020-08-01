@@ -3,20 +3,14 @@ import unittest
 import pronotepy
 import datetime
 
-client = None
-
-
-def setUpModule():
-    global client
-    client = pronotepy.Client('https://demo.index-education.net/pronote/eleve.html')
-    client.login(username='demonstration', password='pronotevs')
+client = pronotepy.Client('https://demo.index-education.net/pronote/eleve.html', 'demonstration', 'pronotevs')
 
 
 class TestClient(unittest.TestCase):
     global client
 
     def test__get_week(self):
-        self.assertEqual(client._get_week((client.start_day + datetime.timedelta(days=8)).date()), 2)
+        self.assertEqual(client.get_week((client.start_day + datetime.timedelta(days=8)).date()), 2)
 
     def test_lessons(self):
         self.assertIsNotNone(
@@ -31,6 +25,10 @@ class TestClient(unittest.TestCase):
     def test_homework(self):
         self.assertIsNotNone(
             client.homework(client.start_day.date(), (client.start_day + datetime.timedelta(days=8)).date()))
+
+    def test_refresh(self):
+        client.refresh()
+        self.assertEqual(client.session_check(), True)
 
 
 class TestPeriod(unittest.TestCase):
@@ -53,7 +51,7 @@ class TestLesson(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         global client
-        cls.lesson = client.lessons(client.start_day.date())[0]
+        cls.lesson = client.lessons((client.start_day+datetime.timedelta(days=4)).date())[0]
 
     def test_normal(self):
         self.assertIsNotNone(self.lesson.normal)
@@ -66,7 +64,7 @@ class TestLessonContent(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         global client
-        cls.lessonContent = client.lessons(client.start_day.date())[0].content
+        cls.lessonContent = client.lessons((client.start_day+datetime.timedelta(days=4)).date())[0].content
 
     def test_files(self):
         self.assertIsNotNone(self.lessonContent.files)

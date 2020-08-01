@@ -4,6 +4,7 @@ import json
 from urllib.parse import quote
 from Crypto.Util import Padding
 from html import unescape
+from typing import Union
 
 
 def _get_l(d): return d['L']
@@ -11,7 +12,8 @@ def _get_l(d): return d['L']
 
 class Util:
     """Utilities for the API wrapper"""
-    grade_translate = ['Absent', 'Dispense', 'NonNote', 'Inapte', 'NonRendu', 'AbsentZero', 'NonRenduZero', 'Felicitations']
+    grade_translate = ['Absent', 'Dispense', 'NonNote', 'Inapte', 'NonRendu', 'AbsentZero', 'NonRenduZero',
+                       'Felicitations']
 
     @classmethod
     def get(cls, iterable, **kwargs) -> list:
@@ -52,7 +54,7 @@ class Util:
     @classmethod
     def grade_parse(cls, string):
         if '|' in string:
-            return cls.grade_translate[int(string[1])-1]
+            return cls.grade_translate[int(string[1]) - 1]
         else:
             return string
 
@@ -73,9 +75,9 @@ class Subject:
     __slots__ = ['id', 'name', 'groups']
 
     attribute_guide = {
-        'N':                          ('id', str),
-        'L':                          ('name', str),
-        'estServiceEnGroupe':         ('groups', bool)
+        'N': ('id', str),
+        'L': ('name', str),
+        'estServiceEnGroupe': ('groups', bool)
     }
 
     def __init__(self, parsed_json):
@@ -100,6 +102,11 @@ class Period:
         date on which the period ends
     """
 
+    id: str
+    name: str
+    start: datetime.datetime
+    end: datetime.datetime
+
     __slots__ = ['_client', 'id', 'name', 'start', 'end']
     instances = set()
 
@@ -116,7 +123,7 @@ class Period:
         """Get grades from the period."""
         json_data = {'donnees': {'Periode': {'N': self.id, 'L': self.name}}, "_Signature_": {"onglet": 198}}
         response = self._client.communication.post('DernieresNotes', json_data)
-        grades = response.json()['donneesSec']['donnees']['listeDevoirs']['V']
+        grades = response['donneesSec']['donnees']['listeDevoirs']['V']
         return [Grade(g) for g in grades]
 
     @property
@@ -124,7 +131,7 @@ class Period:
         """Get averages from the period."""
         json_data = {'donnees': {'Periode': {'N': self.id, 'L': self.name}}, "_Signature_": {"onglet": 198}}
         response = self._client.communication.post('DernieresNotes', json_data)
-        crs = response.json()['donneesSec']['donnees']['listeServices']['V']
+        crs = response['donneesSec']['donnees']['listeServices']['V']
         return [Average(c) for c in crs]
 
     @property
@@ -133,13 +140,13 @@ class Period:
         Calculation may not be the same as the actual average. (max difference 0.01)"""
         json_data = {'donnees': {'Periode': {'N': self.id, 'L': self.name}}, "_Signature_": {"onglet": 198}}
         response = self._client.communication.post('DernieresNotes', json_data)
-        average = response.json()['donneesSec']['donnees'].get('moyGenerale')
+        average = response['donneesSec']['donnees'].get('moyGenerale')
         if average:
             average = average['V']
-        elif response.json()['donneesSec']['donnees']['listeServices']['V']:
+        elif response['donneesSec']['donnees']['listeServices']['V']:
             a = 0
             total = 0
-            services = response.json()['donneesSec']['donnees']['listeServices']['V']
+            services = response['donneesSec']['donnees']['listeServices']['V']
             for s in services:
                 avrg = s['moyEleve']['V'].replace(',', '.')
                 try:
@@ -150,7 +157,7 @@ class Period:
                     a += flt
                     total += 1
             if total:
-                average = round(a/total, 2)
+                average = round(a / total, 2)
             else:
                 average = -1
         else:
@@ -166,7 +173,7 @@ class Average:
     ----------
     student : str
         students average in the subject
-    class : str
+    class_average : str
         classes average in the subject
     max : str
         highest average in the class
@@ -179,15 +186,24 @@ class Average:
     subject : pronotepy.dataClasses.Subject
         subject the average is from
     """
+
+    student: str
+    class_average: str
+    max: str
+    min: str
+    out_of: str
+    default_out_of: str
+    subject: Subject
+
     attribute_guide = {
         'moyEleve,V': ('student', Util.grade_parse),
         'baremeMoyEleve,V': ('out_of', Util.grade_parse),
         'baremeMoyEleveParDefault,V': ('default_out_of', Util.grade_parse),
-        'moyClasse,V': ('class', Util.grade_parse),
+        'moyClasse,V': ('class_average', Util.grade_parse),
         'moyMin,V': ('min', Util.grade_parse),
         'moyMax,V': ('max', Util.grade_parse)
     }
-    __slots__ = ['student', 'out_of', 'default_out_of', 'class', 'min', 'max', 'subject']
+    __slots__ = ['student', 'out_of', 'default_out_of', 'class_average', 'min', 'max', 'subject']
 
     def __init__(self, parsed_json):
         prepared_json = Util.prepare_json(self.__class__, parsed_json)
@@ -225,19 +241,32 @@ class Grade:
     coefficient : str
         the coefficient of the grade
     """
+
+    id: str
+    grade: str
+    out_of: str
+    default_out_of: str
+    date: str
+    subject: Subject
+    period: Period
+    average: str
+    max: str
+    min: str
+    coefficient: str
+
     attribute_guide = {
-        "N":                  ("id", str),
-        "note,V":             ("grade", Util.grade_parse),
-        "bareme,V":           ("out_of", Util.grade_parse),
+        "N": ("id", str),
+        "note,V": ("grade", Util.grade_parse),
+        "bareme,V": ("out_of", Util.grade_parse),
         "baremeParDefault,V": ("default_out_of", Util.grade_parse),
-        "date,V":             ("date", lambda d: datetime.datetime.strptime(d, '%d/%m/%Y').date()),
-        "service,V":          ("subject", Subject),
-        "periode,V,N":        ("period", lambda p: Util.get(Period.instances, id=p)),
-        "moyenne,V":          ("average", Util.grade_parse),
-        "noteMax,V":          ("max", Util.grade_parse),
-        "noteMin,V":          ("min", Util.grade_parse),
-        "coefficient":        ("coefficient", int),
-        "commentaire":        ("comment", str)
+        "date,V": ("date", lambda d: datetime.datetime.strptime(d, '%d/%m/%Y').date()),
+        "service,V": ("subject", Subject),
+        "periode,V,N": ("period", lambda p: Util.get(Period.instances, id=p)),
+        "moyenne,V": ("average", Util.grade_parse),
+        "noteMax,V": ("max", Util.grade_parse),
+        "noteMin,V": ("min", Util.grade_parse),
+        "coefficient": ("coefficient", int),
+        "commentaire": ("comment", str)
     }
 
     instances = set()
@@ -282,23 +311,36 @@ class Lesson:
         starting time of the lesson
     group_name : str
         Name of the group."""
+
+    id: str
+    subject: Union[Subject, None]
+    teacher_name: str
+    classroom: str
+    canceled: bool
+    status: str
+    background_color: str
+    outing: bool
+    start: datetime.datetime
+    group_name: str
+
     __slots__ = ['id', 'subject', 'teacher_name', 'classroom', 'start',
-                 'canceled', 'status', 'background_color', 'detention', 'end', 'outing', 'group_name', 'student_class', '_client', '_content']
+                 'canceled', 'status', 'background_color', 'detention', 'end', 'outing', 'group_name', 'student_class',
+                 '_client', '_content']
     attribute_guide = {
-        'DateDuCours,V':        ('start', lambda d: datetime.datetime.strptime(d, '%d/%m/%Y %H:%M:%S')),
-        'N':                    ('id', str),
-        'estAnnule':            ('canceled', bool),
-        'Statut':            ('status', str),
-        'CouleurFond':            ('background_color', str),
-        'estRetenue':           ('detention', bool),
-        'duree':                ('end', int),
+        'DateDuCours,V': ('start', lambda d: datetime.datetime.strptime(d, '%d/%m/%Y %H:%M:%S')),
+        'N': ('id', str),
+        'estAnnule': ('canceled', bool),
+        'Statut': ('status', str),
+        'CouleurFond': ('background_color', str),
+        'estRetenue': ('detention', bool),
+        'duree': ('end', int),
         'estSortiePedagogique': ('outing', bool)
     }
     transformers = {
         16: ('subject', Subject),
-        3:  ('teacher_name', _get_l),
+        3: ('teacher_name', _get_l),
         17: ('classroom', _get_l),
-        2:  ('group_name', _get_l)
+        2: ('group_name', _get_l)
     }
 
     def __init__(self, client, parsed_json):
@@ -309,7 +351,8 @@ class Lesson:
             self.__setattr__(key, prepared_json[key])
         if self.end:
             self.end = self.start + client.one_hour_duration * self.end
-        self.subject = self.teacher_name = self.classroom = self.group_name = self.student_class = None
+        self.teacher_name = self.classroom = self.group_name = self.student_class = ''
+        self.subject = None
         if 'ListeContenus' in parsed_json:
             for d in parsed_json['ListeContenus']['V']:
                 try:
@@ -326,7 +369,7 @@ class Lesson:
     @property
     def content(self):
         """
-        Gets content of the lesson.
+        Gets content of the lesson. May be None if there is no description.
         
         Notes
         -----
@@ -334,11 +377,11 @@ class Lesson:
         """
         if self._content:
             return self._content
-        week = self._client._get_week(self.start.date())
+        week = self._client.get_week(self.start.date())
         data = {"_Signature_": {"onglet": 89}, "donnees": {"domaine": {"_T": 8, "V": f"[{week}..{week}]"}}}
         response = self._client.communication.post('PageCahierDeTexte', data)
         contents = {}
-        for lesson in response.json()['donneesSec']['donnees']['ListeCahierDeTextes']['V']:
+        for lesson in response['donneesSec']['donnees']['ListeCahierDeTextes']['V']:
             if lesson['cours']['V']['N'] == self.id:
                 contents = lesson['listeContenus']['V'][0]
                 break
@@ -359,6 +402,10 @@ class LessonContent:
     description : str
         description of the lesson content
     """
+
+    title: str
+    description: str
+
     attribute_guide = {
         'L': ('title', str),
         'descriptif,V': ('description', lambda d: unescape(re.sub(re.compile('<.*?>'), '', d))),
@@ -392,13 +439,18 @@ class File:
     url : str
         url of the file
     """
+
+    name: str
+    id: str
+    url: str
+
     attribute_guide = {
         'L': ('name', str),
         'N': ('id', str)
     }
 
     __slots__ = ['name', 'id', '_client', 'url', '_data']
-    
+
     def __init__(self, client, parsed_json):
         prepared_json = Util.prepare_json(self.__class__, parsed_json)
         for key in prepared_json:
@@ -406,7 +458,10 @@ class File:
         self._client = client
         padd = Padding.pad(json.dumps({'N': self.id, 'Actif': True}).replace(' ', '').encode(), 16)
         magic_stuff = client.communication.encryption.aes_encrypt(padd).hex()
-        self.url = client.communication.root_site+'/FichiersExternes/'+magic_stuff+'/'+quote(self.name, safe='~()*!.\'')+'?Session='+client.attributes['h']
+        self.url = client.communication.root_site \
+                   + '/FichiersExternes/' \
+                   + magic_stuff + '/' + quote(self.name, safe='~()*!.\'') \
+                   + '?Session=' + client.attributes['h']
         self._data = None
 
     def save(self, file_name=None):
@@ -456,19 +511,27 @@ class Homework:
     date : str
         deadline
     """
+
+    id: str
+    subject: Subject
+    description: str
+    background_color: str
+    done: bool
+    date: datetime.date
+
     __slots__ = ['id', 'subject', 'description', 'done', 'background_color', '_client', 'date', '_files']
     attribute_guide = {
-        'N':            ('id', str),
+        'N': ('id', str),
         'descriptif,V': ('description', lambda d: unescape(re.sub(re.compile('<.*?>'), '', d))),
-        'TAFFait':      ('done', bool),
-        'Matiere,V':    ('subject', Subject),
-        'CouleurFond':  ('background_color', str),
-        'PourLe,V':     ('date', lambda d: datetime.datetime.strptime(d, '%d/%m/%Y').date()),
+        'TAFFait': ('done', bool),
+        'Matiere,V': ('subject', Subject),
+        'CouleurFond': ('background_color', str),
+        'PourLe,V': ('date', lambda d: datetime.datetime.strptime(d, '%d/%m/%Y').date()),
         'ListePieceJointe,V': ('_files', tuple)
     }
 
     def __init__(self, client, parsed_json):
-        self.done = None
+        self.done = False
         self._client = client
         prepared_json = Util.prepare_json(self.__class__, parsed_json)
         for key in prepared_json:
@@ -512,6 +575,13 @@ class Message:
     date : str
         the date when the message was sent
     """
+
+    id: str
+    author: str
+    recipients: list
+    seen: bool
+    date: str
+
     __slots__ = ['id', 'author', 'recipients', 'seen', 'date', '_client', '_listePM']
     attribute_guide = {
         'N': ('id', str),
@@ -537,7 +607,7 @@ class Message:
                             'listePossessionsMessages': self._listePM},
                 '_Signature_': {'onglet': 131}}
         resp = self._client.communication.post('ListeMessages', data)
-        for m in resp.json()['donneesSec']['donnees']['listeMessages']['V']:
+        for m in resp['donneesSec']['donnees']['listeMessages']['V']:
             if m['N'] == self.id:
                 if type(m['contenu']) == dict:
                     return unescape(re.sub(re.compile('<.*?>'), '', m['contenu']['V']))

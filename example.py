@@ -6,10 +6,11 @@ import pronotepy
 # Ex.: https://your-school.com/pronote/students <-- BAD
 #      https://0000000a.index-education.net/pronote/eleve.html <-- GOOD
 
-client = pronotepy.Client('https://demo.index-education.net/pronote/eleve.html')
+client = pronotepy.Client('https://demo.index-education.net/pronote/eleve.html',
+                          username='demonstration',
+                          password='pronotevs')
 
-if client.login('demonstration', 'pronotevs'):  # login() returns bool that signifies if it successfully logged itself in
-
+if client.logged_in:
     # get the all the periods (may return multiple types like trimesters and semesters but it doesn't really matter
     # the api will get it anyway)
     periods = client.periods
