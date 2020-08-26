@@ -1,19 +1,21 @@
-import requests
-from bs4 import BeautifulSoup
-import secrets
-from Crypto.Hash import MD5, SHA256
-from Crypto.Cipher import AES, PKCS1_v1_5
-from Crypto.Util import Padding
-from Crypto.PublicKey import RSA
 import base64
-import logging
 import datetime
-from . import dataClasses
-import threading
-from time import time, sleep
-import zlib
 import json as jsn
-from typing import List, Callable, Union
+import logging
+import secrets
+import threading
+import zlib
+from time import time, sleep
+from typing import List, Callable, Optional
+
+import requests
+from Crypto.Cipher import AES, PKCS1_v1_5
+from Crypto.Hash import MD5, SHA256
+from Crypto.PublicKey import RSA
+from Crypto.Util import Padding
+from bs4 import BeautifulSoup
+
+from . import dataClasses
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -48,7 +50,7 @@ class Client(object):
 
     """
 
-    def __init__(self, pronote_url, username: str = '', password: str = '', ent: Union[Callable, None] = None):
+    def __init__(self, pronote_url, username: str = '', password: str = '', ent: Optional[Callable] = None):
         log.info('INIT')
         # start communication session
         if not password == '' and username == '':
@@ -165,7 +167,7 @@ class Client(object):
     def get_week(self, date: datetime.date):
         return 1 + int((date - self.start_day.date()).days / 7)
 
-    def lessons(self, date_from: datetime.date, date_to: datetime.date = None):
+    def lessons(self, date_from: datetime.date, date_to: datetime.date = None) -> List[dataClasses.Lesson]:
         """
         Gets all lessons in a given timespan.
 
@@ -191,7 +193,7 @@ class Client(object):
 
         # getting lessons for all the weeks.
         for week in range(first_week, last_week+1):
-            data['NumeroSemaine'] = data['numeroSemaine'] = week
+            data['donnees']['NumeroSemaine'] = data['donnees']['numeroSemaine'] = week
             response = self.communication.post('PageEmploiDuTemps', data)
             l_list = response['donneesSec']['donnees']['ListeCours']
             for lesson in l_list:
@@ -216,7 +218,7 @@ class Client(object):
         return [dataClasses.Period(self, j) for j in json]
 
     @property
-    def current_period(self):
+    def current_period(self) -> dataClasses.Period:
         """Get the current period."""
         id_period = self.parametres_utilisateur['donneesSec']['donnees']['ressource']['listeOngletsPourPeriodes']['V'][0][
             'periodeParDefaut']['V']['N']
