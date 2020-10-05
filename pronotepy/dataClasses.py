@@ -265,7 +265,7 @@ class Grade:
         "moyenne,V": ("average", Util.grade_parse),
         "noteMax,V": ("max", Util.grade_parse),
         "noteMin,V": ("min", Util.grade_parse),
-        "coefficient": ("coefficient", int),
+        "coefficient": ("coefficient", str),
         "commentaire": ("comment", str)
     }
 
