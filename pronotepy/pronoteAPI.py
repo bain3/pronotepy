@@ -103,7 +103,7 @@ class Client(object):
         bool
             True if logged in, False if not
         """
-        if self.ent is True:
+        if self.ent:
             self.username = self.attributes['e']
             self.password = self.attributes['f']
         # identification phase
@@ -111,7 +111,7 @@ class Client(object):
             "genreConnexion": 0,
             "genreEspace": int(self.attributes['a']),
             "identifiant": self.username,
-            "pourENT": self.ent,
+            "pourENT": True if self.ent else False,
             "enConnexionAuto": False,
             "demandeConnexionAuto": False,
             "demandeConnexionAppliMobile": False,
@@ -128,7 +128,7 @@ class Client(object):
         e.aes_set_iv(self.communication.encryption.aes_iv)
 
         # key gen
-        if self.ent is True:
+        if self.ent:
             motdepasse = SHA256.new(str(self.password).encode()).hexdigest().upper()
             e.aes_key = MD5.new(motdepasse.encode()).digest()
         else:
