@@ -383,8 +383,10 @@ class Lesson:
         contents = {}
         for lesson in response['donneesSec']['donnees']['ListeCahierDeTextes']['V']:
             if lesson['cours']['V']['N'] == self.id:
-                contents = lesson['listeContenus']['V'][0]
-                break
+                if len(lesson['listeContenus']['V']) > 0:
+                    contents = lesson['listeContenus']['V'][0]
+                    break
+                else: return None
         if not contents:
             return None
         self._content = LessonContent(self._client, contents)
