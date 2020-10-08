@@ -382,7 +382,7 @@ class Lesson:
         response = self._client.communication.post('PageCahierDeTexte', data)
         contents = {}
         for lesson in response['donneesSec']['donnees']['ListeCahierDeTextes']['V']:
-            if lesson['cours']['V']['N'] == self.id:
+            if lesson['cours']['V']['N'] == self.id and lesson['listeContenus']['V']:
                 contents = lesson['listeContenus']['V'][0]
                 break
         if not contents:
