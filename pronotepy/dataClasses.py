@@ -240,6 +240,8 @@ class Grade:
         the lowest grade of the test
     coefficient : str
         the coefficient of the grade
+    comment : str
+        the comment on the grade description
     """
 
     id: str
@@ -253,6 +255,7 @@ class Grade:
     max: str
     min: str
     coefficient: str
+    comment: str
 
     attribute_guide = {
         "N": ("id", str),
