@@ -133,5 +133,5 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 ## Contact (discord)
 You can contact us by discord if you need help with pronotepy, but **creating an issue is better for everyone**. You don't have to have discord, we don't need to guess who's making the new friend request and everyone else can learn from your questions in the future.
 
-[![bain contact](https://api.xiloe.fr/discordbadge.php?id=430369724275097612)](https://github.com/bain3)</br>
-[![xiloe contact](https://api.xiloe.fr/discordbadge.php?id=665728472647204886)](https://github.com/Xiloe) (Contact me for ENT issues)
+[![bain contact](https://api.xiloe.fr/v1/badges/badge.php?id=430369724275097612)](https://github.com/bain3)</br>
+[![xiloe contact](https://api.xiloe.fr/v1/badges/badge.php?id=665728472647204886)](https://github.com/Xiloe) (Contact me for ENT issues)
