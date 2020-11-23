@@ -313,7 +313,10 @@ class Lesson:
     start : str
         starting time of the lesson
     group_name : str
-        Name of the group."""
+        Name of the group.
+    exempted : bool
+        Specifies if the student's presence is exempt.
+    """
 
     id: str
     subject: Union[Subject, None]
@@ -325,9 +328,11 @@ class Lesson:
     outing: bool
     start: datetime.datetime
     group_name: str
+    exempted: bool
 
     __slots__ = ['id', 'subject', 'teacher_name', 'classroom', 'start',
-                 'canceled', 'status', 'background_color', 'detention', 'end', 'outing', 'group_name', 'student_class',
+                 'canceled', 'status', 'background_color', 'detention',
+                'end', 'outing', 'group_name', 'student_class', 'exempted',
                  '_client', '_content']
     attribute_guide = {
         'DateDuCours,V': ('start', lambda d: datetime.datetime.strptime(d, '%d/%m/%Y %H:%M:%S')),
@@ -337,7 +342,8 @@ class Lesson:
         'CouleurFond': ('background_color', str),
         'estRetenue': ('detention', bool),
         'duree': ('end', int),
-        'estSortiePedagogique': ('outing', bool)
+        'estSortiePedagogique': ('outing', bool),
+        'dispenseEleve': ('exempted', bool)
     }
     transformers = {
         16: ('subject', Subject),
