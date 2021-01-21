@@ -6,7 +6,7 @@ import secrets
 import threading
 import zlib
 from time import time, sleep
-from typing import List, Callable, Optional
+from typing import List, Callable, Optional, Union
 
 import requests
 from Crypto.Cipher import AES, PKCS1_v1_5
@@ -47,7 +47,8 @@ class Client(object):
         The current week of the school year
     logged_in : bool
         If the user is successfully logged in
-
+    info: dataClasses.ClientInfo
+        Provides information about the current client. Name etc...
     """
 
     def __init__(self, pronote_url, username: str = '', password: str = '', ent: Optional[Callable] = None):
@@ -76,7 +77,7 @@ class Client(object):
         # some other attribute creation
         self._last_ping = time()
 
-        self.parametres_utilisateur = self.auth_cookie = None
+        self.parametres_utilisateur = self.auth_cookie = self.info = None
 
         self.date = datetime.datetime.now()
         self.start_day = datetime.datetime.strptime(
@@ -157,7 +158,9 @@ class Client(object):
 
             # getting listeOnglets separately because of pronote API change
             self.parametres_utilisateur = self.communication.post('ParametresUtilisateur', {})
-            self.communication.authorized_onglets = _prepare_onglets(self.parametres_utilisateur['donneesSec']['donnees']['listeOnglets'])
+            self.info = dataClasses.ClientInfo(self.parametres_utilisateur['donneesSec']['donnees']['ressource'])
+            self.communication.authorized_onglets = _prepare_onglets(
+                self.parametres_utilisateur['donneesSec']['donnees']['listeOnglets'])
             log.info("got onglets data.")
             return True
         else:
@@ -178,12 +181,11 @@ class Client(object):
         :param date_to: second date
         """
         user = self.parametres_utilisateur['donneesSec']['donnees']['ressource']
-        data = {"_Signature_": {"onglet": 16},
-                "donnees": {"ressource": user,
-                            "avecAbsencesEleve": False, "avecConseilDeClasse": True,
-                            "estEDTPermanence": False, "avecAbsencesRessource": True,
-                            "avecDisponibilites": True, "avecInfosPrefsGrille": True,
-                            "Ressource": user}}
+        data = {"ressource": user,
+                "avecAbsencesEleve": False, "avecConseilDeClasse": True,
+                "estEDTPermanence": False, "avecAbsencesRessource": True,
+                "avecDisponibilites": True, "avecInfosPrefsGrille": True,
+                "Ressource": user}
         output = []
 
         first_week = self.get_week(date_from)
@@ -192,9 +194,9 @@ class Client(object):
         last_week = self.get_week(date_to)
 
         # getting lessons for all the weeks.
-        for week in range(first_week, last_week+1):
-            data['donnees']['NumeroSemaine'] = data['donnees']['numeroSemaine'] = week
-            response = self.communication.post('PageEmploiDuTemps', data)
+        for week in range(first_week, last_week + 1):
+            data['NumeroSemaine'] = data['numeroSemaine'] = week
+            response = self.post('PageEmploiDuTemps', 16, data)
             l_list = response['donneesSec']['donnees']['ListeCours']
             for lesson in l_list:
                 output.append(dataClasses.Lesson(self, lesson))
@@ -220,8 +222,9 @@ class Client(object):
     @property
     def current_period(self) -> dataClasses.Period:
         """Get the current period."""
-        id_period = self.parametres_utilisateur['donneesSec']['donnees']['ressource']['listeOngletsPourPeriodes']['V'][0][
-            'periodeParDefaut']['V']['N']
+        id_period = \
+            self.parametres_utilisateur['donneesSec']['donnees']['ressource']['listeOngletsPourPeriodes']['V'][0][
+                'periodeParDefaut']['V']['N']
         return dataClasses.Util.get(self.periods_, id=id_period)[0]
 
     def homework(self, date_from: datetime.date, date_to: datetime.date = None) -> List[dataClasses.Homework]:
@@ -241,10 +244,10 @@ class Client(object):
         if not date_to:
             date_to = datetime.datetime.strptime(
                 self.func_options['donneesSec']['donnees']['General']['DerniereDate']['V'], '%d/%m/%Y').date()
-        json_data = {'donnees': {
-            'domaine': {'_T': 8, 'V': f"[{self.get_week(date_from)}..{self.get_week(date_to)}]"}},
-            '_Signature_': {'onglet': 88}}
-        response = self.communication.post('PageCahierDeTexte', json_data)
+        json_data = {
+            'domaine': {'_T': 8, 'V': f"[{self.get_week(date_from)}..{self.get_week(date_to)}]"}}
+
+        response = self.post('PageCahierDeTexte', 88, json_data)
         h_list = response['donneesSec']['donnees']['ListeTravauxAFaire']['V']
         out = []
         for h in h_list:
@@ -269,8 +272,7 @@ class Client(object):
         List[Messages]
             Messages
         """
-        messages = self.communication.post('ListeMessagerie', {'donnees': {'avecMessage': True, 'avecLu': True},
-                                                               '_Signature_': {'onglet': 131}})
+        messages = self.post('ListeMessagerie', 131, {'avecMessage': True, 'avecLu': True})
         return [dataClasses.Message(self, m) for m in messages['donneesSec']['donnees']['listeMessagerie']['V']
                 if not m.get('estUneDiscussion')]
 
@@ -302,11 +304,32 @@ class Client(object):
 
     def session_check(self) -> bool:
         """Checks if the session has expired and refreshes it if it had (returns bool signifying if it was expired)"""
-        self.communication.post('Presence', {'_Signature_': {'onglet': 7}})
+        self.post('Presence', 7, {})
         if self._expired:
             self._expired = False
             return True
         return False
+
+    def post(self, function_name: str, onglet: int, data: dict):
+        """
+        Preforms a raw post to the PRONOTE server. Adds signature, then passes it to _Communication.post
+
+        Parameters
+        ----------
+        function_name: str
+        onglet: int
+        data: dict
+
+        Returns
+        -------
+        Raw JSON
+        """
+        post_data = {
+            '_Signature_': {'onglet': onglet}
+        }
+        if data:
+            post_data['donnees'] = data
+        return self.communication.post(function_name, post_data)
 
 
 class _Communication(object):
@@ -348,7 +371,8 @@ class _Communication(object):
         self.compress_requests = not self.attributes.get("sCoA", False)
 
         # we need to catch this exception. the iv was not yet set and we need to decrypt it with the correct iv.
-        initial_response = self.post('FonctionParametres', {'donnees': json_post}, decryption_change={'iv': MD5.new(self.encryption.aes_iv_temp).digest()})
+        initial_response = self.post('FonctionParametres', {'donnees': json_post},
+                                     decryption_change={'iv': MD5.new(self.encryption.aes_iv_temp).digest()})
         return self.attributes, initial_response
 
     def post(self, function_name: str, data: dict, recursive: bool = False, decryption_change=None):
@@ -568,6 +592,87 @@ class _KeepAlive(threading.Thread):
         self.join()
 
 
+class ParentClient(Client):
+    """
+    A parent PRONOTE client.
+
+    Parameters
+    ----------
+    pronote_url : str
+        URL of the server
+    username : str
+    password : str
+    ent : Callable
+        Cookies for ENT connections
+
+    Attributes
+    ----------
+    start_day : datetime.datetime
+        The first day of the school year
+    week : int
+        The current week of the school year
+    logged_in : bool
+        If the user is successfully logged in
+    info: dataClasses.ClientInfo
+        Provides information about the current client. Name etc...
+    children: List[dataClasses.ClientInfo]
+        List of sub-clients representing all the children connected to the main parent account.
+    """
+    def __init__(self, pronote_url, username: str = '', password: str = '', ent: Optional[Callable] = None,
+                 child: str = None):
+        super().__init__(pronote_url, username, password, ent)
+        self.children = []
+        self._selected_child = None
+        for c in self.parametres_utilisateur['donneesSec']['donnees']['ressource']['listeRessources']:
+            self.children.append(dataClasses.ClientInfo(c))
+
+        if not self.children:
+            raise ChildNotFound('No children were found.')
+        self.set_child(child if child else self.children[0])
+
+    def set_child(self, child: Union[str, dataClasses.ClientInfo]) -> None:
+        """
+        Select a child
+
+        Parameters
+        ----------
+        child: Union[str, dataClasses.ClientInfo]
+            Name or ClientInfo of a child.
+        """
+        if type(child) == str:
+            c = dataClasses.Util.get(self.children, name=child)
+            c = c[0] if c else None
+        else:
+            c = child
+
+        if not c:
+            raise ChildNotFound(f"A child with the name {child} was not found.")
+
+        self._selected_child = c
+        self.parametres_utilisateur['donneesSec']['donnees']['ressource'] = c.raw_resource
+
+    def post(self, function_name: str, onglet: int, data: dict):
+        """
+        Preforms a raw post to the PRONOTE server. Adds signature, then passes it to _Communication.post
+
+        Parameters
+        ----------
+        function_name: str
+        onglet: int
+        data: dict
+
+        Returns
+        -------
+        Raw JSON
+        """
+        post_data = {
+            '_Signature_': {'onglet': onglet, 'membre': {'N': self._selected_child.id, 'G': 4}}
+        }
+        if data:
+            post_data['donnees'] = data
+        return self.communication.post(function_name, post_data)
+
+
 class PronoteAPIError(Exception):
     """
     Base exception for any pronote api errors
@@ -583,3 +688,7 @@ class CryptoError(PronoteAPIError):
 class ExpiredObject(PronoteAPIError):
     """Raised when pronote returns error 22. (unknown object reference)"""
     pass
+
+
+class ChildNotFound(PronoteAPIError):
+    """Child with this name was not found."""

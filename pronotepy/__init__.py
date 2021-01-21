@@ -21,7 +21,7 @@ __title__ = 'pronotepy'
 __author__ = 'bain, Xiloe'
 __license__ = 'MIT'
 __copyright__ = 'Copyright (c) bain, Xiloe'
-__version__ = '1.1.3'
+__version__ = '1.1.8'
 
-from .pronoteAPI import Client
+from .pronoteAPI import Client, ParentClient
 from .dataClasses import *

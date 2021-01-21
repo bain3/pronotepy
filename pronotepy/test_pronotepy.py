@@ -70,5 +70,19 @@ class TestLessonContent(unittest.TestCase):
         self.assertIsNotNone(self.lessonContent.files)
 
 
+class TestParentClient(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.client = pronotepy.ParentClient('https://demo.index-education.net/pronote/parent.html', 'demonstration', 'pronotevs')
+
+    def test_set_child(self):
+        self.client.set_child(self.client.children[1])
+        self.client.set_child('PARENT Fanny')
+
+    def test_homework(self):
+        self.assertIsNotNone(
+            self.client.homework(self.client.start_day.date(), (self.client.start_day + datetime.timedelta(days=8)).date()))
+
+
 if __name__ == '__main__':
     unittest.main()

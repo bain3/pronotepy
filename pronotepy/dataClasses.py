@@ -4,7 +4,7 @@ import json
 from urllib.parse import quote
 from Crypto.Util import Padding
 from html import unescape
-from typing import Union
+from typing import Union, List
 
 
 def _get_l(d): return d['L']
@@ -121,16 +121,16 @@ class Period:
     @property
     def grades(self):
         """Get grades from the period."""
-        json_data = {'donnees': {'Periode': {'N': self.id, 'L': self.name}}, "_Signature_": {"onglet": 198}}
-        response = self._client.communication.post('DernieresNotes', json_data)
+        json_data = {'N': self.id, 'L': self.name}
+        response = self._client.post('DernieresNotes', 198, json_data)
         grades = response['donneesSec']['donnees']['listeDevoirs']['V']
         return [Grade(g) for g in grades]
 
     @property
     def averages(self):
         """Get averages from the period."""
-        json_data = {'donnees': {'Periode': {'N': self.id, 'L': self.name}}, "_Signature_": {"onglet": 198}}
-        response = self._client.communication.post('DernieresNotes', json_data)
+        json_data = {'N': self.id, 'L': self.name}
+        response = self._client.post('DernieresNotes', 198, json_data)
         crs = response['donneesSec']['donnees']['listeServices']['V']
         return [Average(c) for c in crs]
 
@@ -138,8 +138,8 @@ class Period:
     def overall_average(self):
         """Get overall average from the period. If the period average is not provided by pronote, then it's calculated.
         Calculation may not be the same as the actual average. (max difference 0.01)"""
-        json_data = {'donnees': {'Periode': {'N': self.id, 'L': self.name}}, "_Signature_": {"onglet": 198}}
-        response = self._client.communication.post('DernieresNotes', json_data)
+        json_data = {'N': self.id, 'L': self.name}
+        response = self._client.post('DernieresNotes', 198, json_data)
         average = response['donneesSec']['donnees'].get('moyGenerale')
         if average:
             average = average['V']
@@ -332,7 +332,7 @@ class Lesson:
 
     __slots__ = ['id', 'subject', 'teacher_name', 'classroom', 'start',
                  'canceled', 'status', 'background_color', 'detention',
-                'end', 'outing', 'group_name', 'student_class', 'exempted',
+                 'end', 'outing', 'group_name', 'student_class', 'exempted',
                  '_client', '_content']
     attribute_guide = {
         'DateDuCours,V': ('start', lambda d: datetime.datetime.strptime(d, '%d/%m/%Y %H:%M:%S')),
@@ -387,8 +387,8 @@ class Lesson:
         if self._content:
             return self._content
         week = self._client.get_week(self.start.date())
-        data = {"_Signature_": {"onglet": 89}, "donnees": {"domaine": {"_T": 8, "V": f"[{week}..{week}]"}}}
-        response = self._client.communication.post('PageCahierDeTexte', data)
+        data = {"domaine": {"_T": 8, "V": f"[{week}..{week}]"}}
+        response = self._client.post('PageCahierDeTexte', 89, data)
         contents = {}
         for lesson in response['donneesSec']['donnees']['ListeCahierDeTextes']['V']:
             if lesson['cours']['V']['N'] == self.id and lesson['listeContenus']['V']:
@@ -555,10 +555,10 @@ class Homework:
         status : bool
             The status to which to change
         """
-        data = {'_Signature_': {'onglet': 88}, 'donnees': {'listeTAF': [
+        data = {'listeTAF': [
             {'N': self.id, 'TAFFait': status}
-        ]}}
-        if self._client.communication.post("SaisieTAFFaitEleve", data):
+        ]}
+        if self._client.post("SaisieTAFFaitEleve", 88, data):
             self.done = status
 
     @property
@@ -610,12 +610,11 @@ class Message:
     @property
     def content(self):
         """Returns the content of the message"""
-        data = {'donnees': {'message': {'N': self.id},
-                            'marquerCommeLu': False,
-                            'estNonPossede': False,
-                            'listePossessionsMessages': self._listePM},
-                '_Signature_': {'onglet': 131}}
-        resp = self._client.communication.post('ListeMessages', data)
+        data = {'message': {'N': self.id},
+                'marquerCommeLu': False,
+                'estNonPossede': False,
+                'listePossessionsMessages': self._listePM}
+        resp = self._client.post('ListeMessages', 131, data)
         for m in resp['donneesSec']['donnees']['listeMessages']['V']:
             if m['N'] == self.id:
                 if type(m['contenu']) == dict:
@@ -623,6 +622,35 @@ class Message:
                 else:
                     return m['contenu']
         return None
+
+
+class ClientInfo:
+    """
+    Contains info for a resource (a client).
+
+    Attributes
+    ----------
+    id: str
+      id of the client (used internally)
+    name: str
+      name of the client
+    delegue: List[str]
+      list of classes of which the user is a delegue of
+    raw_resource: dict
+      Raw json defining the resource
+    """
+
+    id: str
+    name: str
+    delegue: List[str]
+
+    __slots__ = ['id', 'name', 'delegue', 'raw_resource']
+
+    def __init__(self, json_):
+        self.name = json_['L']
+        self.id = json_['N']
+        self.delegue = [class_['L'] for class_ in json_['listeClassesDelegue']['V']] if json_.get('estDelegue') else []
+        self.raw_resource = json_
 
 
 class DataError(Exception):
