@@ -46,6 +46,13 @@ class TestPeriod(unittest.TestCase):
     def test_overall_average(self):
         self.assertIsNotNone(self.period.overall_average)
 
+    def test_evaluations(self):
+        evaluations = self.period.evaluations
+        self.assertIsNotNone(evaluations)
+        for evaluation in evaluations:
+            for acquisition in evaluation:
+                self.assertIsNotNone(acquisition)
+
 
 class TestLesson(unittest.TestCase):
     @classmethod

@@ -164,6 +164,13 @@ class Period:
             average = -1
         return average
 
+    @property
+    def evaluations(self):
+        json_data = {'periode': {'N': self.id, 'L': self.name, 'G': 2}}
+        response = self._client.post('DernieresEvaluations', 201, json_data)
+        evaluations = response['donneesSec']['donnees']['listeEvaluations']['V']
+        return [Evaluation(e) for e in evaluations]
+
 
 class Average:
     """
@@ -636,21 +643,157 @@ class ClientInfo:
       name of the client
     delegue: List[str]
       list of classes of which the user is a delegue of
+    classe: str
+      name of the student's class
     raw_resource: dict
       Raw json defining the resource
     """
 
     id: str
-    name: str
-    delegue: List[str]
 
-    __slots__ = ['id', 'name', 'delegue', 'raw_resource']
+    __slots__ = ['id', 'raw_resource']
 
     def __init__(self, json_):
-        self.name = json_['L']
         self.id = json_['N']
-        self.delegue = [class_['L'] for class_ in json_['listeClassesDelegue']['V']] if json_.get('estDelegue') else []
         self.raw_resource = json_
+
+    @property
+    def name(self):
+        return self.raw_resource['L']
+
+    @property
+    def delegue(self):
+        if self.raw_resource['estDelegue']:
+            return [class_['L'] for class_ in self.raw_resource['listeClassesDelegue']['V']]
+        else:
+            return []
+
+    @property
+    def classe(self):
+        return self.raw_resource.get('classeDEleve', {}).get('L', '')
+
+    @property
+    def establishment(self):
+        return self.raw_resource.get('Etablissement', {'V': {'L': ""}})['V']['L']
+
+
+class Acquisition:
+    """
+    Contains acquisition info for an evaluation.
+
+    Attributes
+    ----------
+    order: int
+        Telling the order in which the acquisition is. The list of acquisitions is already sorted by this.
+    level: str
+        the level achieved for this acquisition
+    id: int
+        id, used internally
+    abbreviation: str
+        abbreviation for the level achieved
+    coefficient: int
+        coefficient
+    domain: str
+        domain in which the acquisition is
+    domain_id: str
+    name: str
+        name (description) of the acquisition
+    name_id: str
+    pillar: str
+    pillar_id: str
+    pillar_prefix: str
+    """
+    order: int
+    level: str
+    id: str
+    abbreviation: str
+    coefficient: int
+    domain: str
+    domain_id: str
+    name: str
+    name_id: str
+    pillar: str
+    pillar_id: str
+    pillar_prefix: str
+
+    attribute_guide = {
+        'L': ('level', str),
+        'N': ('id', str),
+        'abbreviation': ('abbreviation', str),
+        'coefficient': ('coefficient', int),
+        'domaine,V,L': ('domain', str),
+        'domaine,V,N': ('domain_id', str),
+        'item,V,L': ('name', str),
+        'item,V,N': ('name_id', str),
+        'ordre': ('order', int),
+        'pilier,V,L': ('pillar', str),
+        'pilier,V,N': ('pillar_id', str),
+        'pilier,V,strPrefixes': ('pillar_prefix', str)
+    }
+
+    __slots__ = [
+        "order", "level", "id", "abbreviation", "coefficient", "domain", "domain_id", "name", "name_id", "pillar",
+        "pillar_id", "pillar_prefix"]
+
+    def __init__(self, json_):
+        prepared_json = Util.prepare_json(self.__class__, json_)
+        for key in prepared_json:
+            self.__setattr__(key, prepared_json[key])
+
+
+class Evaluation:
+    """
+    Data class for an evaluation.
+
+    Attributes
+    ----------
+    name: str
+    id: str
+    domain: str
+    teacher: str
+        the teacher who issued the evaluation
+    coefficient: int
+    description: str
+    subject: pronotepy.dataClasses.Subject
+    paliers: List[str]
+    acquisitions: List[pronotepy.dataClasses.Acquisition]
+    date: datetime.date
+    """
+    name: str
+    name: str
+    id: str
+    domain: str
+    teacher: str
+    coefficient: int
+    description: str
+    subject: Subject
+    paliers: List[str]
+    acquisitions: List[Acquisition]
+    date: datetime.date
+
+    __slots__ = [
+        "name", "name", "id", "domain", "teacher", "coefficient", "description", "subject", "paliers", "acquisitions",
+        "date"]
+
+    attribute_guide = {
+        'L': ('name', str),
+        'N': ('id', str),
+        'domaine,V,L': ('domain', str),
+        'individu,V,L': ('teacher', str),
+        'coefficient': ('coefficient', int),
+        'descriptif': ('description', str),
+        'matiere,V': ('subject', Subject),
+        'listePaliers,V': ('paliers', lambda x: [_get_l(y) for y in x]),
+        # Can we just appreciate the readability of this?
+        'listeNiveauxDAcquisitions,V': (
+            'acquisitions', lambda x: sorted([Acquisition(y) for y in x], key=lambda z: z.order)),
+        "date,V": ("date", lambda d: datetime.datetime.strptime(d, '%d/%m/%Y').date()),
+    }
+
+    def __init__(self, json_):
+        prepared_json = Util.prepare_json(self.__class__, json_)
+        for key in prepared_json:
+            self.__setattr__(key, prepared_json[key])
 
 
 class DataError(Exception):
