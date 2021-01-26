@@ -50,7 +50,7 @@ class TestPeriod(unittest.TestCase):
         evaluations = self.period.evaluations
         self.assertIsNotNone(evaluations)
         for evaluation in evaluations:
-            for acquisition in evaluation:
+            for acquisition in evaluation.acquisitions:
                 self.assertIsNotNone(acquisition)
 
 
