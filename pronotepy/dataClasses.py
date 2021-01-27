@@ -643,7 +643,7 @@ class ClientInfo:
       name of the client
     delegue: List[str]
       list of classes of which the user is a delegue of
-    classe: str
+    class_name: str
       name of the student's class
     raw_resource: dict
       Raw json defining the resource
@@ -669,7 +669,7 @@ class ClientInfo:
             return []
 
     @property
-    def classe(self):
+    def class_name(self):
         return self.raw_resource.get('classeDEleve', {}).get('L', '')
 
     @property
