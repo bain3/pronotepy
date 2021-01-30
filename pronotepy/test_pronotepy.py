@@ -10,11 +10,11 @@ class TestClient(unittest.TestCase):
     global client
 
     def test__get_week(self):
-        self.assertEqual(client.get_week((client.start_day + datetime.timedelta(days=8)).date()), 2)
+        self.assertEqual(client.get_week(client.start_day + datetime.timedelta(days=8)), 2)
 
     def test_lessons(self):
         self.assertIsNotNone(
-            client.lessons(client.start_day.date(), (client.start_day + datetime.timedelta(days=8)).date()))
+            client.lessons(client.start_day, client.start_day + datetime.timedelta(days=8)))
 
     def test_periods(self):
         self.assertIsNotNone(client.periods)
@@ -24,7 +24,7 @@ class TestClient(unittest.TestCase):
 
     def test_homework(self):
         self.assertIsNotNone(
-            client.homework(client.start_day.date(), (client.start_day + datetime.timedelta(days=8)).date()))
+            client.homework(client.start_day, client.start_day + datetime.timedelta(days=8)))
 
     def test_refresh(self):
         client.refresh()
@@ -58,7 +58,7 @@ class TestLesson(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         global client
-        cls.lesson = client.lessons((client.start_day+datetime.timedelta(days=4)).date())[0]
+        cls.lesson = client.lessons(client.start_day+datetime.timedelta(days=4))[0]
 
     def test_normal(self):
         self.assertIsNotNone(self.lesson.normal)
@@ -71,7 +71,7 @@ class TestLessonContent(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         global client
-        cls.lessonContent = client.lessons((client.start_day+datetime.timedelta(days=4)).date())[0].content
+        cls.lessonContent = client.lessons(client.start_day+datetime.timedelta(days=4))[0].content
 
     def test_files(self):
         self.assertIsNotNone(self.lessonContent.files)
@@ -88,7 +88,7 @@ class TestParentClient(unittest.TestCase):
 
     def test_homework(self):
         self.assertIsNotNone(
-            self.client.homework(self.client.start_day.date(), (self.client.start_day + datetime.timedelta(days=8)).date()))
+            self.client.homework(self.client.start_day, self.client.start_day + datetime.timedelta(days=8)))
 
 
 if __name__ == '__main__':

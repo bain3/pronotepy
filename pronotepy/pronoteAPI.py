@@ -41,7 +41,7 @@ class Client(object):
 
     Attributes
     ----------
-    start_day : datetime.datetime
+    start_day : datetime.date
         The first day of the school year
     week : int
         The current week of the school year
@@ -81,7 +81,7 @@ class Client(object):
 
         self.date = datetime.datetime.now()
         self.start_day = datetime.datetime.strptime(
-            self.func_options['donneesSec']['donnees']['General']['PremierLundi']['V'], '%d/%m/%Y')
+            self.func_options['donneesSec']['donnees']['General']['PremierLundi']['V'], '%d/%m/%Y').date()
         self.week = self.get_week(datetime.date.today())
 
         # get the length of one hour
@@ -168,7 +168,7 @@ class Client(object):
             return False
 
     def get_week(self, date: datetime.date):
-        return 1 + int((date - self.start_day.date()).days / 7)
+        return 1 + int((date - self.start_day).days / 7)
 
     def lessons(self, date_from: datetime.date, date_to: datetime.date = None) -> List[dataClasses.Lesson]:
         """
