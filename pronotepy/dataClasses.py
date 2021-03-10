@@ -348,7 +348,6 @@ class Lesson:
         'Statut': ('status', str),
         'CouleurFond': ('background_color', str),
         'estRetenue': ('detention', bool),
-        'duree': ('end', int),
         'estSortiePedagogique': ('outing', bool),
         'dispenseEleve': ('exempted', bool)
     }
@@ -365,8 +364,20 @@ class Lesson:
         prepared_json = Util.prepare_json(self.__class__, parsed_json)
         for key in prepared_json:
             self.__setattr__(key, prepared_json[key])
-        if self.end:
-            self.end = self.start + client.one_hour_duration * self.end
+
+        # get correct ending time
+        # Pronote gives us the place where the hour should be in a week, when we modulo that with the amount of
+        # hours in a day we can get the "place" when the hour starts. Then we just add the duration (and substract 1)
+        end_place = parsed_json['place'] % (len(
+            client.func_options['donneesSec']['donnees']['General']['ListeHeuresFin']['V'])-1) + parsed_json['duree']-1
+
+        # With the end "place" now known we can look up the ending time in func_options
+        self.end = None
+        for end_time in client.func_options['donneesSec']['donnees']['General']['ListeHeuresFin']['V']:
+            if end_time['G'] == end_place:
+                end_time = datetime.datetime.strptime(end_time['L'], "%Hh%M").time()
+                self.end = self.start.replace(hour=end_time.hour, minute=end_time.minute)
+
         self.teacher_name = self.classroom = self.group_name = self.student_class = ''
         self.subject = None
         if 'ListeContenus' in parsed_json:

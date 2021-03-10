@@ -84,13 +84,6 @@ class Client(object):
             self.func_options['donneesSec']['donnees']['General']['PremierLundi']['V'], '%d/%m/%Y').date()
         self.week = self.get_week(datetime.date.today())
 
-        # get the length of one hour
-        hour_start = datetime.datetime.strptime(
-            self.func_options['donneesSec']['donnees']['General']['ListeHeures']['V'][0]['L'], '%Hh%M')
-        hour_end = datetime.datetime.strptime(
-            self.func_options['donneesSec']['donnees']['General']['ListeHeuresFin']['V'][0]['L'], '%Hh%M')
-        self.one_hour_duration = hour_end - hour_start
-
         self.periods_ = self.periods
         self.logged_in = self._login()
         self._expired = False
