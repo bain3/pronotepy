@@ -3,7 +3,7 @@ An API wrapper for pronote.
 
 This whole package is licensed under the MIT license:
 
-Copyright (c) 2020 bain, Xiloe
+Copyright (c) 2020-2021 bain, Xiloe
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"),
 to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
@@ -21,7 +21,7 @@ __title__ = 'pronotepy'
 __author__ = 'bain, Xiloe'
 __license__ = 'MIT'
 __copyright__ = 'Copyright (c) bain, Xiloe'
-__version__ = '1.2.0'
+__version__ = '1.2.1'
 
 from .pronoteAPI import Client, ParentClient
 from .dataClasses import *

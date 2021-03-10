@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.abspath('../..'))
 # -- Project information -----------------------------------------------------
 
 project = 'pronotepy'
-copyright = '2020, bain, Xiloe'
+copyright = '2021, bain, Xiloe'
 author = 'bain, Xiloe'
 
 
