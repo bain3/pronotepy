@@ -233,7 +233,7 @@ class Grade:
         the maximum amount of points
     default_out_of : str
         the default maximum amount of points
-    date : str
+    date : datetime.date
         the date on which the grade was given
     subject : pronotepy.dataClasses.Subject
         the subject in which the grade was given
@@ -255,7 +255,7 @@ class Grade:
     grade: str
     out_of: str
     default_out_of: str
-    date: str
+    date: datetime.date
     subject: Subject
     period: Period
     average: str
