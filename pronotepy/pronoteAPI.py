@@ -112,7 +112,7 @@ class Client(object):
             "demandeConnexionAppliMobileJeton": False,
             "uuidAppliMobile": "",
             "loginTokenSAV": ""}
-        idr = self.communication.post("Identification", {'donnees': ident_json})
+        idr = self.post("Identification", data=ident_json)
         log.debug('indentification')
 
         # creating the authentification data
@@ -143,14 +143,14 @@ class Client(object):
 
         # send
         auth_json = {"connexion": 0, "challenge": ch, "espace": int(self.attributes['a'])}
-        auth_response = self.communication.post("Authentification", {'donnees': auth_json})
+        auth_response = self.post("Authentification", data=auth_json)
         if 'cle' in auth_response['donneesSec']['donnees']:
-            self.communication.after_auth(self.communication.last_response, auth_response, e.aes_key)
+            self.communication.after_auth(auth_response, e.aes_key)
             self.encryption.aes_key = e.aes_key
             log.info(f'successfully logged in as {self.username}')
 
             # getting listeOnglets separately because of pronote API change
-            self.parametres_utilisateur = self.communication.post('ParametresUtilisateur', {})
+            self.parametres_utilisateur = self.post('ParametresUtilisateur')
             self.info = dataClasses.ClientInfo(self.parametres_utilisateur['donneesSec']['donnees']['ressource'])
             self.communication.authorized_onglets = _prepare_onglets(
                 self.parametres_utilisateur['donneesSec']['donnees']['listeOnglets'])
@@ -303,7 +303,7 @@ class Client(object):
             return True
         return False
 
-    def post(self, function_name: str, onglet: int, data: dict):
+    def post(self, function_name: str, onglet: int = None, data: dict = None):
         """
         Preforms a raw post to the PRONOTE server. Adds signature, then passes it to _Communication.post
 
@@ -317,12 +317,22 @@ class Client(object):
         -------
         Raw JSON
         """
-        post_data = {
-            '_Signature_': {'onglet': onglet}
-        }
+        post_data = {}
+        if onglet:
+            post_data['_Signature_'] = {'onglet': onglet}
         if data:
             post_data['donnees'] = data
-        return self.communication.post(function_name, post_data)
+
+        try:
+            return self.communication.post(function_name, post_data)
+        except PronoteAPIError as e:
+            if isinstance(e, ExpiredObject):
+                raise e
+
+            log.info(
+                f'Have you tried turning it off and on again? ERROR: {e.pronote_error_code} | {e.pronote_error_msg}')
+            self.refresh()
+            return self.communication.post(function_name, data, True)
 
 
 class _Communication(object):
@@ -368,7 +378,7 @@ class _Communication(object):
                                      decryption_change={'iv': MD5.new(self.encryption.aes_iv_temp).digest()})
         return self.attributes, initial_response
 
-    def post(self, function_name: str, data: dict, recursive: bool = False, decryption_change=None):
+    def post(self, function_name: str, data: dict, decryption_change=None):
         """
         Handler for all POST requests by the api to PRONOTE servers. Automatically provides all needed data for the
         verification of posts. Session id and order numbers are preserved.
@@ -419,14 +429,10 @@ class _Communication(object):
             r_json = response.json()
             if r_json["Erreur"]["G"] == 22:
                 raise ExpiredObject(error_messages.get(22))
-            if recursive:
-                raise PronoteAPIError(error_messages.get(r_json["Erreur"]["G"],
-                                                         f'Unknown error from pronote: {r_json["Erreur"]["G"]} | {r_json["Erreur"]["Titre"]}'))
-
-            log.info(
-                f'Have you tried turning it off and on again? ERROR: {r_json["Erreur"]["G"]} | {r_json["Erreur"]["Titre"]}')
-            self.client.refresh()
-            return self.client.communication.post(function_name, data, True)
+            raise PronoteAPIError(error_messages.get(r_json["Erreur"]["G"],
+                                                     f'Unknown error from pronote: {r_json["Erreur"]["G"]} | {r_json["Erreur"]["Titre"]}'),
+                                  pronote_error_code=r_json['Erreur']['G'],
+                                  pronote_error_msg=r_json['Erreur']['Titre'])
 
         # checking for decryption change
         if decryption_change:
@@ -453,14 +459,12 @@ class _Communication(object):
 
         return response_data
 
-    def after_auth(self, auth_response, data, auth_key):
+    def after_auth(self, data, auth_key):
         """
         Key change after the authentification was successful.
 
         Parameters
         ----------
-        auth_response
-            The authentification response from the server
         auth_key
             AES authentification key used to calculate the challenge (From password of the user)
         data
@@ -611,6 +615,7 @@ class ParentClient(Client):
     children: List[dataClasses.ClientInfo]
         List of sub-clients representing all the children connected to the main parent account.
     """
+
     def __init__(self, pronote_url, username: str = '', password: str = '', ent: Optional[Callable] = None,
                  child: str = None):
         super().__init__(pronote_url, username, password, ent)
@@ -644,7 +649,7 @@ class ParentClient(Client):
         self._selected_child = c
         self.parametres_utilisateur['donneesSec']['donnees']['ressource'] = c.raw_resource
 
-    def post(self, function_name: str, onglet: int, data: dict):
+    def post(self, function_name: str, onglet: int = None, data: dict = None):
         """
         Preforms a raw post to the PRONOTE server. Adds signature, then passes it to _Communication.post
 
@@ -658,19 +663,34 @@ class ParentClient(Client):
         -------
         Raw JSON
         """
-        post_data = {
-            '_Signature_': {'onglet': onglet, 'membre': {'N': self._selected_child.id, 'G': 4}}
-        }
+        post_data = {}
+        if onglet:
+            post_data['_Signature_'] = {'onglet': onglet, 'membre': {'N': self._selected_child.id, 'G': 4}}
+
         if data:
             post_data['donnees'] = data
-        return self.communication.post(function_name, post_data)
+
+        try:
+            return self.communication.post(function_name, post_data)
+        except PronoteAPIError as e:
+            if isinstance(e, ExpiredObject):
+                raise e
+
+            log.info(
+                f'Have you tried turning it off and on again? ERROR: {e.pronote_error_code} | {e.pronote_error_msg}')
+            self.refresh()
+            return self.communication.post(function_name, data, True)
 
 
 class PronoteAPIError(Exception):
     """
     Base exception for any pronote api errors
     """
-    pass
+
+    def __init__(self, *args: object, pronote_error_code: int = None, pronote_error_msg: str = None) -> None:
+        super().__init__(*args)
+        self.pronote_error_code = pronote_error_code
+        self.pronote_error_msg = pronote_error_msg
 
 
 class CryptoError(PronoteAPIError):
