@@ -1,3 +1,4 @@
+import logging
 import datetime
 import re
 import json
@@ -5,6 +6,11 @@ from urllib.parse import quote
 from Crypto.Util import Padding
 from html import unescape
 from typing import Union, List
+
+
+
+log = logging.getLogger(__name__)
+log.setLevel(logging.DEBUG)
 
 
 def _get_l(d): return d['L']
@@ -121,15 +127,17 @@ class Period:
     @property
     def grades(self):
         """Get grades from the period."""
-        json_data = {'N': self.id, 'L': self.name}
+        json_data = {'Periode': {'N': self.id, 'L': self.name}}
         response = self._client.post('DernieresNotes', 198, json_data)
+        log.debug(response)
         grades = response['donneesSec']['donnees']['listeDevoirs']['V']
         return [Grade(g) for g in grades]
 
     @property
     def averages(self):
         """Get averages from the period."""
-        json_data = {'N': self.id, 'L': self.name}
+
+        json_data = {'Periode': {'N': self.id, 'L': self.name}}
         response = self._client.post('DernieresNotes', 198, json_data)
         crs = response['donneesSec']['donnees']['listeServices']['V']
         return [Average(c) for c in crs]
@@ -138,7 +146,7 @@ class Period:
     def overall_average(self):
         """Get overall average from the period. If the period average is not provided by pronote, then it's calculated.
         Calculation may not be the same as the actual average. (max difference 0.01)"""
-        json_data = {'N': self.id, 'L': self.name}
+        json_data = {'Periode': {'N': self.id, 'L': self.name}}
         response = self._client.post('DernieresNotes', 198, json_data)
         average = response['donneesSec']['donnees'].get('moyGenerale')
         if average:
@@ -166,7 +174,7 @@ class Period:
 
     @property
     def evaluations(self):
-        json_data = {'periode': {'N': self.id, 'L': self.name, 'G': 2}}
+        json_data = {'Periode': {'N': self.id, 'L': self.name, 'G': 2}}
         response = self._client.post('DernieresEvaluations', 201, json_data)
         evaluations = response['donneesSec']['donnees']['listeEvaluations']['V']
         return [Evaluation(e) for e in evaluations]
