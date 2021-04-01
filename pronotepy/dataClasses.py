@@ -491,7 +491,7 @@ class File:
         for key in prepared_json:
             self.__setattr__(key, prepared_json[key])
         self._client = client
-        padd = Padding.pad(json.dumps({'N': self.id, 'Actif': True}).replace(' ', '').encode(), 16)
+        padd = Padding.pad(json.dumps({'N': self.id, 'G': 1}).replace(' ', '').encode(), 16)
         magic_stuff = client.communication.encryption.aes_encrypt(padd).hex()
         self.url = client.communication.root_site \
                    + '/FichiersExternes/' \
