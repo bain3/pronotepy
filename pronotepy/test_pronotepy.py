@@ -13,8 +13,14 @@ class TestClient(unittest.TestCase):
         self.assertEqual(client.get_week(client.start_day + datetime.timedelta(days=8)), 2)
 
     def test_lessons(self):
-        self.assertIsNotNone(
-            client.lessons(client.start_day, client.start_day + datetime.timedelta(days=8)))
+        start = client.start_day
+        end = client.start_day+datetime.timedelta(days=8)
+        lessons = client.lessons(start, end)
+        # We assume demo website will always have some lessons
+        self.assertGreater(len(lessons), 0)
+        for lesson in lessons:
+            self.assertLessEqual(start, lesson.start.date())
+            self.assertLessEqual(lesson.start.date(), end)
 
     def test_periods(self):
         self.assertIsNotNone(client.periods)
@@ -23,8 +29,15 @@ class TestClient(unittest.TestCase):
         self.assertIsNotNone(client.current_period)
 
     def test_homework(self):
-        self.assertIsNotNone(
-            client.homework(client.start_day, client.start_day + datetime.timedelta(days=8)))
+        start = client.start_day
+        end = client.start_day+datetime.timedelta(days=31)
+        homework = client.homework(start, end)
+
+        # We assume demo website will always have homework
+        self.assertGreater(len(homework), 0)
+        for hw in homework:
+            self.assertLessEqual(start, hw.date)
+            self.assertLessEqual(hw.date, end)
 
     def test_refresh(self):
         client.refresh()
@@ -38,17 +51,19 @@ class TestPeriod(unittest.TestCase):
         cls.period = client.current_period
 
     def test_grades(self):
-        self.assertIsNotNone(self.period.grades)
+        # We assume demo website will have grades
+        grades = self.period.grades
+        self.assertGreater(len(grades), 0)
 
     def test_averages(self):
-        self.assertIsNotNone(self.period.averages)
+        self.assertGreater(len(self.period.averages), 0)
 
     def test_overall_average(self):
         self.assertIsNotNone(self.period.overall_average)
 
     def test_evaluations(self):
         evaluations = self.period.evaluations
-        self.assertIsNotNone(evaluations)
+        self.assertGreater(len(evaluations), 0)
         for evaluation in evaluations:
             for acquisition in evaluation.acquisitions:
                 self.assertIsNotNone(acquisition)
@@ -80,7 +95,8 @@ class TestLessonContent(unittest.TestCase):
 class TestParentClient(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
-        cls.client = pronotepy.ParentClient('https://demo.index-education.net/pronote/parent.html', 'demonstration', 'pronotevs')
+        cls.client = pronotepy.ParentClient('https://demo.index-education.net/pronote/parent.html',
+                                            'demonstration', 'pronotevs')
 
     def test_set_child(self):
         self.client.set_child(self.client.children[1])
@@ -88,7 +104,7 @@ class TestParentClient(unittest.TestCase):
 
     def test_homework(self):
         self.assertIsNotNone(
-            self.client.homework(self.client.start_day, self.client.start_day + datetime.timedelta(days=8)))
+            self.client.homework(self.client.start_day, self.client.start_day + datetime.timedelta(days=31)))
 
 
 if __name__ == '__main__':
