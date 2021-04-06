@@ -57,7 +57,7 @@ properties.
             print(grade.grade) # This prints the actual grade. Could be a number or for example "Absent" (always a string)
 
     # print only the grades from the current period
-    for grade in client.current_period:
+    for grade in client.current_period.grades:
         print(grade.grade)
 
 Long Term Usage
