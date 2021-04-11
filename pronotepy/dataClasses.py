@@ -5,9 +5,7 @@ import json
 from urllib.parse import quote
 from Crypto.Util import Padding
 from html import unescape
-from typing import Union, List
-
-
+from typing import Union, List, Optional
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -331,6 +329,8 @@ class Lesson:
         Name of the group.
     exempted : bool
         Specifies if the student's presence is exempt.
+    virtual_classrooms : List[str]
+        List of urls for virtual classrooms
     """
 
     id: str
@@ -344,11 +344,12 @@ class Lesson:
     start: datetime.datetime
     group_name: str
     exempted: bool
+    virtual_classrooms: Optional[List[str]]
 
     __slots__ = ['id', 'subject', 'teacher_name', 'classroom', 'start',
                  'canceled', 'status', 'background_color', 'detention',
                  'end', 'outing', 'group_name', 'student_class', 'exempted',
-                 '_client', '_content']
+                 '_client', '_content', 'virtual_classrooms']
     attribute_guide = {
         'DateDuCours,V': ('start', lambda d: datetime.datetime.strptime(d, '%d/%m/%Y %H:%M:%S')),
         'N': ('id', str),
@@ -357,7 +358,8 @@ class Lesson:
         'CouleurFond': ('background_color', str),
         'estRetenue': ('detention', bool),
         'estSortiePedagogique': ('outing', bool),
-        'dispenseEleve': ('exempted', bool)
+        'dispenseEleve': ('exempted', bool),
+        'listeVisios,V': ('virtual_classrooms', lambda l: [i["url"] for i in l])
     }
     transformers = {
         16: ('subject', Subject),
@@ -377,14 +379,17 @@ class Lesson:
         # Pronote gives us the place where the hour should be in a week, when we modulo that with the amount of
         # hours in a day we can get the "place" when the hour starts. Then we just add the duration (and substract 1)
         end_place = parsed_json['place'] % (len(
-            client.func_options['donneesSec']['donnees']['General']['ListeHeuresFin']['V'])-1) + parsed_json['duree']-1
+            client.func_options['donneesSec']['donnees']['General']['ListeHeuresFin']['V']) - 1) + parsed_json[
+                        'duree'] - 1
 
         # With the end "place" now known we can look up the ending time in func_options
         self.end = None
-        for end_time in client.func_options['donneesSec']['donnees']['General']['ListeHeuresFin']['V']:
-            if end_time['G'] == end_place:
-                end_time = datetime.datetime.strptime(end_time['L'], "%Hh%M").time()
-                self.end = self.start.replace(hour=end_time.hour, minute=end_time.minute)
+        end_time = next(filter(
+            lambda x: x['G'] == end_place,
+            client.func_options['donneesSec']['donnees']['General']['ListeHeuresFin']['V']
+        ))
+        end_time = datetime.datetime.strptime(end_time['L'], "%Hh%M").time()
+        self.end = self.start.replace(hour=end_time.hour, minute=end_time.minute)
 
         self.teacher_name = self.classroom = self.group_name = self.student_class = ''
         self.subject = None
