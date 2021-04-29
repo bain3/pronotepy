@@ -50,7 +50,14 @@ class Util:
                 for level in actual_dict:
                     out = out[level]
             except KeyError:
-                output[attribute_dict[key][0]] = None
+                if len(attribute_dict[key]) == 3:
+                    output[attribute_dict[key][0]] = attribute_dict[key][2]
+                else:
+                    try:
+                        output[attribute_dict[key][0]] = attribute_dict[key][1](None)
+                    except Exception as e:
+                        log.debug("Exception while parsing json ("+str(actual_dict)+"), setting to None: " + str(e))
+                        output[attribute_dict[key][0]] = None
             else:
                 output[attribute_dict[key][0]] = attribute_dict[key][1](out)
         return output
@@ -100,9 +107,9 @@ class Period:
         the id of the period (used internally)
     name : str
         name of the period
-    start : str
+    start : datetime.datetime
         date on which the period starts
-    end : str
+    end : datetime.datetime
         date on which the period ends
     """
 
@@ -211,7 +218,7 @@ class Average:
     attribute_guide = {
         'moyEleve,V': ('student', Util.grade_parse),
         'baremeMoyEleve,V': ('out_of', Util.grade_parse),
-        'baremeMoyEleveParDefault,V': ('default_out_of', Util.grade_parse),
+        'baremeMoyEleveParDefault,V': ('default_out_of', Util.grade_parse, ""),
         'moyClasse,V': ('class_average', Util.grade_parse),
         'moyMin,V': ('min', Util.grade_parse),
         'moyMax,V': ('max', Util.grade_parse)
@@ -274,7 +281,7 @@ class Grade:
         "N": ("id", str),
         "note,V": ("grade", Util.grade_parse),
         "bareme,V": ("out_of", Util.grade_parse),
-        "baremeParDefault,V": ("default_out_of", Util.grade_parse),
+        "baremeParDefault,V": ("default_out_of", Util.grade_parse, ""),
         "date,V": ("date", lambda d: datetime.datetime.strptime(d, '%d/%m/%Y').date()),
         "service,V": ("subject", Subject),
         "periode,V,N": ("period", lambda p: Util.get(Period.instances, id=p)),
@@ -323,8 +330,10 @@ class Lesson:
         background color of the lesson
     outing : bool
         if it is a pedagogical outing
-    start : str
+    start : datetime.datetime
         starting time of the lesson
+    end : datetime.datetime
+        end of the lesson
     group_name : str
         Name of the group.
     exempted : bool
@@ -344,7 +353,8 @@ class Lesson:
     start: datetime.datetime
     group_name: str
     exempted: bool
-    virtual_classrooms: Optional[List[str]]
+    virtual_classrooms: List[str]
+    end: datetime.datetime
 
     __slots__ = ['id', 'subject', 'teacher_name', 'classroom', 'start',
                  'canceled', 'status', 'background_color', 'detention',
@@ -356,10 +366,10 @@ class Lesson:
         'estAnnule': ('canceled', bool),
         'Statut': ('status', str),
         'CouleurFond': ('background_color', str),
-        'estRetenue': ('detention', bool),
-        'estSortiePedagogique': ('outing', bool),
-        'dispenseEleve': ('exempted', bool),
-        'listeVisios,V': ('virtual_classrooms', lambda l: [i["url"] for i in l])
+        'estRetenue': ('detention', bool, False),
+        'estSortiePedagogique': ('outing', bool, False),
+        'dispenseEleve': ('exempted', bool, False),
+        'listeVisios,V': ('virtual_classrooms', lambda l: [i["url"] for i in l], [])
     }
     transformers = {
         16: ('subject', Subject),
@@ -548,7 +558,7 @@ class Homework:
         the background color of the homework 
     done : bool
         if the homework is marked done
-    date : str
+    date : datetime.date
         deadline
     """
 
@@ -612,7 +622,7 @@ class Message:
         Recipitents of the message. ! May be just ['# recipients'] !
     seen : bool
         if the message was seen
-    date : str
+    date : datetime.datetime
         the date when the message was sent
     """
 
@@ -620,7 +630,7 @@ class Message:
     author: str
     recipients: list
     seen: bool
-    date: str
+    date: datetime.datetime
 
     __slots__ = ['id', 'author', 'recipients', 'seen', 'date', '_client', '_listePM']
     attribute_guide = {
