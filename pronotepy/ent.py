@@ -313,3 +313,61 @@ def ac_lyon(username, password):
     
     return requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
 
+def ac_orleans_tours(username, password):
+    """
+    ENT for AC Orleans-Tours
+
+    Parameters
+    ----------
+    username : str
+        username
+    password : str
+        password
+
+    Returns
+    -------
+    cookies : cookies
+        returns the ent session cookies
+    """
+
+    # Required Headers
+    headers = {
+        'connection': 'keep-alive',
+        'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:73.0) Gecko/20100101 Firefox/73.0'
+    }
+    
+    # Login payload
+    payload = {
+        "j_username": username,
+        "j_password": password,
+        "_eventId_proceed": ""
+    }
+    
+    # ENT / PRONOTE required URLs
+    ent_login_page = "https://ent.netocentre.fr/cas/login?service=https://0451462V.index-education.net/pronote/eleve.html&idpId=parentEleveEN-IdP"
+    ent_login = "https://educonnect.education.gouv.fr/idp/profile/SAML2/Redirect/SSO?execution=e1s1"
+    pronote_verif = "https://ent.netocentre.fr/cas/Shibboleth.sso/SAML2/POST?client_name=EduConnect"
+    
+    # ENT Connection
+    session = requests.Session()
+
+    # Connection URL specifying the pronote service
+    session.get(ent_login_page, headers=headers)
+
+    # Send user:pass to the ENT
+    response = session.post(ent_login, headers=headers, data=payload)
+
+    # retrieving the "RelayState", "SAMLResponse" tokens in the response
+    soup = BeautifulSoup(response.text, 'html.parser')
+    cas_infos = dict()
+    inputs = soup.findAll('input', {'type': 'hidden'})
+    for input_ in inputs:
+        cas_infos[input_.get('name')] = input_.get('value')
+
+    # retrieving pronote ticket
+    response = session.post(pronote_verif, headers=headers, data=cas_infos)
+
+
+    cookies = requests.utils.cookiejar_from_dict(
+        requests.utils.dict_from_cookiejar(session.cookies))
+    return cookies
