@@ -87,7 +87,7 @@ For any extra details, please see the documentation linked above.
 
 ### ENT
 
-Pronotepy has builtin functions for getting cookies from some ENTs (if you want your ENT to be supported please contact Xiloe (see contact)). 
+Pronotepy has builtin functions for getting cookies from some ENTs (if you want your ENT to be added make a new issue). 
 You can pass those functions to the client like this:
 ```python
 import pronotepy
