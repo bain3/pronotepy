@@ -1,3 +1,9 @@
+<h2 align="center">Looking for maintainers</h2>
+We (bain, Xiloe) do not actively maintain this project anymore. We would love to hear from someone who would
+take on the role of a maintainer. As a last goodbye I have created a PRONOTE protocol description that describes
+the login process and some inner workings of PRONOTE. It can be used as a stepping stone to create a better API wrapper,
+or to start contributing to this one.
+
 <br />
 <p align="center">
   <a href="https://github.com/bain3/pronotepy">
