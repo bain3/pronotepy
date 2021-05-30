@@ -142,7 +142,7 @@ POST /pronote/appelfonction/<espace_id>/<session_id>/<numero_ordre>
 ```
 
 - `connection_type` - used by accounts with multiple "types" of connection like a professor's account. (0 - domicile, 1 - dans la classe) (0 by default)
-- `using_ent` - boolean signifying if the connection is from an ENT. Check the ENT section for further information.
+- `using_ent` - boolean signifying if the connection is from an ENT. Check the <a href="#ENT">ENT section</a> for further information.
 
 A successful response will look like:
 
