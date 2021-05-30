@@ -6,14 +6,7 @@ Submodules
 
 .. toctree::
 
+   pronotepy.clients
    pronotepy.dataClasses
    pronotepy.ent
-   pronotepy.pronoteAPI
-   pronotepy.test_pronotepy
-
-Module contents
----------------
-
-.. automodule:: pronotepy
-   :members:
-   :show-inheritance:
+   pronotepy.exceptions

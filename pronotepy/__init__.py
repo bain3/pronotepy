@@ -23,5 +23,7 @@ __license__ = 'MIT'
 __copyright__ = 'Copyright (c) bain, Xiloe'
 __version__ = '1.3.0'
 
-from .pronoteAPI import Client, ParentClient
-from .dataClasses import *
+from .dataClasses import Util, Subject, Period, File, Grade, Lesson, Message, LessonContent, ClientInfo, \
+    Average, Acquisition, Evaluation, Homework
+from .clients import Client, ParentClient
+from .exceptions import *

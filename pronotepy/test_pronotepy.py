@@ -1,7 +1,7 @@
+import datetime
 import unittest
 
 import pronotepy
-import datetime
 
 client = pronotepy.Client('https://demo.index-education.net/pronote/eleve.html', 'demonstration', 'pronotevs')
 

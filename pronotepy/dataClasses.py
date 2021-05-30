@@ -1,11 +1,14 @@
-import logging
 import datetime
-import re
 import json
-from urllib.parse import quote
-from Crypto.Util import Padding
+import logging
+import re
 from html import unescape
-from typing import Union, List, Optional
+from typing import Union, List
+from urllib.parse import quote
+
+from Crypto.Util import Padding
+
+from .exceptions import IncorrectJson
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -828,15 +831,3 @@ class Evaluation:
         prepared_json = Util.prepare_json(self.__class__, json_)
         for key in prepared_json:
             self.__setattr__(key, prepared_json[key])
-
-
-class DataError(Exception):
-    """
-    Base exception for any errors made by creating or manipulating data classes.
-    """
-    pass
-
-
-class IncorrectJson(DataError):
-    """Bad json"""
-    pass
