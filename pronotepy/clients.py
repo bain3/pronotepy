@@ -10,7 +10,7 @@ from .exceptions import *
 from .pronoteAPI import _Communication, _Encryption, _KeepAlive, _enleverAlea, _prepare_onglets, log
 
 
-class ClientBase:
+class _ClientBase:
     """
     Base for every PRONOTE client. Ensures login.
 
@@ -164,13 +164,6 @@ class ClientBase:
         json = self.func_options['donneesSec']['donnees']['General']['ListePeriodes']
         return [dataClasses.Period(self, j) for j in json]
 
-    @property
-    def current_period(self) -> dataClasses.Period:
-        """Get the current period."""
-        id_period = \
-            self.parametres_utilisateur['donneesSec']['donnees']['ressource']['listeOngletsPourPeriodes']['V'][0][
-                'periodeParDefaut']['V']['N']
-        return dataClasses.Util.get(self.periods_, id=id_period)[0]
 
     def keep_alive(self):
         """
@@ -245,7 +238,7 @@ class ClientBase:
             return self.communication.post(function_name, data, True)
 
 
-class Client(ClientBase):
+class Client(_ClientBase):
     """
     A PRONOTE client.
 
@@ -352,6 +345,14 @@ class Client(ClientBase):
         return [dataClasses.Message(self, m) for m in messages['donneesSec']['donnees']['listeMessagerie']['V']
                 if not m.get('estUneDiscussion')]
 
+    @property
+    def current_period(self) -> dataClasses.Period:
+        """Get the current period."""
+        id_period = \
+            self.parametres_utilisateur['donneesSec']['donnees']['ressource']['listeOngletsPourPeriodes']['V'][0][
+                'periodeParDefaut']['V']['N']
+        return dataClasses.Util.get(self.periods_, id=id_period)[0]
+
 
 class ParentClient(Client):
     """
@@ -444,3 +445,36 @@ class ParentClient(Client):
                 f'Have you tried turning it off and on again? ERROR: {e.pronote_error_code} | {e.pronote_error_msg}')
             self.refresh()
             return self.communication.post(function_name, data, True)
+
+
+class VieScolaireClient(_ClientBase):
+    """
+    A PRONOTE client for Vie Scolaire accounts.
+
+    Parameters
+    ----------
+    pronote_url : str
+        URL of the server
+    username : str
+    password : str
+    ent : Callable
+        Cookies for ENT connections
+
+    Attributes
+    ----------
+    start_day : datetime.datetime
+        The first day of the school year
+    week : int
+        The current week of the school year
+    logged_in : bool
+        If the user is successfully logged in
+    info: dataClasses.ClientInfo
+        Provides information about the current client. Name etc...
+    classes: List[dataClasses.StudentClass]
+        List of all classes this account has access to.
+    """
+
+    def __init__(self, pronote_url, username: str = '', password: str = '', ent: Optional[Callable] = None):
+        super().__init__(pronote_url, username, password, ent)
+        self.classes = [dataClasses.StudentClass(self, json) for json in
+                        self.parametres_utilisateur["donneesSec"]["donnees"]["listeClasses"]["V"]]

@@ -262,13 +262,13 @@ class _Encryption(object):
 class _KeepAlive(threading.Thread):
     def __init__(self, client):
         super().__init__(target=self.alive)
-        self._connection = client.communication
+        self._client = client
         self.keep_alive = True
 
     def alive(self):
         while self.keep_alive:
-            if time() - self._connection.last_ping >= 300:
-                self._connection.post('Presence', {'_Signature_': {'onglet': 7}})
+            if time() - self._client._communication.last_ping >= 300:
+                self._client.post('Presence', 7)
             sleep(1)
 
     def __enter__(self):

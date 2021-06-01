@@ -14,7 +14,7 @@ class TestClient(unittest.TestCase):
 
     def test_lessons(self):
         start = client.start_day
-        end = client.start_day+datetime.timedelta(days=8)
+        end = client.start_day + datetime.timedelta(days=8)
         lessons = client.lessons(start, end)
         # We assume demo website will always have some lessons
         self.assertGreater(len(lessons), 0)
@@ -30,7 +30,7 @@ class TestClient(unittest.TestCase):
 
     def test_homework(self):
         start = client.start_day
-        end = client.start_day+datetime.timedelta(days=31)
+        end = client.start_day + datetime.timedelta(days=31)
         homework = client.homework(start, end)
 
         # We assume demo website will always have homework
@@ -73,7 +73,7 @@ class TestLesson(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         global client
-        cls.lesson = client.lessons(client.start_day+datetime.timedelta(days=4))[0]
+        cls.lesson = client.lessons(client.start_day + datetime.timedelta(days=4))[0]
 
     def test_normal(self):
         self.assertIsNotNone(self.lesson.normal)
@@ -86,7 +86,7 @@ class TestLessonContent(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         global client
-        cls.lessonContent = client.lessons(client.start_day+datetime.timedelta(days=4))[0].content
+        cls.lessonContent = client.lessons(client.start_day + datetime.timedelta(days=4))[0].content
 
     def test_files(self):
         self.assertIsNotNone(self.lessonContent.files)
@@ -105,6 +105,25 @@ class TestParentClient(unittest.TestCase):
     def test_homework(self):
         self.assertIsNotNone(
             self.client.homework(self.client.start_day, self.client.start_day + datetime.timedelta(days=31)))
+
+
+class TestVieScolaireClient(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.client = pronotepy.VieScolaireClient('https://demo.index-education.net/pronote/viescolaire.html',
+                                                 'demonstration2', 'pronotevs')
+
+    def test_classes(self):
+        self.assertGreater(len(self.client.classes), 0)
+
+        for cls in self.client.classes:
+            self.assertIsNotNone(cls.name)
+
+        for student in self.client.classes[0].students():
+            self.assertIsInstance(student.identity, pronotepy.Identity)
+            self.assertGreater(len(student.guardians), 0)
+            for guardian in student.guardians:
+                self.assertIsInstance(guardian.identity, pronotepy.Identity)
 
 
 if __name__ == '__main__':

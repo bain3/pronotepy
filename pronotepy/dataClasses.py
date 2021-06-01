@@ -59,7 +59,7 @@ class Util:
                     try:
                         output[attribute_dict[key][0]] = attribute_dict[key][1](None)
                     except Exception as e:
-                        log.debug("Exception while parsing json ("+str(actual_dict)+"), setting to None: " + str(e))
+                        log.debug("Exception while parsing json (" + str(actual_dict) + "), setting to None: " + str(e))
                         output[attribute_dict[key][0]] = None
             else:
                 output[attribute_dict[key][0]] = attribute_dict[key][1](out)
@@ -71,6 +71,10 @@ class Util:
             return cls.grade_translate[int(string[1]) - 1]
         else:
             return string
+
+    @staticmethod
+    def date_parse(formatted_date: str):
+        return datetime.datetime.strptime(formatted_date, '%d/%m/%Y').date()
 
 
 class Subject:
@@ -285,7 +289,7 @@ class Grade:
         "note,V": ("grade", Util.grade_parse),
         "bareme,V": ("out_of", Util.grade_parse),
         "baremeParDefault,V": ("default_out_of", Util.grade_parse, ""),
-        "date,V": ("date", lambda d: datetime.datetime.strptime(d, '%d/%m/%Y').date()),
+        "date,V": ("date", Util.date_parse),
         "service,V": ("subject", Subject),
         "periode,V,N": ("period", lambda p: Util.get(Period.instances, id=p)),
         "moyenne,V": ("average", Util.grade_parse),
@@ -579,7 +583,7 @@ class Homework:
         'TAFFait': ('done', bool),
         'Matiere,V': ('subject', Subject),
         'CouleurFond': ('background_color', str),
-        'PourLe,V': ('date', lambda d: datetime.datetime.strptime(d, '%d/%m/%Y').date()),
+        'PourLe,V': ('date', Util.date_parse),
         'ListePieceJointe,V': ('_files', tuple)
     }
 
@@ -824,10 +828,250 @@ class Evaluation:
         # Can we just appreciate the readability of this?
         'listeNiveauxDAcquisitions,V': (
             'acquisitions', lambda x: sorted([Acquisition(y) for y in x], key=lambda z: z.order)),
-        "date,V": ("date", lambda d: datetime.datetime.strptime(d, '%d/%m/%Y').date()),
+        "date,V": ("date", Util.date_parse),
     }
 
     def __init__(self, json_):
         prepared_json = Util.prepare_json(self.__class__, json_)
         for key in prepared_json:
             self.__setattr__(key, prepared_json[key])
+
+
+class Identity:
+    """
+    Represents an Identity of a person
+    
+    Attributes
+    ----------
+    postal_code: str
+    date_of_birth: datetime.date
+    email: str
+    last_name: str
+    country: str
+    mobile_number: str
+    landline_number: str
+    other_phone_number: str
+    city: str
+    place_of_birth: str
+    first_names: List[str]
+    address: List[str]
+    formatted_address: str
+        concatenated address information into a single string
+    """
+    attribute_guide = {
+        "CP": ("postal_code", str),
+        "dateNaiss": ("date_of_birth", Util.date_parse, None),
+        "email": ("email", str),
+        "nom": ("last_name", str),
+        "pays": ("country", str),
+        "telPort": ("mobile_number", str),
+        "telFixe": ("landline_number", str),
+        "telAutre": ("other_phone_number", str),
+        "ville": ("city", str),
+        "villeNaiss": ("place_of_birth", str)
+    }
+    __slots__ = ["postal_code", "date_of_birth", "email", "last_name", "country", "mobile_number", "landline_number",
+                 "other_phone_number", "city", "place_of_birth", "first_names", "address", "formatted_address"]
+
+    postal_code: str
+    date_of_birth: datetime.date
+    email: str
+    last_name: str
+    country: str
+    mobile_number: str
+    landline_number: str
+    other_phone_number: str
+    city: str
+    place_of_birth: str
+    first_names: List[str]
+    address: List[str]
+    formatted_address: str
+
+
+    def __init__(self, json_):
+        prepared_json = Util.prepare_json(self.__class__, json_)
+        for key in prepared_json:
+            self.__setattr__(key, prepared_json[key])
+
+        self.address = []
+        i = 1
+        while True:
+            option = json_.get("adresse" + str(i))
+            if not option: break
+            self.address.append(option)
+            i += 1
+        self.formatted_address = ','.join([*self.address, self.postal_code, self.city, self.country])
+        self.first_names = [json_.get("prenom"), json_.get("prenom2"), json_.get("prenom3")]
+
+
+class Guardian:
+    """
+    Represents a guardian of a student.
+
+    Attributes
+    ----------
+    identity: dataClasses.Identity
+    accepteInfosProf: bool
+    authorized_email: bool
+    authorized_pick_up_kid: bool
+    urgency_contact: bool
+    preferred_responsible_contact: bool
+    accomodates_kid: bool
+    relatives_link: str
+    responsibility_level: str
+    financially_responsible: bool
+    full_name: str
+    is_legal: bool
+    """
+    attribute_guide = {
+        "accepteInfosProf": ("accepteInfosProf", bool),
+        "autoriseEmail": ("authorized_email", bool),
+        "autoriseRecupererEnfant": ("authorized_pick_up_kid", bool),
+        "contactUrgence": ("urgency_contact", bool),
+        "estResponsablePreferentiel": ("preferred_responsible_contact", bool),
+        "hebergeEnfant": ("accomodates_kid", bool),
+        "lienParente": ("relatives_link", str),
+        "niveauResponsabilite": ("responsibility_level", str),
+        "responsableFinancier": ("financially_responsible", bool),
+        "nom": ("full_name", str)
+    }
+    __slots__ = ["identity", "accepteInfosProf", "authorized_email", "authorized_pick_up_kid", "urgency_contact",
+                 "preferred_responsible_contact", "accomodates_kid", "relatives_link", "responsibility_level",
+                 "financially_responsible", "full_name", "is_legal"]
+
+    identity: Identity
+    accepteInfosProf: bool
+    authorized_email: bool
+    authorized_pick_up_kid: bool
+    urgency_contact: bool
+    preferred_responsible_contact: bool
+    accomodates_kid: bool
+    relatives_link: str
+    responsibility_level: str
+    financially_responsible: bool
+    full_name: str
+    is_legal: bool
+
+    def __init__(self, json_):
+        prepared_json = Util.prepare_json(self.__class__, json_)
+        for key in prepared_json:
+            self.__setattr__(key, prepared_json[key])
+
+        self.identity = Identity(json_)
+        self.is_legal = self.responsibility_level == "LEGAL"
+
+
+class Student:
+    """
+    Represents a student
+
+    Attributes
+    ----------
+    full_name: str
+    id: str
+    enrollment_date: datetime.date
+    date_of_birth: datetime.date
+    projects: List[str]
+    last_name: str
+    first_names: str
+    sex: str
+    options: List[str]
+        language options
+    """
+    attribute_guide = {
+        "L": ("full_name", str),
+        "N": ("id", str),
+        "entree,V": ("enrollment_date", Util.date_parse),
+        "neLe,V": ("date_of_birth", Util.date_parse),
+        "listeProjets,V": ("projects", lambda p: [f"{x['typeAmenagement']} ({x['handicap']})" for x in p]),
+        "nom": ("last_name", str),
+        "prenoms": ("first_names", str),
+        "sexe": ("sex", str),
+    }
+    __slots__ = ["_client", "full_name", "id", "enrollment_date", "date_of_birth", "projects", "last_name",
+                 "first_names", "sex", "options", "_cache"]
+
+    full_name: str
+    id: str
+    enrollment_date: datetime.date
+    date_of_birth: datetime.date
+    projects: List[str]
+    last_name: str
+    first_names: str
+    sex: str
+    options: List[str]
+
+    def __init__(self, client, json_):
+        prepared_json = Util.prepare_json(self.__class__, json_)
+        for key in prepared_json:
+            self.__setattr__(key, prepared_json[key])
+
+        self._client = client
+        self._cache = None
+
+        self.options = []
+        i = 1
+        while True:
+            option = json_.get("option" + str(i))
+            if not option:
+                break
+            self.options.append(option)
+            i += 1
+
+    @property
+    def identity(self) -> Identity:
+        """
+        Identity of this student
+        """
+        if not self._cache:
+            self._cache = self._client.post("FicheEleve", 105,
+                                            {"Eleve": {"N": self.id}, "AvecEleve": True, "AvecResponsables": True})
+        return Identity(self._cache["donneesSec"]["donnees"]["Identite"])
+
+    @property
+    def guardians(self) -> List[Guardian]:
+        """
+        List of responsible persons (parents).
+        """
+        if not self._cache:
+            self._cache = self._client.post("FicheEleve", 105, {"N": self.id})
+        return [Guardian(j) for j in self._cache["donneesSec"]["donnees"]["Responsables"]["V"]]
+
+
+class StudentClass:
+    """
+    Represents a class of students
+
+    Attributes
+    ----------
+    name: str
+    id: str
+    responsible: bool
+        is the teacher responsible for the class
+    grade: str
+    """
+    attribute_guide = {
+        "L": ("name", str),
+        "N": ("id", str),
+        "estResponsable": ("responsible", bool),
+        "niveau,V,L": ("grade", str, "")
+    }
+    __slots__ = ["name", "id", "responsible", "grade", "_client"]
+
+    name: str
+    id: str
+    responsible: bool
+    grade: str
+
+    def __init__(self, client, json_):
+        prepared_json = Util.prepare_json(self.__class__, json_)
+        for key in prepared_json:
+            self.__setattr__(key, prepared_json[key])
+
+        self._client = client
+
+    def students(self, period: Period = None) -> List[Student]:
+        period = period or self._client.periods[0]
+        r = self._client.post("ListeRessources", 105,
+                              {"classe": {"N": self.id, "G": 1}, "periode": {"N": period.id, "G": 1}})
+        return [Student(self._client, j) for j in r["donneesSec"]["donnees"]["listeRessources"]["V"]]
