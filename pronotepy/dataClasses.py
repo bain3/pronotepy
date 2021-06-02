@@ -887,7 +887,6 @@ class Identity:
     address: List[str]
     formatted_address: str
 
-
     def __init__(self, json_):
         prepared_json = Util.prepare_json(self.__class__, json_)
         for key in prepared_json:
@@ -1034,7 +1033,8 @@ class Student:
         List of responsible persons (parents).
         """
         if not self._cache:
-            self._cache = self._client.post("FicheEleve", 105, {"N": self.id})
+            self._cache = self._client.post("FicheEleve", 105,
+                                            {"Eleve": {"N": self.id}, "AvecEleve": True, "AvecResponsables": True})
         return [Guardian(j) for j in self._cache["donneesSec"]["donnees"]["Responsables"]["V"]]
 
 

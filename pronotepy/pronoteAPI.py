@@ -52,6 +52,7 @@ class _Communication(object):
             'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:73.0) Gecko/20100101 Firefox/73.0'}
 
         # get rsa keys and session id
+        log.debug(f"Requesing html: {self.root_site}/{self.html_page}")
         get_response = self.session.request('GET', f'{self.root_site}/{self.html_page}', headers=headers,
                                             cookies=self.cookies)
         self.attributes = self._parse_html(get_response.content)
