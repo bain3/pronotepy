@@ -380,7 +380,7 @@ class Lesson:
         'estSortiePedagogique': ('outing', bool, False),
         'dispenseEleve': ('exempted', bool, False),
         'listeVisios,V': ('virtual_classrooms', lambda l: [i["url"] for i in l], []),
-        'P': ('num', str)
+        'P': ('num', int)
     }
     transformers = {
         16: ('subject', Subject),
