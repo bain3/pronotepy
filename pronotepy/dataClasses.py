@@ -347,6 +347,8 @@ class Lesson:
         Specifies if the student's presence is exempt.
     virtual_classrooms : List[str]
         List of urls for virtual classrooms
+    num: int
+        For the same lesson time, the biggest num is the one shown on pronote.
     """
 
     id: str
@@ -362,11 +364,12 @@ class Lesson:
     exempted: bool
     virtual_classrooms: List[str]
     end: datetime.datetime
+    num: int
 
     __slots__ = ['id', 'subject', 'teacher_name', 'classroom', 'start',
                  'canceled', 'status', 'background_color', 'detention',
                  'end', 'outing', 'group_name', 'student_class', 'exempted',
-                 '_client', '_content', 'virtual_classrooms']
+                 '_client', '_content', 'virtual_classrooms', 'num']
     attribute_guide = {
         'DateDuCours,V': ('start', lambda d: datetime.datetime.strptime(d, '%d/%m/%Y %H:%M:%S')),
         'N': ('id', str),
@@ -376,7 +379,8 @@ class Lesson:
         'estRetenue': ('detention', bool, False),
         'estSortiePedagogique': ('outing', bool, False),
         'dispenseEleve': ('exempted', bool, False),
-        'listeVisios,V': ('virtual_classrooms', lambda l: [i["url"] for i in l], [])
+        'listeVisios,V': ('virtual_classrooms', lambda l: [i["url"] for i in l], []),
+        'P': ('num', int)
     }
     transformers = {
         16: ('subject', Subject),
