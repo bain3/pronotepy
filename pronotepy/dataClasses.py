@@ -76,9 +76,11 @@ class Util:
     def date_parse(formatted_date: str) -> datetime.datetime:
         """convert date to a datetime.datetime object"""
         if re.match(r"\d{2}/\d{2}/\d{4}$", formatted_date):
-            return datetime.datetime.strptime(formatted_date, '%d/%m/%Y').date()
+            return datetime.datetime.strptime(formatted_date, '%d/%m/%Y')
         elif re.match(r"\d{2}/\d{2}/\d{4} \d{2}:\d{2}:\d{2}$", formatted_date):
-            return datetime.datetime.strptime(formatted_date, '%d/%m/%Y %H:%M:%S').date()
+            return datetime.datetime.strptime(formatted_date, '%d/%m/%Y %H:%M:%S')
+        elif re.match(r"\d{2}/\d{2}/\d{2} \d{2}h\d{2}$", formatted_date):
+            return datetime.datetime.strptime(formatted_date, '%d/%m/%y %Hh%M')
         else:
             log.warning("date parsing not possible for value '" + formatted_date + "' set to None")
 
@@ -144,8 +146,8 @@ class Period:
         self._client = client
         self.id = parsed_json['N']
         self.name = parsed_json['L']
-        self.start = datetime.datetime.strptime(parsed_json['dateDebut']['V'], '%d/%m/%Y')
-        self.end = datetime.datetime.strptime(parsed_json['dateFin']['V'], '%d/%m/%Y')
+        self.start = Util.date_parse(parsed_json['dateDebut']['V'], '%d/%m/%Y')
+        self.end = Util.date_parse(parsed_json['dateFin']['V'], '%d/%m/%Y')
 
     @property
     def grades(self):
@@ -382,7 +384,7 @@ class Lesson:
                  'end', 'outing', 'group_name', 'student_class', 'exempted',
                  '_client', '_content', 'virtual_classrooms', 'num']
     attribute_guide = {
-        'DateDuCours,V': ('start', lambda d: datetime.datetime.strptime(d, '%d/%m/%Y %H:%M:%S')),
+        'DateDuCours,V': ('start', Util.date_parse),
         'N': ('id', str),
         'estAnnule': ('canceled', bool),
         'Statut': ('status', str),
@@ -480,7 +482,7 @@ class LessonContent:
 
     attribute_guide = {
         'L': ('title', str),
-        'descriptif,V': ('description', lambda d: unescape(re.sub(re.compile('<.*?>'), '', d))),
+        'descriptif,V': ('description', Util.htlm_parse),
         'ListePieceJointe,V': ('_files', tuple)
     }
 
@@ -594,7 +596,7 @@ class Homework:
     __slots__ = ['id', 'subject', 'description', 'done', 'background_color', '_client', 'date', '_files']
     attribute_guide = {
         'N': ('id', str),
-        'descriptif,V': ('description', lambda d: unescape(re.sub(re.compile('<.*?>'), '', d))),
+        'descriptif,V': ('description', Util.htlm_parse),
         'TAFFait': ('done', bool),
         'Matiere,V': ('subject', Subject),
         'CouleurFond': ('background_color', str),
@@ -749,7 +751,7 @@ class Message:
         'public_gauche': ('author', str),
         'listePublic': ('recipients', list),
         'lu': ('seen', bool),
-        'libelleDate': ('date', lambda d: datetime.datetime.strptime(' '.join(d.split()[1:]), '%d/%m/%y %Hh%M'))
+        'libelleDate': ('date', lambda d: Util.date_parse(' '.join(d.split()[1:])))
     }
 
     def __init__(self, client, json_):
@@ -770,7 +772,7 @@ class Message:
         for m in resp['donneesSec']['donnees']['listeMessages']['V']:
             if m['N'] == self.id:
                 if type(m['contenu']) == dict:
-                    return unescape(re.sub(re.compile('<.*?>'), '', m['contenu']['V']))
+                    return Util.htlm_parse(m['contenu']['V'])
                 else:
                     return m['contenu']
         return None
