@@ -73,8 +73,19 @@ class Util:
             return string
 
     @staticmethod
-    def date_parse(formatted_date: str):
-        return datetime.datetime.strptime(formatted_date, '%d/%m/%Y').date()
+    def date_parse(formatted_date: str) -> datetime.datetime:
+        """convert date to a datetime.datetime object"""
+        if re.match(r"\d{2}/\d{2}/\d{4}$", formatted_date):
+            return datetime.datetime.strptime(formatted_date, '%d/%m/%Y').date()
+        elif re.match(r"\d{2}/\d{2}/\d{4} \d{2}:\d{2}:\d{2}$", formatted_date):
+            return datetime.datetime.strptime(formatted_date, '%d/%m/%Y %H:%M:%S').date()
+        else:
+            log.warning("date parsing not possible for value '" + formatted_date + "' set to None")
+
+    @staticmethod
+    def htlm_parse(html_text: str) -> str:
+        """remove tags from html text"""
+        return unescape(re.sub(re.compile('<.*?>'), '', html_text))
 
 
 class Subject:
@@ -617,6 +628,95 @@ class Homework:
     def files(self):
         """Get all the files attached to the homework"""
         return [File(self._client, jsn) for jsn in self._files]
+
+
+class Information:
+    """
+    Represents a information in a information and surveys tab.
+
+    Attributes
+    ----------
+    id : str
+        the id of the information
+    author : str
+        author of the information
+    title : str
+        title of the information
+    content: str
+        content of the information
+    read : bool
+        if the message has been read
+    creation_date : datetime.datetime
+        the date when the message was created
+    start_date : datetime.datetime
+        the date when the message became visible
+    end_date : datetime.datetime
+        the date on which the message will be withdrawn
+    category: str
+        category of the information
+    survey: bool
+        if the message is a survey
+    anonymous_response : bool
+        if the survey response is anonymous
+    """
+
+    id: str
+    title: str
+    author: str
+    content: str
+    read: bool
+    creation_date: datetime.datetime
+    start_date: datetime.datetime
+    end_date: datetime.datetime
+    category: str
+    survey: bool
+    anonymous_response: bool
+
+    __slots__ = ['id', 'title', 'author', 'read', 'creation_date', 'start_date', 'end_date', 'category',
+                 'survey', 'anonymous_response', '_raw_content', '_client']
+
+    attribute_guide = {
+        'N': ('id', str),
+        'L': ('title', str),
+        'auteur': ('author', str),
+        'listeQuestions,V': ('_raw_content', list),
+        'lue': ('read', bool),
+        'dateCreation,V': ('creation_date', Util.date_parse),
+        'dateDebut,V': ('start_date', Util.date_parse),
+        'dateFin,V': ('end_date', Util.date_parse),
+        'categorie,V,L': ('category', str),
+        'estSondage': ('survey', bool),
+        'reponseAnonyme': ('anonymous_response', bool)
+    }
+
+    def __init__(self, client, json_):
+        self._client = client
+        prepared_json = Util.prepare_json(self.__class__, json_)
+        for key in prepared_json:
+            self.__setattr__(key, prepared_json[key])
+
+    @property
+    def content(self):
+        return Util.htlm_parse(self._raw_content[0]['texte']['V'])
+
+    def mark_as_read(self, status: bool):
+        data = {
+            "listeActualites": [
+                {
+                    "N": self.id,
+                    "validationDirecte": True,
+                    "genrePublic": 4,
+                    "public": {
+                        "N": self._client.info.id,
+                        "G": 4,
+                    },
+                    "lue": status,
+                }
+            ],
+            "saisieActualite": False
+        }
+        if self._client.post("SaisieActualites", 8, data):
+            self.read = status
 
 
 class Message:

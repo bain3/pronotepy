@@ -164,7 +164,6 @@ class _ClientBase:
         json = self.func_options['donneesSec']['donnees']['General']['ListePeriodes']
         return [dataClasses.Period(self, j) for j in json]
 
-
     def keep_alive(self):
         """
         Returns a context manager to keep the connection alive. When inside the context manager,
@@ -344,6 +343,23 @@ class Client(_ClientBase):
         messages = self.post('ListeMessagerie', 131, {'avecMessage': True, 'avecLu': True})
         return [dataClasses.Message(self, m) for m in messages['donneesSec']['donnees']['listeMessagerie']['V']
                 if not m.get('estUneDiscussion')]
+
+    def information_and_surveys(self, only_unread: bool = False) -> List[dataClasses.Information]:
+        """
+        Gets all the information and surveys in the information and surveys tab
+
+        Returns
+        -------
+        List[Information]
+            Information
+        """
+        response = self.post('PageActualites', 8, {'estAuteur': False})
+        info = [dataClasses.Information(self, info) for info in
+                response['donneesSec']['donnees']['listeActualites']['V']]
+
+        if only_unread:
+            return [i for i in info if not i.read]
+        return info
 
     @property
     def current_period(self) -> dataClasses.Period:
