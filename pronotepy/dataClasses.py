@@ -146,8 +146,8 @@ class Period:
         self._client = client
         self.id = parsed_json['N']
         self.name = parsed_json['L']
-        self.start = Util.date_parse(parsed_json['dateDebut']['V'], '%d/%m/%Y')
-        self.end = Util.date_parse(parsed_json['dateFin']['V'], '%d/%m/%Y')
+        self.start = Util.date_parse(parsed_json['dateDebut']['V'])
+        self.end = Util.date_parse(parsed_json['dateFin']['V'])
 
     @property
     def grades(self):
