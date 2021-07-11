@@ -73,8 +73,8 @@ class Util:
             return string
 
     @staticmethod
-    def date_parse(formatted_date: str) -> datetime.datetime:
-        """convert date to a datetime.datetime object"""
+    def date_parse(formatted_date: str) -> datetime.date:
+        """convert date to a datetime.date object"""
         if re.match(r"\d{2}/\d{2}/\d{4}$", formatted_date):
             return datetime.datetime.strptime(formatted_date, '%d/%m/%Y').date()
         elif re.match(r"\d{2}/\d{2}/\d{4} \d{2}:\d{2}:\d{2}$", formatted_date):
