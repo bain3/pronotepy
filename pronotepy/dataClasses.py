@@ -97,7 +97,7 @@ class Util:
             log.warning("date parsing not possible for value '" + formatted_date + "' set to None")
 
     @staticmethod
-    def htlm_parse(html_text: str) -> str:
+    def html_parse(html_text: str) -> str:
         """remove tags from html text"""
         return unescape(re.sub(re.compile('<.*?>'), '', html_text))
 
@@ -494,7 +494,7 @@ class LessonContent:
 
     attribute_guide = {
         'L': ('title', str),
-        'descriptif,V': ('description', Util.htlm_parse),
+        'descriptif,V': ('description', Util.html_parse),
         'ListePieceJointe,V': ('_files', tuple)
     }
 
@@ -608,7 +608,7 @@ class Homework:
     __slots__ = ['id', 'subject', 'description', 'done', 'background_color', '_client', 'date', '_files']
     attribute_guide = {
         'N': ('id', str),
-        'descriptif,V': ('description', Util.htlm_parse),
+        'descriptif,V': ('description', Util.html_parse),
         'TAFFait': ('done', bool),
         'Matiere,V': ('subject', Subject),
         'CouleurFond': ('background_color', str),
@@ -711,7 +711,7 @@ class Information:
 
     @property
     def content(self):
-        return Util.htlm_parse(self._raw_content[0]['texte']['V'])
+        return Util.html_parse(self._raw_content[0]['texte']['V'])
 
     def mark_as_read(self, status: bool):
         data = {
@@ -784,7 +784,7 @@ class Message:
         for m in resp['donneesSec']['donnees']['listeMessages']['V']:
             if m['N'] == self.id:
                 if type(m['contenu']) == dict:
-                    return Util.htlm_parse(m['contenu']['V'])
+                    return Util.html_parse(m['contenu']['V'])
                 else:
                     return m['contenu']
         return None
