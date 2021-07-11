@@ -635,8 +635,8 @@ class Homework:
         data = {'listeTAF': [
             {'N': self.id, 'TAFFait': status}
         ]}
-        if self._client.post("SaisieTAFFaitEleve", 88, data):
-            self.done = status
+        self._client.post("SaisieTAFFaitEleve", 88, data)
+        self.done = status
 
     @property
     def files(self):
@@ -729,6 +729,7 @@ class Information:
             ],
             "saisieActualite": False
         }
+        self._client.post("SaisieActualites", 8, data)
         self.read = status
 
 
