@@ -39,6 +39,14 @@ class TestClient(unittest.TestCase):
             self.assertLessEqual(start, hw.date)
             self.assertLessEqual(hw.date, end)
 
+    def test_information(self):
+        information = client.information_and_surveys()
+        self.assertGreater(len(information), 0)
+        for i in information:
+            self.assertIsNotNone(i.author)
+            self.assertIsNotNone(i.creation_date)
+            self.assertIsInstance(i.survey, bool)
+
     def test_refresh(self):
         client.refresh()
         self.assertEqual(client.session_check(), True)
