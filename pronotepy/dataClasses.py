@@ -729,8 +729,7 @@ class Information:
             ],
             "saisieActualite": False
         }
-        if self._client.post("SaisieActualites", 8, data):
-            self.read = status
+        self.read = status
 
 
 class Message:
