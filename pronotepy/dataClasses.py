@@ -76,6 +76,18 @@ class Util:
     def date_parse(formatted_date: str) -> datetime.datetime:
         """convert date to a datetime.datetime object"""
         if re.match(r"\d{2}/\d{2}/\d{4}$", formatted_date):
+            return datetime.datetime.strptime(formatted_date, '%d/%m/%Y').date()
+        elif re.match(r"\d{2}/\d{2}/\d{4} \d{2}:\d{2}:\d{2}$", formatted_date):
+            return datetime.datetime.strptime(formatted_date, '%d/%m/%Y %H:%M:%S').date()
+        elif re.match(r"\d{2}/\d{2}/\d{2} \d{2}h\d{2}$", formatted_date):
+            return datetime.datetime.strptime(formatted_date, '%d/%m/%y %Hh%M').date()
+        else:
+            log.warning("date parsing not possible for value '" + formatted_date + "' set to None")
+
+    @staticmethod
+    def datetime_parse(formatted_date: str) -> datetime.datetime:
+        """convert date to a datetime.datetime object"""
+        if re.match(r"\d{2}/\d{2}/\d{4}$", formatted_date):
             return datetime.datetime.strptime(formatted_date, '%d/%m/%Y')
         elif re.match(r"\d{2}/\d{2}/\d{4} \d{2}:\d{2}:\d{2}$", formatted_date):
             return datetime.datetime.strptime(formatted_date, '%d/%m/%Y %H:%M:%S')
@@ -146,8 +158,8 @@ class Period:
         self._client = client
         self.id = parsed_json['N']
         self.name = parsed_json['L']
-        self.start = Util.date_parse(parsed_json['dateDebut']['V'])
-        self.end = Util.date_parse(parsed_json['dateFin']['V'])
+        self.start = Util.datetime_parse(parsed_json['dateDebut']['V'])
+        self.end = Util.datetime_parse(parsed_json['dateFin']['V'])
 
     @property
     def grades(self):
@@ -384,7 +396,7 @@ class Lesson:
                  'end', 'outing', 'group_name', 'student_class', 'exempted',
                  '_client', '_content', 'virtual_classrooms', 'num']
     attribute_guide = {
-        'DateDuCours,V': ('start', Util.date_parse),
+        'DateDuCours,V': ('start', Util.datetime_parse),
         'N': ('id', str),
         'estAnnule': ('canceled', bool),
         'Statut': ('status', str),
@@ -751,7 +763,7 @@ class Message:
         'public_gauche': ('author', str),
         'listePublic': ('recipients', list),
         'lu': ('seen', bool),
-        'libelleDate': ('date', lambda d: Util.date_parse(' '.join(d.split()[1:])))
+        'libelleDate': ('date', lambda d: Util.datetime_parse(' '.join(d.split()[1:])))
     }
 
     def __init__(self, client, json_):
