@@ -406,3 +406,71 @@ def ac_orleans_tours(username, password):
     cookies = requests.utils.cookiejar_from_dict(
         requests.utils.dict_from_cookiejar(session.cookies))
     return cookies
+
+def monbureaunumerique(username, password):
+    """
+    ENT for MonBureauNumerique (Grand Est)
+
+    Parameters
+    ----------
+    username : str
+        username
+    password : str
+        password
+
+    Returns
+    -------
+    cookies : cookies
+        returns the ent session cookies
+    """
+
+    # Required Headers
+    headers = {
+        'Connection': 'keep-alive',
+        'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:73.0) Gecko/20100101 Firefox/73.0'
+    }
+
+    # Login payload
+    payload = {
+        "j_username": username,
+        "j_password": password,
+        "_eventId_proceed": ""
+    }
+
+    # ENT / PRONOTE required URLs
+    ent_login_page = "https://cas.monbureaunumerique.fr/login?selection=EDU&service=http%3A%2F%2Fpronote.lycee-fabert.com%2Fpronote%2F&submit=Valider"
+    ent_load = "https://educonnect.education.gouv.fr/idp/profile/SAML2/POST/SSO"
+    ent_login = "https://educonnect.education.gouv.fr/idp/profile/SAML2/POST/SSO?execution=e1s1"
+    pronote_verif = "https://cas.monbureaunumerique.fr/saml/SAMLAssertionConsumer"
+
+    # ENT Connection
+    session = requests.Session()
+
+    # Connection URL specifying the pronote service
+    response = session.get(ent_login_page, headers=headers)
+
+    # retrieving the "RelayState", "SAMLResponse" in the ent response for educonnect
+    soup = BeautifulSoup(response.text, 'html.parser')
+    cas_info = dict()
+    inputs = soup.findAll('input', {'type':'hidden'})
+    for input_ in inputs:
+        cas_info[input_.get('name')] = input_.get('value')
+
+    session.post(ent_load, headers=headers, data=cas_info)
+
+    # Send user:pass to the ENT
+    response = session.post(ent_login, headers=headers, data=payload)
+
+    # retrieving the "RelayState", "SAMLResponse" tokens in the response
+    soup = BeautifulSoup(response.text, 'html.parser')
+    cas_infos = dict()
+    inputs = soup.findAll('input', {'type': 'hidden'})
+    for input_ in inputs:
+        cas_infos[input_.get('name')] = input_.get('value')
+
+    # retrieving pronote ticket
+    response = session.post(pronote_verif, headers=headers, data=cas_infos)
+
+    cookies = requests.utils.cookiejar_from_dict(
+        requests.utils.dict_from_cookiejar(session.cookies))
+    return cookies
