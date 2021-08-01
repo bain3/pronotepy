@@ -695,9 +695,9 @@ class Information:
         'auteur': ('author', str),
         'listeQuestions,V': ('_raw_content', list),
         'lue': ('read', bool),
-        'dateCreation,V': ('creation_date', Util.date_parse),
-        'dateDebut,V': ('start_date', Util.date_parse),
-        'dateFin,V': ('end_date', Util.date_parse),
+        'dateCreation,V': ('creation_date', Util.datetime_parse),
+        'dateDebut,V': ('start_date', Util.datetime_parse),
+        'dateFin,V': ('end_date', Util.datetime_parse),
         'categorie,V,L': ('category', str),
         'estSondage': ('survey', bool),
         'reponseAnonyme': ('anonymous_response', bool)
