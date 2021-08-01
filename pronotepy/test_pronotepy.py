@@ -1,4 +1,5 @@
 import datetime
+import typing
 import unittest
 
 import pronotepy
@@ -39,14 +40,6 @@ class TestClient(unittest.TestCase):
             self.assertLessEqual(start, hw.date)
             self.assertLessEqual(hw.date, end)
 
-    def test_information(self):
-        information = client.information_and_surveys()
-        self.assertGreater(len(information), 0)
-        for i in information:
-            self.assertIsNotNone(i.author)
-            self.assertIsNotNone(i.creation_date)
-            self.assertIsInstance(i.survey, bool)
-
     def test_refresh(self):
         client.refresh()
         self.assertEqual(client.session_check(), True)
@@ -75,6 +68,30 @@ class TestPeriod(unittest.TestCase):
         for evaluation in evaluations:
             for acquisition in evaluation.acquisitions:
                 self.assertIsNotNone(acquisition)
+
+
+class TestInformation(unittest.TestCase):
+
+    def test_attribute_type(self):
+        information = client.information_and_surveys()
+        for info in information:
+            for attr_name, attr_type in typing.get_type_hints(pronotepy.Information).items():
+                with self.subTest(attr_name=attr_name, attr_type=attr_type):
+                    if isinstance(attr_type, typing._BaseGenericAlias):
+                        attr_type = typing.get_args(attr_type)
+                    self.assertIsInstance(info.__getattribute__(attr_name), attr_type)
+
+    def test_unread(self):
+        information = client.information_and_surveys(only_unread=True)
+        for info in information:
+            self.assertFalse(info.read)
+
+    def test_time_delta(self):
+        start = datetime.datetime(year=client.start_day.year, month=client.start_day.month, day=client.start_day.day)
+        end = start + datetime.timedelta(days=100)
+        information = client.information_and_surveys(date_from=start, date_to=end)
+        for info in information:
+            self.assertTrue(start <= info.start_date <= end, msg="date outside the research limits")
 
 
 class TestLesson(unittest.TestCase):
