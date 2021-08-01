@@ -344,9 +344,19 @@ class Client(_ClientBase):
         return [dataClasses.Message(self, m) for m in messages['donneesSec']['donnees']['listeMessagerie']['V']
                 if not m.get('estUneDiscussion')]
 
-    def information_and_surveys(self, only_unread: bool = False) -> List[dataClasses.Information]:
+    def information_and_surveys(self, date_from: datetime.datetime = None, date_to: datetime.datetime = None,
+                                only_unread: bool = False, ) -> List[dataClasses.Information]:
         """
-        Gets all the information and surveys in the information and surveys tab
+        Gets all the information and surveys in the information and surveys tab.
+
+        Parameters
+        ----------
+        only_unread : bool
+            Return only unread information
+        date_from : datetime.datetime
+            The first date
+        date_to : datetime.datetime
+            The second date
 
         Returns
         -------
@@ -358,7 +368,14 @@ class Client(_ClientBase):
                 response['donneesSec']['donnees']['listeActualites']['V']]
 
         if only_unread:
-            return [i for i in info if not i.read]
+            info = [i for i in info if not i.read]
+
+        if date_from is not None:
+            info = [i for i in info if i.start_date >= date_from]
+
+        if date_to is not None:
+            info = [i for i in info if i.start_date <= date_to]
+
         return info
 
     @property
