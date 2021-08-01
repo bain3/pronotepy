@@ -691,7 +691,7 @@ class Information:
 
     attribute_guide = {
         'N': ('id', str),
-        'L': ('title', str),
+        'L': ('title', str, None),
         'auteur': ('author', str),
         'listeQuestions,V': ('_raw_content', list),
         'lue': ('read', bool),
