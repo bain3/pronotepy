@@ -3,18 +3,21 @@ import json
 import logging
 import re
 from html import unescape
-from typing import Union, List
+from typing import Union, List, Callable, Any, TypeVar, Optional, Tuple, Set
 from urllib.parse import quote
 
 from Crypto.Util import Padding
 
-from .exceptions import IncorrectJson
+from .exceptions import ParsingError
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 
 def _get_l(d): return d['L']
+
+
+class MissingType: pass
 
 
 class Util:
@@ -42,30 +45,6 @@ class Util:
         return output
 
     @classmethod
-    def prepare_json(cls, data_class, json_dict):
-        """Prepares json for the data class."""
-        attribute_dict = data_class.attribute_guide
-        output = {}
-        for key in attribute_dict:
-            actual_dict = key.split(',')
-            try:
-                out = json_dict
-                for level in actual_dict:
-                    out = out[level]
-            except KeyError:
-                if len(attribute_dict[key]) == 3:
-                    output[attribute_dict[key][0]] = attribute_dict[key][2]
-                else:
-                    try:
-                        output[attribute_dict[key][0]] = attribute_dict[key][1](None)
-                    except Exception as e:
-                        log.debug("Exception while parsing json (" + str(actual_dict) + "), setting to None: " + str(e))
-                        output[attribute_dict[key][0]] = None
-            else:
-                output[attribute_dict[key][0]] = attribute_dict[key][1](out)
-        return output
-
-    @classmethod
     def grade_parse(cls, string):
         if '|' in string:
             return cls.grade_translate[int(string[1]) - 1]
@@ -73,7 +52,7 @@ class Util:
             return string
 
     @staticmethod
-    def date_parse(formatted_date: str) -> datetime.date:
+    def date_parse(formatted_date: str) -> Optional[datetime.date]:
         """convert date to a datetime.date object"""
         if re.match(r"\d{2}/\d{2}/\d{4}$", formatted_date):
             return datetime.datetime.strptime(formatted_date, '%d/%m/%Y').date()
@@ -83,9 +62,10 @@ class Util:
             return datetime.datetime.strptime(formatted_date, '%d/%m/%y %Hh%M').date()
         else:
             log.warning("date parsing not possible for value '" + formatted_date + "' set to None")
+            return None
 
     @staticmethod
-    def datetime_parse(formatted_date: str) -> datetime.datetime:
+    def datetime_parse(formatted_date: str) -> Optional[datetime.datetime]:
         """convert date to a datetime.datetime object"""
         if re.match(r"\d{2}/\d{2}/\d{4}$", formatted_date):
             return datetime.datetime.strptime(formatted_date, '%d/%m/%Y')
@@ -95,6 +75,7 @@ class Util:
             return datetime.datetime.strptime(formatted_date, '%d/%m/%y %Hh%M')
         else:
             log.warning("date parsing not possible for value '" + formatted_date + "' set to None")
+            return None
 
     @staticmethod
     def html_parse(html_text: str) -> str:
@@ -102,7 +83,70 @@ class Util:
         return unescape(re.sub(re.compile('<.*?>'), '', html_text))
 
 
-class Subject:
+class Object:
+    """
+    Base object for all pronotepy data classes.
+    """
+
+    class _Resolver:
+        """
+        Resolves an arbitrary value from a json dictionary.
+        """
+
+        R = TypeVar("R")
+        _missing: MissingType = MissingType()
+
+        def __init__(self, json_dict: dict):
+            self.json_dict = json_dict
+
+        def __call__(self, converter: Callable[[Any], R], *path: str, default: Union[MissingType, R] = _missing,
+                     strict: bool = True) -> Optional[R]:
+            """
+
+            Parameters
+            ----------
+            converter : Callable[[Any], R]
+                the final value will be passed to this converter, it can be any callable with a single argument
+            path : str
+                arguments describing the path through the dictionary to the value
+            default : Union[MissingType, R]
+                default value if the actual one cannot be found, works with strict as False
+            strict : bool
+                if True, the resolver will return None when it can't find the correct value
+
+            Returns
+            -------
+            the resolved value
+            """
+            json_value: Any = self.json_dict
+            try:
+                for p in path:  # walk through the json dict according to the path
+                    json_value = json_value[p]
+            except KeyError:
+                # we have failed to get the correct value, try to return a default
+                if default is not self._missing:
+                    log.debug(
+                        f"Could not get value for (path: {','.join(path)}), setting to default.")
+                    json_value = default
+                else:
+                    if strict:
+                        # in strict mode we do not want to give unpredictable output
+                        raise ParsingError("Error while parsing received json", self.json_dict, path)
+
+                    json_value = None
+            else:
+                try:
+                    json_value = converter(json_value)
+                except Exception as e:
+                    raise ParsingError(f"Error while converting value: {e}", self.json_dict, path)
+
+            return json_value
+
+    def __init__(self, json_dict):
+        self._resolver: Object._Resolver = self._Resolver(json_dict)
+
+
+class Subject(Object):
     """
     Represents a subject. You shouldn't have to create this class manually.
 
@@ -115,21 +159,20 @@ class Subject:
     groups : bool
         if the subject is in groups
     """
+
     __slots__ = ['id', 'name', 'groups']
 
-    attribute_guide = {
-        'N': ('id', str),
-        'L': ('name', str),
-        'estServiceEnGroupe': ('groups', bool)
-    }
-
     def __init__(self, parsed_json):
-        prepared_json = Util.prepare_json(self.__class__, parsed_json)
-        for key in prepared_json:
-            self.__setattr__(key, prepared_json[key])
+        super().__init__(parsed_json)
+
+        self.id = self._resolver(str, "N")
+        self.name = self._resolver(str, "L")
+        self.groups = self._resolver(bool, "estServiceGroupe", default=False)
+
+        del self._resolver
 
 
-class Period:
+class Period(Object):
     """
     Represents a period of the school year. You shouldn't have to create this class manually.
 
@@ -145,21 +188,21 @@ class Period:
         date on which the period ends
     """
 
-    id: str
-    name: str
-    start: datetime.datetime
-    end: datetime.datetime
-
     __slots__ = ['_client', 'id', 'name', 'start', 'end']
-    instances = set()
+    instances: Set[Any] = set()
 
-    def __init__(self, client, parsed_json):
+    def __init__(self, client, json_dict):
+        super().__init__(json_dict)
+
         self.__class__.instances.add(self)
         self._client = client
-        self.id = parsed_json['N']
-        self.name = parsed_json['L']
-        self.start = Util.datetime_parse(parsed_json['dateDebut']['V'])
-        self.end = Util.datetime_parse(parsed_json['dateFin']['V'])
+
+        self.id: str = self._resolver(str, "N")
+        self.name: str = self._resolver(str, "L")
+        self.start: datetime.datetime = self._resolver(Util.datetime_parse, "dateDebut", "V")
+        self.end: datetime.datetime = self._resolver(Util.datetime_parse, "dateFin", "V")
+
+        del self._resolver
 
     @property
     def grades(self):
@@ -217,7 +260,7 @@ class Period:
         return [Evaluation(e) for e in evaluations]
 
 
-class Average:
+class Average(Object):
     """
     Represents an Average.
 
@@ -239,33 +282,21 @@ class Average:
         subject the average is from
     """
 
-    student: str
-    class_average: str
-    max: str
-    min: str
-    out_of: str
-    default_out_of: str
-    subject: Subject
-
-    attribute_guide = {
-        'moyEleve,V': ('student', Util.grade_parse),
-        'baremeMoyEleve,V': ('out_of', Util.grade_parse),
-        'baremeMoyEleveParDefault,V': ('default_out_of', Util.grade_parse, ""),
-        'moyClasse,V': ('class_average', Util.grade_parse),
-        'moyMin,V': ('min', Util.grade_parse),
-        'moyMax,V': ('max', Util.grade_parse)
-    }
     __slots__ = ['student', 'out_of', 'default_out_of', 'class_average', 'min', 'max', 'subject']
 
-    def __init__(self, parsed_json):
-        prepared_json = Util.prepare_json(self.__class__, parsed_json)
-        for key in prepared_json:
-            self.__setattr__(key, prepared_json[key])
-        self.subject = Subject(parsed_json)
+    def __init__(self, json_dict):
+        super().__init__(json_dict)
+
+        self.student: str = self._resolver(Util.grade_parse, "moyEleve", "V")
+        self.out_of: str = self._resolver(Util.grade_parse, "baremeMoyEleve", "V")
+        self.default_out_of: str = self._resolver(Util.grade_parse, "baremeMoyEleveParDefault", "V", default="")
+        self.class_average: str = self._resolver(Util.grade_parse, "moyClasse", "V")
+        self.min: str = self._resolver(Util.grade_parse, "moyMin", "V")
+        self.max: str = self._resolver(Util.grade_parse, "moyMax", "V")
+        self.subject = Subject(json_dict)
 
 
-# noinspection PyTypeChecker
-class Grade:
+class Grade(Object):
     """Represents a grade. You shouldn't have to create this class manually.
 
     Attributes
@@ -276,7 +307,7 @@ class Grade:
         the actual grade
     out_of : str
         the maximum amount of points
-    default_out_of : str
+    default_out_of : Optional[str]
         the default maximum amount of points
     date : datetime.date
         the date on which the grade was given
@@ -296,69 +327,47 @@ class Grade:
         the comment on the grade description
     """
 
-    id: str
-    grade: str
-    out_of: str
-    default_out_of: str
-    date: datetime.date
-    subject: Subject
-    period: Period
-    average: str
-    max: str
-    min: str
-    coefficient: str
-    comment: str
-
-    attribute_guide = {
-        "N": ("id", str),
-        "note,V": ("grade", Util.grade_parse),
-        "bareme,V": ("out_of", Util.grade_parse),
-        "baremeParDefault,V": ("default_out_of", Util.grade_parse, ""),
-        "date,V": ("date", Util.date_parse),
-        "service,V": ("subject", Subject),
-        "periode,V,N": ("period", lambda p: Util.get(Period.instances, id=p)),
-        "moyenne,V": ("average", Util.grade_parse),
-        "noteMax,V": ("max", Util.grade_parse),
-        "noteMin,V": ("min", Util.grade_parse),
-        "coefficient": ("coefficient", str),
-        "commentaire": ("comment", str)
-    }
-
-    instances = set()
-
     __slots__ = ['id', 'grade', 'out_of', 'default_out_of', 'date', 'subject',
                  'period', 'average', 'max', 'min', 'coefficient', 'comment']
 
-    def __init__(self, parsed_json):
-        if parsed_json['G'] != 60:
-            raise IncorrectJson('The json received was not the same as expected.')
-        prepared_json = Util.prepare_json(self.__class__, parsed_json)
-        self.coefficient = 1
-        for key in prepared_json:
-            self.__setattr__(key, prepared_json[key])
+    def __init__(self, json_dict):
+        super().__init__(json_dict)
+
+        self.id: str = self._resolver(str, "N")
+        self.grade: str = self._resolver(Util.grade_parse, "note", "V")
+        self.out_of: str = self._resolver(Util.grade_parse, "bareme", "V")
+        self.default_out_of: str = self._resolver(Util.grade_parse, "baremeParDefault", "V", strict=False)
+        self.date: datetime.date = self._resolver(Util.date_parse, "date", "V")
+        self.subject: Subject = self._resolver(Subject, "service", "V")
+        self.period: Period = self._resolver(lambda p: Util.get(Period.instances, id=p)[0], "periode", "V", "N")
+        self.average: str = self._resolver(Util.grade_parse, "moyenne", "V")
+        self.max: str = self._resolver(Util.grade_parse, "noteMax", "V")
+        self.min: str = self._resolver(Util.grade_parse, "noteMin", "V")
+        self.coefficient: str = self._resolver(str, "coefficient")
+        self.comment: str = self._resolver(str, "commentaire")
+
+        del self._resolver
 
 
-class Lesson:
+class Lesson(Object):
     """
     Represents a lesson with a given time. You shouldn't have to create this class manually.
-
-    !!If a lesson is a pedagogical outing, it will only have the "outing" and "start" attributes!!
 
     Attributes
     ----------
     id : str
         the id of the lesson (used internally)
-    subject : pronotepy.dataClasses.Subject
+    subject : Optional[pronotepy.Subject]
         the subject that the lesson is from
-    teacher_name : str
+    teacher_name : Optional[str]
         name of the teacher
-    classroom : str
+    classroom : Optional[str]
         name of the classroom
     canceled : bool
         if the lesson is canceled
-    status : str
+    status : Optional[str]
         status of the lesson
-    background_color : str
+    background_color : Optional[str]
         background color of the lesson
     outing : bool
         if it is a pedagogical outing
@@ -366,47 +375,23 @@ class Lesson:
         starting time of the lesson
     end : datetime.datetime
         end of the lesson
-    group_name : str
+    group_name : Optional[str]
         Name of the group.
     exempted : bool
         Specifies if the student's presence is exempt.
     virtual_classrooms : List[str]
         List of urls for virtual classrooms
-    num: int
+    num : int
         For the same lesson time, the biggest num is the one shown on pronote.
+    detention : bool
+        is marked as detention
     """
-
-    id: str
-    subject: Union[Subject, None]
-    teacher_name: str
-    classroom: str
-    canceled: bool
-    status: str
-    background_color: str
-    outing: bool
-    start: datetime.datetime
-    group_name: str
-    exempted: bool
-    virtual_classrooms: List[str]
-    end: datetime.datetime
-    num: int
 
     __slots__ = ['id', 'subject', 'teacher_name', 'classroom', 'start',
                  'canceled', 'status', 'background_color', 'detention',
-                 'end', 'outing', 'group_name', 'student_class', 'exempted',
+                 'end', 'outing', 'group_name', 'exempted',
                  '_client', '_content', 'virtual_classrooms', 'num']
-    attribute_guide = {
-        'DateDuCours,V': ('start', Util.datetime_parse),
-        'N': ('id', str),
-        'estAnnule': ('canceled', bool),
-        'Statut': ('status', str),
-        'CouleurFond': ('background_color', str),
-        'estRetenue': ('detention', bool, False),
-        'estSortiePedagogique': ('outing', bool, False),
-        'dispenseEleve': ('exempted', bool, False),
-        'listeVisios,V': ('virtual_classrooms', lambda l: [i["url"] for i in l], []),
-        'P': ('num', int)
-    }
+
     transformers = {
         16: ('subject', Subject),
         3: ('teacher_name', _get_l),
@@ -414,37 +399,54 @@ class Lesson:
         2: ('group_name', _get_l)
     }
 
-    def __init__(self, client, parsed_json):
+    def __init__(self, client, json_dict):
+        super().__init__(json_dict)
         self._client = client
         self._content = None
-        prepared_json = Util.prepare_json(self.__class__, parsed_json)
-        for key in prepared_json:
-            self.__setattr__(key, prepared_json[key])
+
+        self.id: str = self._resolver(str, "N")
+        self.canceled: bool = self._resolver(bool, "estAnnule", default=False)
+        self.status: Optional[str] = self._resolver(str, "Statut", strict=False)
+        self.background_color: Optional[str] = self._resolver(str, "CouleurFond", strict=False)
+        self.outing: bool = self._resolver(bool, "estSortiePedagogique", default=False)
+        self.start: datetime.datetime = self._resolver(Util.datetime_parse, "DateDuCours", "V")
+        self.exempted: bool = self._resolver(bool, "dispenseEleve", default=False)
+        self.virtual_classrooms: List[str] = self._resolver(lambda l: [i["url"] for i in l], "listeVisios", "V",
+                                                            default=[])
+        self.num: int = self._resolver(int, "P", default=0)
+        self.detention: bool = self._resolver(bool, "estRetenue", default=False)
 
         # get correct ending time
         # Pronote gives us the place where the hour should be in a week, when we modulo that with the amount of
         # hours in a day we can get the "place" when the hour starts. Then we just add the duration (and substract 1)
-        end_place = parsed_json['place'] % (len(
-            client.func_options['donneesSec']['donnees']['General']['ListeHeuresFin']['V']) - 1) + parsed_json[
+        end_place = json_dict['place'] % (len(
+            client.func_options['donneesSec']['donnees']['General']['ListeHeuresFin']['V']) - 1) + json_dict[
                         'duree'] - 1
 
         # With the end "place" now known we can look up the ending time in func_options
-        self.end = None
         end_time = next(filter(
             lambda x: x['G'] == end_place,
             client.func_options['donneesSec']['donnees']['General']['ListeHeuresFin']['V']
         ))
         end_time = datetime.datetime.strptime(end_time['L'], "%Hh%M").time()
-        self.end = self.start.replace(hour=end_time.hour, minute=end_time.minute)
+        self.end: datetime.datetime = self.start.replace(hour=end_time.hour, minute=end_time.minute)
 
-        self.teacher_name = self.classroom = self.group_name = self.student_class = ''
-        self.subject = None
-        if 'ListeContenus' in parsed_json:
-            for d in parsed_json['ListeContenus']['V']:
-                try:
-                    self.__setattr__(self.__class__.transformers[d['G']][0], self.__class__.transformers[d['G']][1](d))
-                except KeyError:
-                    pass
+        # get additional information about the lesson
+        self.teacher_name: Optional[str] = None
+        self.classroom: Optional[str] = None
+        self.group_name: Optional[str] = None
+        self.subject: Optional[Subject] = None
+
+        if 'ListeContenus' not in json_dict:
+            raise ParsingError("Error while parsing for lesson details", json_dict, ("ListeContenus", "V"))
+
+        for d in json_dict['ListeContenus']['V']:
+            try:
+                self.__setattr__(self.__class__.transformers[d['G']][0], self.__class__.transformers[d['G']][1](d))
+            except KeyError:
+                pass
+
+        del self._resolver
 
     @property
     def normal(self):
@@ -477,7 +479,7 @@ class Lesson:
         return self._content
 
 
-class LessonContent:
+class LessonContent(Object):
     """
     Represents the content of a lesson. You shouldn't have to create this class manually.
 
@@ -489,22 +491,16 @@ class LessonContent:
         description of the lesson content
     """
 
-    title: str
-    description: str
-
-    attribute_guide = {
-        'L': ('title', str),
-        'descriptif,V': ('description', Util.html_parse),
-        'ListePieceJointe,V': ('_files', tuple)
-    }
-
     __slots__ = ['title', 'description', '_files', '_client']
 
-    def __init__(self, client, parsed_json):
-        prepared_json = Util.prepare_json(self.__class__, parsed_json)
-        for key in prepared_json:
-            self.__setattr__(key, prepared_json[key])
+    def __init__(self, client, json_dict):
+        super().__init__(json_dict)
+
         self._client = client
+
+        self.title: str = self._resolver(str, 'L')
+        self.description: str = self._resolver(Util.html_parse, "descriptif", "V")
+        self._files: Tuple[dict] = self._resolver(tuple, "ListePieceJointe", "V")
 
     @property
     def files(self):
@@ -512,7 +508,7 @@ class LessonContent:
         return [File(self._client, jsn) for jsn in self._files]
 
 
-class File:
+class File(Object):
     """
     Represents a file uploaded to pronote.
 
@@ -526,28 +522,22 @@ class File:
         url of the file
     """
 
-    name: str
-    id: str
-    url: str
-
-    attribute_guide = {
-        'L': ('name', str),
-        'N': ('id', str)
-    }
-
     __slots__ = ['name', 'id', '_client', 'url', '_data']
 
-    def __init__(self, client, parsed_json):
-        prepared_json = Util.prepare_json(self.__class__, parsed_json)
-        for key in prepared_json:
-            self.__setattr__(key, prepared_json[key])
+    def __init__(self, client, json_dict):
+        super().__init__(json_dict)
+
         self._client = client
+
+        self.name: str = self._resolver(str, 'L')
+        self.id: str = self._resolver(str, 'N')
+
         padd = Padding.pad(json.dumps({'N': self.id, 'G': 1}).replace(' ', '').encode(), 16)
         magic_stuff = client.communication.encryption.aes_encrypt(padd).hex()
-        self.url = client.communication.root_site \
-                   + '/FichiersExternes/' \
-                   + magic_stuff + '/' + quote(self.name, safe='~()*!.\'') \
-                   + '?Session=' + client.attributes['h']
+
+        self.url = f"{client.communication.root_site}/FichiersExternes/{magic_stuff}/" + \
+                   quote(self.name, safe='~()*!.\'') + f"?Session={client.attributes['h']}"
+
         self._data = None
 
     def save(self, file_name=None):
@@ -578,7 +568,7 @@ class File:
         return response.content
 
 
-class Homework:
+class Homework(Object):
     """
     Represents a homework. You shouldn't have to create this class manually.
 
@@ -598,30 +588,20 @@ class Homework:
         deadline
     """
 
-    id: str
-    subject: Subject
-    description: str
-    background_color: str
-    done: bool
-    date: datetime.date
-
     __slots__ = ['id', 'subject', 'description', 'done', 'background_color', '_client', 'date', '_files']
-    attribute_guide = {
-        'N': ('id', str),
-        'descriptif,V': ('description', Util.html_parse),
-        'TAFFait': ('done', bool),
-        'Matiere,V': ('subject', Subject),
-        'CouleurFond': ('background_color', str),
-        'PourLe,V': ('date', Util.date_parse),
-        'ListePieceJointe,V': ('_files', tuple)
-    }
 
-    def __init__(self, client, parsed_json):
-        self.done = False
+    def __init__(self, client, json_dict):
+        super().__init__(json_dict)
+
         self._client = client
-        prepared_json = Util.prepare_json(self.__class__, parsed_json)
-        for key in prepared_json:
-            self.__setattr__(key, prepared_json[key])
+
+        self.id: str = self._resolver(str, "N")
+        self.description: str = self._resolver(Util.html_parse, "descriptif", "V")
+        self.done: bool = self._resolver(bool, "TAFFait")
+        self.subject: Subject = self._resolver(Subject, "Matiere", "V")
+        self.date: datetime.date = self._resolver(Util.date_parse, "PourLe", "V")
+        self.background_color: str = self._resolver(str, "CouleurFond")
+        self._files = self._resolver(tuple, "ListePieceJointe", "V")
 
     def set_done(self, status: bool):
         """
@@ -644,7 +624,7 @@ class Homework:
         return [File(self._client, jsn) for jsn in self._files]
 
 
-class Information:
+class Information(Object):
     """
     Represents a information in a information and surveys tab.
 
@@ -656,8 +636,6 @@ class Information:
         author of the information
     title : str
         title of the information
-    content: str
-        content of the information
     read : bool
         if the message has been read
     creation_date : datetime.datetime
@@ -674,40 +652,25 @@ class Information:
         if the survey response is anonymous
     """
 
-    id: str
-    title: str
-    author: str
-    content: str
-    read: bool
-    creation_date: datetime.datetime
-    start_date: datetime.datetime
-    end_date: datetime.datetime
-    category: str
-    survey: bool
-    anonymous_response: bool
-
     __slots__ = ['id', 'title', 'author', 'read', 'creation_date', 'start_date', 'end_date', 'category',
                  'survey', 'anonymous_response', '_raw_content', '_client']
 
-    attribute_guide = {
-        'N': ('id', str),
-        'L': ('title', str, None),
-        'auteur': ('author', str),
-        'listeQuestions,V': ('_raw_content', list),
-        'lue': ('read', bool),
-        'dateCreation,V': ('creation_date', Util.datetime_parse),
-        'dateDebut,V': ('start_date', Util.datetime_parse),
-        'dateFin,V': ('end_date', Util.datetime_parse),
-        'categorie,V,L': ('category', str),
-        'estSondage': ('survey', bool),
-        'reponseAnonyme': ('anonymous_response', bool)
-    }
+    def __init__(self, client, json_dict):
+        super().__init__(json_dict)
 
-    def __init__(self, client, json_):
         self._client = client
-        prepared_json = Util.prepare_json(self.__class__, json_)
-        for key in prepared_json:
-            self.__setattr__(key, prepared_json[key])
+
+        self.id: str = self._resolver(str, 'N')
+        self.title: Optional[str] = self._resolver(str, "L", strict=False)
+        self.author: str = self._resolver(str, "auteur")
+        self._raw_content: list = self._resolver(list, "listeQuestions", "V")
+        self.read: bool = self._resolver(bool, "lue")
+        self.creation_date: datetime.datetime = self._resolver(Util.datetime_parse, "dateCreation", "V")
+        self.start_date: datetime.datetime = self._resolver(Util.datetime_parse, "dateDebut", "V")
+        self.end_date: datetime.datetime = self._resolver(Util.datetime_parse, "dateFin", "V")
+        self.category: str = self._resolver(str, "categorie", "V", "L")
+        self.survey: bool = self._resolver(bool, "estSondage")
+        self.anonymous_response: bool = self._resolver(bool, "reponseAnonyme")
 
     @property
     def content(self):
@@ -733,7 +696,7 @@ class Information:
         self.read = status
 
 
-class Message:
+class Message(Object):
     """
     Represents a message in a discussion.
 
@@ -751,27 +714,19 @@ class Message:
         the date when the message was sent
     """
 
-    id: str
-    author: str
-    recipients: list
-    seen: bool
-    date: datetime.datetime
-
     __slots__ = ['id', 'author', 'recipients', 'seen', 'date', '_client', '_listePM']
-    attribute_guide = {
-        'N': ('id', str),
-        'public_gauche': ('author', str),
-        'listePublic': ('recipients', list),
-        'lu': ('seen', bool),
-        'libelleDate': ('date', lambda d: Util.datetime_parse(' '.join(d.split()[1:])))
-    }
 
-    def __init__(self, client, json_):
+    def __init__(self, client, json_dict):
+        super().__init__(json_dict)
         self._client = client
-        self._listePM = json_['listePossessionsMessages']['V']
-        prepared_json = Util.prepare_json(self.__class__, json_)
-        for key in prepared_json:
-            self.__setattr__(key, prepared_json[key])
+        self._listePM = json_dict['listePossessionsMessages']['V']
+
+        self.id: str = self._resolver(str, "N")
+        self.author: str = self._resolver(str, "public_gauche")
+        self.recipients: list = self._resolver(list, "listePublic")
+        self.seen: bool = self._resolver(bool, "lu")
+        self.date: datetime.datetime = self._resolver(lambda d: Util.datetime_parse(" ".join(d.split()[1:])),
+                                                      "libelleDate")
 
     @property
     def content(self):
@@ -796,332 +751,258 @@ class ClientInfo:
 
     Attributes
     ----------
-    id: str
+    id : str
       id of the client (used internally)
-    name: str
-      name of the client
-    delegue: List[str]
-      list of classes of which the user is a delegue of
-    class_name: str
-      name of the student's class
-    raw_resource: dict
+    raw_resource : dict
       Raw json defining the resource
     """
-
-    id: str
 
     __slots__ = ['id', 'raw_resource']
 
     def __init__(self, json_):
-        self.id = json_['N']
-        self.raw_resource = json_
+        self.id: str = json_['N']
+        self.raw_resource: dict = json_
 
     @property
-    def name(self):
+    def name(self) -> str:
+        """
+        Name of the client
+        """
         return self.raw_resource['L']
 
     @property
-    def delegue(self):
+    def delegue(self) -> List[str]:
+        """
+        list of classes of which the user is a delegue of
+        """
         if self.raw_resource['estDelegue']:
             return [class_['L'] for class_ in self.raw_resource['listeClassesDelegue']['V']]
         else:
             return []
 
     @property
-    def class_name(self):
+    def class_name(self) -> str:
+        """
+        name of the student's class
+        """
         return self.raw_resource.get('classeDEleve', {}).get('L', '')
 
     @property
-    def establishment(self):
+    def establishment(self) -> str:
+        """
+        name of the student's establishment
+        """
         return self.raw_resource.get('Etablissement', {'V': {'L': ""}})['V']['L']
 
 
-class Acquisition:
+class Acquisition(Object):
     """
     Contains acquisition info for an evaluation.
 
     Attributes
     ----------
-    order: int
+    order : int
         Telling the order in which the acquisition is. The list of acquisitions is already sorted by this.
-    level: str
+    level : str
         the level achieved for this acquisition
-    id: int
+    id : int
         id, used internally
-    abbreviation: str
+    abbreviation : str
         abbreviation for the level achieved
-    coefficient: int
+    coefficient : int
         coefficient
-    domain: str
+    domain : str
         domain in which the acquisition is
-    domain_id: str
-    name: str
+    domain_id : str
+    name : str
         name (description) of the acquisition
-    name_id: str
-    pillar: str
-    pillar_id: str
-    pillar_prefix: str
+    name_id : str
+    pillar : str
+    pillar_id : str
+    pillar_prefix : str
     """
-    order: int
-    level: str
-    id: str
-    abbreviation: str
-    coefficient: int
-    domain: str
-    domain_id: str
-    name: str
-    name_id: str
-    pillar: str
-    pillar_id: str
-    pillar_prefix: str
-
-    attribute_guide = {
-        'L': ('level', str),
-        'N': ('id', str),
-        'abbreviation': ('abbreviation', str),
-        'coefficient': ('coefficient', int),
-        'domaine,V,L': ('domain', str),
-        'domaine,V,N': ('domain_id', str),
-        'item,V,L': ('name', str),
-        'item,V,N': ('name_id', str),
-        'ordre': ('order', int),
-        'pilier,V,L': ('pillar', str),
-        'pilier,V,N': ('pillar_id', str),
-        'pilier,V,strPrefixes': ('pillar_prefix', str)
-    }
 
     __slots__ = [
         "order", "level", "id", "abbreviation", "coefficient", "domain", "domain_id", "name", "name_id", "pillar",
         "pillar_id", "pillar_prefix"]
 
-    def __init__(self, json_):
-        prepared_json = Util.prepare_json(self.__class__, json_)
-        for key in prepared_json:
-            self.__setattr__(key, prepared_json[key])
+    def __init__(self, json_dict):
+        super().__init__(json_dict)
+
+        self.id: str = self._resolver(str, "N")
+        self.level: str = self._resolver(str, "L")
+        self.abbreviation: str = self._resolver(str, "abbreviation")
+        self.coefficient: int = self._resolver(int, "coefficient")
+        self.domain: str = self._resolver(str, "domaine", "V", "L")
+        self.domain_id: str = self._resolver(str, "domaine", "V", "N")
+        self.name: str = self._resolver(str, "item", "V", "L")
+        self.name_id: str = self._resolver(str, "item", "V", "N")
+        self.order: int = self._resolver(int, "ordre")
+        self.pillar: str = self._resolver(str, "pilier", "V", "L")
+        self.pillar_id: str = self._resolver(str, "pilier", "V", "N")
+        self.pillar_prefix: str = self._resolver(str, "pilier", "V", "strPrefixes")
 
 
-class Evaluation:
+class Evaluation(Object):
     """
     Data class for an evaluation.
 
     Attributes
     ----------
-    name: str
-    id: str
-    domain: str
-    teacher: str
+    name : str
+    id : str
+    domain : Optional[str]
+    teacher : str
         the teacher who issued the evaluation
-    coefficient: int
-    description: str
-    subject: pronotepy.dataClasses.Subject
-    paliers: List[str]
-    acquisitions: List[pronotepy.dataClasses.Acquisition]
-    date: datetime.date
+    coefficient : int
+    description : str
+    subject : pronotepy.dataClasses.Subject
+    paliers : List[str]
+    acquisitions : List[pronotepy.dataClasses.Acquisition]
+    date : datetime.date
     """
-    name: str
-    name: str
-    id: str
-    domain: str
-    teacher: str
-    coefficient: int
-    description: str
-    subject: Subject
-    paliers: List[str]
-    acquisitions: List[Acquisition]
-    date: datetime.date
 
     __slots__ = [
         "name", "name", "id", "domain", "teacher", "coefficient", "description", "subject", "paliers", "acquisitions",
         "date"]
 
-    attribute_guide = {
-        'L': ('name', str),
-        'N': ('id', str),
-        'domaine,V,L': ('domain', str),
-        'individu,V,L': ('teacher', str),
-        'coefficient': ('coefficient', int),
-        'descriptif': ('description', str),
-        'matiere,V': ('subject', Subject),
-        'listePaliers,V': ('paliers', lambda x: [_get_l(y) for y in x]),
-        # Can we just appreciate the readability of this?
-        'listeNiveauxDAcquisitions,V': (
-            'acquisitions', lambda x: sorted([Acquisition(y) for y in x], key=lambda z: z.order)),
-        "date,V": ("date", Util.date_parse),
-    }
-
-    def __init__(self, json_):
-        prepared_json = Util.prepare_json(self.__class__, json_)
-        for key in prepared_json:
-            self.__setattr__(key, prepared_json[key])
+    def __init__(self, json_dict):
+        super().__init__(json_dict)
+        self.name: str = self._resolver(str, "L")
+        self.id: str = self._resolver(str, "N")
+        self.domain: Optional[str] = self._resolver(str, "domaine", "V", "L", strict=False)
+        self.teacher: str = self._resolver(str, "individu", "V", "L")
+        self.coefficient: int = self._resolver(int, "coefficient")
+        self.description: str = self._resolver(str, "descriptif")
+        self.subject: Subject = self._resolver(Subject, "matiere", "V")
+        self.paliers: List[str] = self._resolver(lambda x: [_get_l(y) for y in x], "listePaliers", "V")
+        self.acquisitions: List[Acquisition] = self._resolver(
+            lambda x: sorted([Acquisition(y) for y in x], key=lambda z: z.order), "listeNiveauxDAcquisitions", "V")
+        self.date: datetime.date = self._resolver(Util.date_parse, "date", "V")
 
 
-class Identity:
+class Identity(Object):
     """
     Represents an Identity of a person
     
     Attributes
     ----------
-    postal_code: str
-    date_of_birth: datetime.date
-    email: str
-    last_name: str
-    country: str
-    mobile_number: str
-    landline_number: str
-    other_phone_number: str
-    city: str
-    place_of_birth: str
-    first_names: List[str]
-    address: List[str]
-    formatted_address: str
+    postal_code : str
+    date_of_birth : datetime.date
+    email : Optional[str]
+    last_name : str
+    country : str
+    mobile_number : Optional[str]
+    landline_number : Optional[str]
+    other_phone_number : Optional[str]
+    city : str
+    place_of_birth : Optional[str]
+    first_names : List[str]
+    address : List[str]
+    formatted_address : str
         concatenated address information into a single string
     """
-    attribute_guide = {
-        "CP": ("postal_code", str),
-        "dateNaiss": ("date_of_birth", Util.date_parse, None),
-        "email": ("email", str),
-        "nom": ("last_name", str),
-        "pays": ("country", str),
-        "telPort": ("mobile_number", str),
-        "telFixe": ("landline_number", str),
-        "telAutre": ("other_phone_number", str),
-        "ville": ("city", str),
-        "villeNaiss": ("place_of_birth", str)
-    }
     __slots__ = ["postal_code", "date_of_birth", "email", "last_name", "country", "mobile_number", "landline_number",
                  "other_phone_number", "city", "place_of_birth", "first_names", "address", "formatted_address"]
 
-    postal_code: str
-    date_of_birth: datetime.date
-    email: str
-    last_name: str
-    country: str
-    mobile_number: str
-    landline_number: str
-    other_phone_number: str
-    city: str
-    place_of_birth: str
-    first_names: List[str]
-    address: List[str]
-    formatted_address: str
+    def __init__(self, json_dict):
+        super().__init__(json_dict)
 
-    def __init__(self, json_):
-        prepared_json = Util.prepare_json(self.__class__, json_)
-        for key in prepared_json:
-            self.__setattr__(key, prepared_json[key])
+        self.postal_code: str = self._resolver(str, "CP")
+        self.date_of_birth: Optional[datetime.date] = self._resolver(Util.date_parse, "dateNaiss", strict=False)
+        self.email: Optional[str] = self._resolver(str, "email", strict=False)
+        self.last_name: str = self._resolver(str, "nom")
+        self.country: str = self._resolver(str, "pays")
+        self.mobile_number: Optional[str] = self._resolver(str, "telPort", strict=False)
+        self.landline_number: Optional[str] = self._resolver(str, "telFixe", strict=False)
+        self.other_phone_number: Optional[str] = self._resolver(str, "telAutre", strict=False)
+        self.city: str = self._resolver(str, "ville")
+        self.place_of_birth: Optional[str] = self._resolver(str, "villeNaiss", strict=False)
 
-        self.address = []
+        self.address: List[str] = []
         i = 1
         while True:
-            option = json_.get("adresse" + str(i))
+            option = json_dict.get("adresse" + str(i))
             if not option: break
             self.address.append(option)
             i += 1
-        self.formatted_address = ','.join([*self.address, self.postal_code, self.city, self.country])
-        self.first_names = [json_.get("prenom"), json_.get("prenom2"), json_.get("prenom3")]
+        self.formatted_address: str = ','.join([*self.address, self.postal_code, self.city, self.country])
+        self.first_names: List[str] = [json_dict.get("prenom"), json_dict.get("prenom2"), json_dict.get("prenom3")]
 
 
-class Guardian:
+class Guardian(Object):
     """
     Represents a guardian of a student.
 
     Attributes
     ----------
-    identity: dataClasses.Identity
-    accepteInfosProf: bool
-    authorized_email: bool
-    authorized_pick_up_kid: bool
-    urgency_contact: bool
-    preferred_responsible_contact: bool
-    accomodates_kid: bool
-    relatives_link: str
-    responsibility_level: str
-    financially_responsible: bool
-    full_name: str
-    is_legal: bool
+    identity : dataClasses.Identity
+    accepteInfosProf : bool
+    authorized_email : bool
+    authorized_pick_up_kid : bool
+    urgency_contact : bool
+    preferred_responsible_contact : bool
+    accomodates_kid : bool
+    relatives_link : str
+    responsibility_level : str
+    financially_responsible : bool
+    full_name : str
+    is_legal : bool
     """
-    attribute_guide = {
-        "accepteInfosProf": ("accepteInfosProf", bool),
-        "autoriseEmail": ("authorized_email", bool),
-        "autoriseRecupererEnfant": ("authorized_pick_up_kid", bool),
-        "contactUrgence": ("urgency_contact", bool),
-        "estResponsablePreferentiel": ("preferred_responsible_contact", bool),
-        "hebergeEnfant": ("accomodates_kid", bool),
-        "lienParente": ("relatives_link", str),
-        "niveauResponsabilite": ("responsibility_level", str),
-        "responsableFinancier": ("financially_responsible", bool),
-        "nom": ("full_name", str)
-    }
     __slots__ = ["identity", "accepteInfosProf", "authorized_email", "authorized_pick_up_kid", "urgency_contact",
                  "preferred_responsible_contact", "accomodates_kid", "relatives_link", "responsibility_level",
                  "financially_responsible", "full_name", "is_legal"]
 
-    identity: Identity
-    accepteInfosProf: bool
-    authorized_email: bool
-    authorized_pick_up_kid: bool
-    urgency_contact: bool
-    preferred_responsible_contact: bool
-    accomodates_kid: bool
-    relatives_link: str
-    responsibility_level: str
-    financially_responsible: bool
-    full_name: str
-    is_legal: bool
+    def __init__(self, json_dict):
+        super().__init__(json_dict)
 
-    def __init__(self, json_):
-        prepared_json = Util.prepare_json(self.__class__, json_)
-        for key in prepared_json:
-            self.__setattr__(key, prepared_json[key])
+        self.accepteInfosProf: bool = self._resolver(bool, "accepteInfosProf")
+        self.authorized_email: bool = self._resolver(bool, "autoriseEmail")
+        self.authorized_pick_up_kid: bool = self._resolver(bool, "autoriseRecupererEnfant")
+        self.urgency_contact: bool = self._resolver(bool, "contactUrgence")
+        self.preferred_responsible_contact: bool = self._resolver(bool, "estResponsablePreferentiel")
+        self.accomodates_kid: bool = self._resolver(bool, "hebergeEnfant")
+        self.relatives_link: str = self._resolver(str, "lienParente")
+        self.responsibility_level: str = self._resolver(str, "niveauResponsabilite")
+        self.financially_responsible: bool = self._resolver(bool, "responsableFinancier")
+        self.full_name: str = self._resolver(str, "nom")
 
-        self.identity = Identity(json_)
+        self.identity = Identity(json_dict)
         self.is_legal = self.responsibility_level == "LEGAL"
 
 
-class Student:
+class Student(Object):
     """
     Represents a student
 
     Attributes
     ----------
-    full_name: str
-    id: str
-    enrollment_date: datetime.date
-    date_of_birth: datetime.date
-    projects: List[str]
-    last_name: str
-    first_names: str
-    sex: str
-    options: List[str]
+    full_name : str
+    id : str
+    enrollment_date : datetime.date
+    date_of_birth : datetime.date
+    projects : List[str]
+    last_name : str
+    first_names : str
+    sex : str
+    options : List[str]
         language options
     """
-    attribute_guide = {
-        "L": ("full_name", str),
-        "N": ("id", str),
-        "entree,V": ("enrollment_date", Util.date_parse),
-        "neLe,V": ("date_of_birth", Util.date_parse),
-        "listeProjets,V": ("projects", lambda p: [f"{x.get('typeAmenagement', '')} ({x.get('handicap', '')})" for x in p]),
-        "nom": ("last_name", str),
-        "prenoms": ("first_names", str),
-        "sexe": ("sex", str),
-    }
     __slots__ = ["_client", "full_name", "id", "enrollment_date", "date_of_birth", "projects", "last_name",
                  "first_names", "sex", "options", "_cache"]
 
-    full_name: str
-    id: str
-    enrollment_date: datetime.date
-    date_of_birth: datetime.date
-    projects: List[str]
-    last_name: str
-    first_names: str
-    sex: str
-    options: List[str]
+    def __init__(self, client, json_dict):
+        super().__init__(json_dict)
 
-    def __init__(self, client, json_):
-        prepared_json = Util.prepare_json(self.__class__, json_)
-        for key in prepared_json:
-            self.__setattr__(key, prepared_json[key])
+        self.full_name: str = self._resolver(str, "L")
+        self.id: str = self._resolver(str, "N")
+        self.enrollment_date: datetime.date = self._resolver(Util.date_parse, "entree", "V")
+        self.date_of_birth: datetime.date = self._resolver(Util.date_parse, "neLe", "V")
+        self.projects: List[str] = self._resolver(
+            lambda p: [f"{x.get('typeAmenagement', '')} ({x.get('handicap', '')})" for x in p], "listeProjets", "V")
+        self.last_name: str = self._resolver(str, "nom")
+        self.first_names: str = self._resolver(str, "prenoms")
+        self.sex: str = self._resolver(str, "sexe")
 
         self._client = client
         self._cache = None
@@ -1129,7 +1010,7 @@ class Student:
         self.options = []
         i = 1
         while True:
-            option = json_.get("option" + str(i))
+            option = json_dict.get("option" + str(i))
             if not option:
                 break
             self.options.append(option)
@@ -1156,35 +1037,27 @@ class Student:
         return [Guardian(j) for j in self._cache["donneesSec"]["donnees"]["Responsables"]["V"]]
 
 
-class StudentClass:
+class StudentClass(Object):
     """
     Represents a class of students
 
     Attributes
     ----------
-    name: str
-    id: str
-    responsible: bool
+    name : str
+    id : str
+    responsible : bool
         is the teacher responsible for the class
-    grade: str
+    grade : str
     """
-    attribute_guide = {
-        "L": ("name", str),
-        "N": ("id", str),
-        "estResponsable": ("responsible", bool),
-        "niveau,V,L": ("grade", str, "")
-    }
     __slots__ = ["name", "id", "responsible", "grade", "_client"]
 
-    name: str
-    id: str
-    responsible: bool
-    grade: str
+    def __init__(self, client, json_dict):
+        super().__init__(json_dict)
 
-    def __init__(self, client, json_):
-        prepared_json = Util.prepare_json(self.__class__, json_)
-        for key in prepared_json:
-            self.__setattr__(key, prepared_json[key])
+        self.name: str = self._resolver(str, "L")
+        self.id: str = self._resolver(str, "N")
+        self.responsible: bool = self._resolver(bool, "estResponsable")
+        self.grade: str = self._resolver(str, "niveau", "V", "L", default="")
 
         self._client = client
 

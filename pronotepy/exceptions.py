@@ -1,3 +1,6 @@
+from typing import List, Tuple
+
+
 class PronoteAPIError(Exception):
     """
     Base exception for any pronote api errors
@@ -30,6 +33,9 @@ class DataError(Exception):
     pass
 
 
-class IncorrectJson(DataError):
+class ParsingError(DataError):
     """Bad json"""
-    pass
+    def __init__(self, message: str, json_dict: dict, path: Tuple[str, ...]):
+        super().__init__(message)
+        self.json_dict = json_dict
+        self.path = path
