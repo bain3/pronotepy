@@ -295,6 +295,8 @@ class Average(Object):
         self.max: str = self._resolver(Util.grade_parse, "moyMax", "V")
         self.subject = Subject(json_dict)
 
+        del self._resolver
+
 
 class Grade(Object):
     """Represents a grade. You shouldn't have to create this class manually.
@@ -502,6 +504,8 @@ class LessonContent(Object):
         self.description: str = self._resolver(Util.html_parse, "descriptif", "V")
         self._files: Tuple[dict] = self._resolver(tuple, "ListePieceJointe", "V")
 
+        del self._resolver
+
     @property
     def files(self):
         """Get all the attached files from the lesson"""
@@ -539,6 +543,8 @@ class File(Object):
                    quote(self.name, safe='~()*!.\'') + f"?Session={client.attributes['h']}"
 
         self._data = None
+
+        del self._resolver
 
     def save(self, file_name=None):
         """
@@ -602,6 +608,8 @@ class Homework(Object):
         self.date: datetime.date = self._resolver(Util.date_parse, "PourLe", "V")
         self.background_color: str = self._resolver(str, "CouleurFond")
         self._files = self._resolver(tuple, "ListePieceJointe", "V")
+
+        del self._resolver
 
     def set_done(self, status: bool):
         """
@@ -672,6 +680,8 @@ class Information(Object):
         self.survey: bool = self._resolver(bool, "estSondage")
         self.anonymous_response: bool = self._resolver(bool, "reponseAnonyme")
 
+        del self._resolver
+
     @property
     def content(self):
         return Util.html_parse(self._raw_content[0]['texte']['V'])
@@ -727,6 +737,8 @@ class Message(Object):
         self.seen: bool = self._resolver(bool, "lu")
         self.date: datetime.datetime = self._resolver(lambda d: Util.datetime_parse(" ".join(d.split()[1:])),
                                                       "libelleDate")
+
+        del self._resolver
 
     @property
     def content(self):
@@ -842,6 +854,8 @@ class Acquisition(Object):
         self.pillar_id: str = self._resolver(str, "pilier", "V", "N")
         self.pillar_prefix: str = self._resolver(str, "pilier", "V", "strPrefixes")
 
+        del self._resolver
+
 
 class Evaluation(Object):
     """
@@ -879,6 +893,8 @@ class Evaluation(Object):
         self.acquisitions: List[Acquisition] = self._resolver(
             lambda x: sorted([Acquisition(y) for y in x], key=lambda z: z.order), "listeNiveauxDAcquisitions", "V")
         self.date: datetime.date = self._resolver(Util.date_parse, "date", "V")
+
+        del self._resolver
 
 
 class Identity(Object):
@@ -929,6 +945,8 @@ class Identity(Object):
         self.formatted_address: str = ','.join([*self.address, self.postal_code, self.city, self.country])
         self.first_names: List[str] = [json_dict.get("prenom"), json_dict.get("prenom2"), json_dict.get("prenom3")]
 
+        del self._resolver
+
 
 class Guardian(Object):
     """
@@ -969,6 +987,8 @@ class Guardian(Object):
 
         self.identity = Identity(json_dict)
         self.is_legal = self.responsibility_level == "LEGAL"
+
+        del self._resolver
 
 
 class Student(Object):
@@ -1016,6 +1036,8 @@ class Student(Object):
             self.options.append(option)
             i += 1
 
+        del self._resolver
+
     @property
     def identity(self) -> Identity:
         """
@@ -1060,6 +1082,8 @@ class StudentClass(Object):
         self.grade: str = self._resolver(str, "niveau", "V", "L", default="")
 
         self._client = client
+
+        del self._resolver
 
     def students(self, period: Period = None) -> List[Student]:
         period = period or self._client.periods[0]
