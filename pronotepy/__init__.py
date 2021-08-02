@@ -23,7 +23,7 @@ __license__ = 'MIT'
 __copyright__ = 'Copyright (c) bain, Xiloe'
 __version__ = '1.5.0'
 
-from .dataClasses import Util, Subject, Period, File, Grade, Lesson, Message, LessonContent, ClientInfo, \
+from .dataClasses import Util, Subject, Period, File, Grade, Lesson, Message, LessonContent, Information, ClientInfo, \
     Average, Acquisition, Evaluation, Homework, StudentClass, Student, Identity, Guardian
 from .clients import Client, ParentClient, VieScolaireClient
 from .exceptions import *
