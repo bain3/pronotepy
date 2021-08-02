@@ -1100,7 +1100,7 @@ class Student:
         "N": ("id", str),
         "entree,V": ("enrollment_date", Util.date_parse),
         "neLe,V": ("date_of_birth", Util.date_parse),
-        "listeProjets,V": ("projects", lambda p: [f"{x['typeAmenagement']} ({x['handicap']})" for x in p]),
+        "listeProjets,V": ("projects", lambda p: [f"{x.get('typeAmenagement', '')} ({x.get('handicap', '')})" for x in p]),
         "nom": ("last_name", str),
         "prenoms": ("first_names", str),
         "sexe": ("sex", str),
