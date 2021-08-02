@@ -3,7 +3,7 @@ import json
 import logging
 import re
 from html import unescape
-from typing import Union, List
+from typing import Union, List, Optional
 from urllib.parse import quote
 
 from Crypto.Util import Padding
@@ -100,6 +100,41 @@ class Util:
     def html_parse(html_text: str) -> str:
         """remove tags from html text"""
         return unescape(re.sub(re.compile('<.*?>'), '', html_text))
+
+
+class _PronoteObject:
+    """
+    base class for objects formed from a dict and an attribute_guide
+    """
+
+    def __init__(self, json_dict: dict) -> None:
+        """
+        the child class must contain the attribute_guide attribute in the format:
+        attribute_guide = {
+            'Path,To,Attr,In,json_dict': ('attr_name', method_to_format)
+        }
+        """
+        attr_guide = self.attribute_guide
+
+        for key in attr_guide:
+            # we try to recover the value
+            attribute_path = key.split(',')
+            try:
+                attribute_value = json_dict
+                for level in attribute_path:
+                    attribute_value = attribute_value[level]
+                self.__setattr__(attr_guide[key][0], attr_guide[key][1](attribute_value))
+
+            # if the search fails
+            except KeyError as e:
+                # we apply the default value if there is one
+                if len(attr_guide[key]) == 3:
+                    self.__setattr__(attr_guide[key][0], attr_guide[key][2])
+                # else we apply the value None
+                else:
+                    log.warning("Exception while parsing json (" + str(attribute_path) + "),\
+                     setting to None: " + str(e))
+                    self.__setattr__(attr_guide[key][0], None)
 
 
 class Subject:
@@ -644,9 +679,9 @@ class Homework:
         return [File(self._client, jsn) for jsn in self._files]
 
 
-class Information:
+class Information(_PronoteObject):
     """
-    Represents a information in a information and surveys tab.
+    Represents a information in a information and surveys tab. You shouldn't have to create this class manually.
 
     Attributes
     ----------
@@ -675,7 +710,7 @@ class Information:
     """
 
     id: str
-    title: str
+    title: Optional[str]
     author: str
     content: str
     read: bool
@@ -685,9 +720,6 @@ class Information:
     category: str
     survey: bool
     anonymous_response: bool
-
-    __slots__ = ['id', 'title', 'author', 'read', 'creation_date', 'start_date', 'end_date', 'category',
-                 'survey', 'anonymous_response', '_raw_content', '_client']
 
     attribute_guide = {
         'N': ('id', str),
@@ -705,9 +737,7 @@ class Information:
 
     def __init__(self, client, json_):
         self._client = client
-        prepared_json = Util.prepare_json(self.__class__, json_)
-        for key in prepared_json:
-            self.__setattr__(key, prepared_json[key])
+        super().__init__(json_)
 
     @property
     def content(self):
