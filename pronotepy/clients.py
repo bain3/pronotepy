@@ -64,7 +64,9 @@ class _ClientBase:
         # some other attribute creation
         self._last_ping = time()
 
-        self.parametres_utilisateur = self.auth_cookie = self.info = None
+        self.parametres_utilisateur: dict = {}
+        self.auth_cookie: dict = {}
+        self.info: Optional[dataClasses.ClientInfo] = None
 
         self.start_day = datetime.datetime.strptime(
             self.func_options['donneesSec']['donnees']['General']['PremierLundi']['V'], '%d/%m/%Y').date()
@@ -234,7 +236,7 @@ class _ClientBase:
             log.info(
                 f'Have you tried turning it off and on again? ERROR: {e.pronote_error_code} | {e.pronote_error_msg}')
             self.refresh()
-            return self.communication.post(function_name, data, True)
+            return self.communication.post(function_name, post_data)
 
 
 class Client(_ClientBase):
@@ -417,14 +419,13 @@ class ParentClient(Client):
     def __init__(self, pronote_url, username: str = '', password: str = '', ent: Optional[Callable] = None,
                  child: str = None):
         super().__init__(pronote_url, username, password, ent)
-        self.children = []
-        self._selected_child = None
+        self.children: List[dataClasses.ClientInfo] = []
         for c in self.parametres_utilisateur['donneesSec']['donnees']['ressource']['listeRessources']:
             self.children.append(dataClasses.ClientInfo(c))
 
         if not self.children:
             raise ChildNotFound('No children were found.')
-        self.set_child(child if child else self.children[0])
+        self._selected_child: dataClasses.ClientInfo = self.children[0]
 
     def set_child(self, child: Union[str, dataClasses.ClientInfo]) -> None:
         """
@@ -436,9 +437,10 @@ class ParentClient(Client):
             Name or ClientInfo of a child.
         """
         if type(child) == str:
-            c = dataClasses.Util.get(self.children, name=child)
-            c = c[0] if c else None
+            candidates = dataClasses.Util.get(self.children, name=child)
+            c = candidates[0] if candidates else None
         else:
+            # noinspection Mypy
             c = child
 
         if not c:
@@ -477,7 +479,7 @@ class ParentClient(Client):
             log.info(
                 f'Have you tried turning it off and on again? ERROR: {e.pronote_error_code} | {e.pronote_error_msg}')
             self.refresh()
-            return self.communication.post(function_name, data, True)
+            return self.communication.post(function_name, post_data)
 
 
 class VieScolaireClient(_ClientBase):

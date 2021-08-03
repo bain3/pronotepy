@@ -1,13 +1,7 @@
-beautifulsoup4
-certifi
-chardet
-docopt
-idna
-pyasn1
-numpydoc
-sphinxcontrib-apidoc
-pycryptodome
-requests
-soupsieve
-urllib3
-yarg
+beautifulsoup4 >= 4.8.2
+pycryptodome >= 3.9.4
+requests >= 2.22.0
+# -- dev --
+mypy
+types-requests
+types-beautifulsoup4

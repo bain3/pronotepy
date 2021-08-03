@@ -5,6 +5,7 @@ import secrets
 import threading
 import zlib
 from time import time, sleep
+from typing import Union, Optional
 
 import requests
 from Crypto.Cipher import AES, PKCS1_v1_5
@@ -69,7 +70,7 @@ class _Communication(object):
                                      decryption_change={'iv': MD5.new(self.encryption.aes_iv_temp).digest()})
         return self.attributes, initial_response
 
-    def post(self, function_name: str, data: dict, decryption_change=None):
+    def post(self, function_name: str, data: dict, decryption_change: Optional[dict] = None):
         """
         Handler for all POST requests by the api to PRONOTE servers. Automatically provides all needed data for the
         verification of posts. Session id and order numbers are preserved.
@@ -78,39 +79,45 @@ class _Communication(object):
         ----------
         function_name : str
             The name of the function (eg. Authentification)
-        data: dict
+        data : dict
             The date that will be sent in the donneesSec dictionary
-        recursive: bool
-            Cursed recursion
         decryption_change
             If the decryption key or iv is changing in the middle of the request, you can set it here
         """
         if '_Signature_' in data and data['_Signature_'].get('onglet') not in self.authorized_onglets:
             raise PronoteAPIError('Action not permitted. (onglet is not normally accessible)')
 
-        # this part is for some pronotes who need to have good encryption even if they're communicating over https
-        if self.compress_requests:
-            log.debug(f"[_Communication.post] compressing data")
-            data = jsn.dumps(data).encode()  # get bytes in utf8
-            data = data.hex()  # get hex of data
-            log.debug(data)
-            data = zlib.compress(data.encode(), level=6)[2:-4]  # actual compression
-            log.debug(f"[_Communication.post] data compressed")
-        if self.encrypt_requests:
-            log.debug("[_Communication.post] encrypt data")
-            if type(data) == dict:
-                data = str(data).encode()
-            data = self.encryption.aes_encrypt(data).hex().upper()
+        post_data: Union[dict, str] = data
 
-        # sending the actual request. adding some headers
+        if self.compress_requests:
+            # takes care of compression. it is done with zlib, with compression level set to 6. the headers
+            # are stripped, and the output is converted to hex
+            log.debug(f"[_Communication.post] compressing data")
+            post_data = jsn.dumps(data).encode().hex()
+            log.debug(post_data)
+            post_data = zlib.compress(post_data.encode(), level=6)[2:-4].hex().upper()
+        if self.encrypt_requests:
+            # encryption is done with the communicated key, the output is converted to hex (the client makes the output
+            # all CAPS, so we're doing the same)
+            log.debug("[_Communication.post] encrypt data")
+            if type(post_data) == dict:
+                # get the data in json form, then proceed to encrypt
+                post_data = self.encryption.aes_encrypt(jsn.dumps(post_data).encode()).hex().upper()
+            elif type(post_data) == str:
+                # we can assume the post_data is from compression, we need to get back the raw bytes
+                post_data = self.encryption.aes_encrypt(bytes.fromhex(post_data)).hex().upper()
+
+        # creating the full json dict
         r_number = self.encryption.aes_encrypt(str(self.request_number).encode()).hex()
         json = {'session': int(self.attributes['h']), 'numeroOrdre': r_number, 'nom': function_name,
-                'donneesSec': data}
+                'donneesSec': post_data}
+
         p_site = self.root_site + '/appelfonction/' + self.attributes['a'] + '/' + self.attributes['h'] + '/' + r_number
+
         response = self.session.request('POST', p_site, json=json, cookies=self.cookies)
+
         self.request_number += 2
         self.last_ping = time()
-
         self.last_response = response
 
         # error protection
@@ -120,31 +127,38 @@ class _Communication(object):
             r_json = response.json()
             if r_json["Erreur"]["G"] == 22:
                 raise ExpiredObject(error_messages.get(22))
-            raise PronoteAPIError(error_messages.get(r_json["Erreur"]["G"],
-                                                     f'Unknown error from pronote: {r_json["Erreur"]["G"]} | {r_json["Erreur"]["Titre"]}'),
-                                  pronote_error_code=r_json['Erreur']['G'],
-                                  pronote_error_msg=r_json['Erreur']['Titre'])
+            raise PronoteAPIError(
+                error_messages.get(r_json["Erreur"]["G"], f'Unknown error from pronote: {r_json["Erreur"]["G"]} '
+                                                          f'| {r_json["Erreur"]["Titre"]}'),
+                pronote_error_code=r_json['Erreur']['G'],
+                pronote_error_msg=r_json['Erreur']['Titre'])
+
+        # TODO: check returned request_number
 
         # checking for decryption change
-        if decryption_change:
-            log.debug("decryption change")
+        if decryption_change is not None:
+            log.debug("[_Communication.post] decryption change")
             if 'iv' in decryption_change:
                 self.encryption.aes_iv = decryption_change['iv']
             if 'key' in decryption_change:
                 self.encryption.aes_key = decryption_change['key']
 
         response_data = response.json()
-        # decryption part of their "super strong" bullshit
+
         if self.encrypt_requests:
+            # decrypt the received message, the output will either be a hex string, or the json dictionary
             log.debug("[_Communication.post] decrypting")
-            response_data['donneesSec'] = self.encryption.aes_decrypt(bytes.fromhex(response_data['donneesSec']))
-            log.debug(f"decrypted: {response_data['donneesSec'].hex()}")
+            decrypted: bytes = self.encryption.aes_decrypt(bytes.fromhex(response_data['donneesSec']))
+            if not self.compress_requests:
+                response_data['donneesSec'] = jsn.loads(decrypted.decode())
+            else:
+                response_data['donneesSec'] = decrypted
         if self.compress_requests:
             log.debug("[_Communication.post] decompressing")
-            response_data['donneesSec'] = zlib.decompress(response_data['donneesSec'], wbits=-15).decode()
-        if type(response_data['donneesSec']) == str:
+            d: Union[bytes, str] = response_data['donneesSec']
             try:
-                response_data['donneesSec'] = jsn.loads(response_data['donneesSec'])
+                response_data['donneesSec'] = jsn.loads(
+                    zlib.decompress(bytes.fromhex(d) if type(d) == str else d, wbits=-15).decode())  # type: ignore
             except jsn.JSONDecodeError:
                 raise PronoteAPIError("JSONDecodeError while requesting from pronote.")
 
