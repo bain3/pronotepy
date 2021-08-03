@@ -24,6 +24,6 @@ __copyright__ = 'Copyright (c) bain, Xiloe'
 __version__ = '2.0.0'
 
 from .dataClasses import Util, Subject, Period, File, Grade, Lesson, Message, LessonContent, Information, ClientInfo, \
-    Average, Acquisition, Evaluation, Homework, StudentClass, Student, Identity, Guardian
+    Average, Acquisition, Evaluation, Homework, StudentClass, Student, Identity, Guardian, Object
 from .clients import Client, ParentClient, VieScolaireClient
 from .exceptions import *
