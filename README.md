@@ -23,7 +23,8 @@ or to start contributing to this one.
 [![python version](https://img.shields.io/pypi/pyversions/pronotepy.svg)](https://pypi.org/project/pronotepy/)
 [![license](https://img.shields.io/pypi/l/pronotepy.svg)](https://pypi.org/project/pronotepy/)
 [![Documentation Status](https://readthedocs.org/projects/pronotepy/badge/?version=latest)](https://pronotepy.readthedocs.io/en/latest/?badge=latest)
-  [![Run Unit Tests](https://github.com/bain3/pronotepy/workflows/Run%20Unit%20Tests/badge.svg)](https://github.com/bain3/pronotepy/actions?query=workflow%3A%22Run+Unit+Tests%22)
+[![Run Unit Tests](https://github.com/bain3/pronotepy/actions/workflows/rununittests.yml/badge.svg)](https://github.com/bain3/pronotepy/actions/workflows/rununittests.yml)
+[![Mypy Check](https://github.com/bain3/pronotepy/actions/workflows/mypy.yml/badge.svg)](https://github.com/bain3/pronotepy/actions/workflows/mypy.yml)
 
 ## Introduction
 

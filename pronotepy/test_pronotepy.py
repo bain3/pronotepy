@@ -46,6 +46,9 @@ class TestClient(unittest.TestCase):
 
 
 class TestPeriod(unittest.TestCase):
+
+    period: pronotepy.Period
+
     @classmethod
     def setUpClass(cls) -> None:
         global client
@@ -95,6 +98,9 @@ class TestInformation(unittest.TestCase):
 
 
 class TestLesson(unittest.TestCase):
+
+    lesson: pronotepy.Lesson
+
     @classmethod
     def setUpClass(cls) -> None:
         global client
@@ -108,6 +114,9 @@ class TestLesson(unittest.TestCase):
 
 
 class TestLessonContent(unittest.TestCase):
+
+    lessonContent: pronotepy.LessonContent
+
     @classmethod
     def setUpClass(cls) -> None:
         global client
@@ -118,6 +127,9 @@ class TestLessonContent(unittest.TestCase):
 
 
 class TestParentClient(unittest.TestCase):
+
+    client: pronotepy.ParentClient
+
     @classmethod
     def setUpClass(cls) -> None:
         cls.client = pronotepy.ParentClient('https://demo.index-education.net/pronote/parent.html',
@@ -133,6 +145,9 @@ class TestParentClient(unittest.TestCase):
 
 
 class TestVieScolaireClient(unittest.TestCase):
+
+    client: pronotepy.VieScolaireClient
+
     @classmethod
     def setUpClass(cls) -> None:
         cls.client = pronotepy.VieScolaireClient('https://demo.index-education.net/pronote/viescolaire.html',

@@ -416,16 +416,18 @@ class ParentClient(Client):
         List of sub-clients representing all the children connected to the main parent account.
     """
 
-    def __init__(self, pronote_url, username: str = '', password: str = '', ent: Optional[Callable] = None,
-                 child: str = None):
+    def __init__(self, pronote_url, username: str = '', password: str = '', ent: Optional[Callable] = None):
         super().__init__(pronote_url, username, password, ent)
+
         self.children: List[dataClasses.ClientInfo] = []
         for c in self.parametres_utilisateur['donneesSec']['donnees']['ressource']['listeRessources']:
             self.children.append(dataClasses.ClientInfo(c))
 
         if not self.children:
             raise ChildNotFound('No children were found.')
+
         self._selected_child: dataClasses.ClientInfo = self.children[0]
+        self.parametres_utilisateur['donneesSec']['donnees']['ressource'] = self._selected_child.raw_resource
 
     def set_child(self, child: Union[str, dataClasses.ClientInfo]) -> None:
         """
@@ -440,14 +442,13 @@ class ParentClient(Client):
             candidates = dataClasses.Util.get(self.children, name=child)
             c = candidates[0] if candidates else None
         else:
-            # noinspection Mypy
             c = child
 
         if not c:
             raise ChildNotFound(f"A child with the name {child} was not found.")
 
         self._selected_child = c
-        self.parametres_utilisateur['donneesSec']['donnees']['ressource'] = c.raw_resource
+        self.parametres_utilisateur['donneesSec']['donnees']['ressource'] = self._selected_child.raw_resource
 
     def post(self, function_name: str, onglet: int = None, data: dict = None):
         """
