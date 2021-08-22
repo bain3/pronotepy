@@ -11,7 +11,6 @@ from Crypto.Util import Padding
 from .exceptions import ParsingError
 
 log = logging.getLogger(__name__)
-log.setLevel(logging.DEBUG)
 
 
 def _get_l(d): return d['L']
