@@ -59,7 +59,7 @@ def atrium_sud(username, password):
     return requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
 
 
-def ac_reims_and_occitanie_montpellier(username, password, orig_url, ent_login, ent_verif, pronote_verif, SERVERID, preselection):
+def _ac_reims_and_occitanie_montpellier(username, password, orig_url, ent_login, ent_verif, pronote_verif, SERVERID, preselection):
     """
     Function used by ac_reims and occitanie_montpellier
 
@@ -143,7 +143,7 @@ def ac_reims(username, password):
     pronote_verif = 'https://cas.monbureaunumerique.fr/saml/SAMLAssertionConsumer'
     SERVERID = 'gdest-prod-web14'
     preselection = 'REIMS-ATS_parent_eleve'
-    return ac_reims_and_occitanie_montpellier(username, password, orig_url, ent_login, ent_verif, pronote_verif, SERVERID, preselection)
+    return _ac_reims_and_occitanie_montpellier(username, password, orig_url, ent_login, ent_verif, pronote_verif, SERVERID, preselection)
 
 def occitanie_montpellier(username, password):
     """
@@ -167,7 +167,7 @@ def occitanie_montpellier(username, password):
     pronote_verif = 'https://cas.mon-ent-occitanie.fr/saml/SAMLAssertionConsumer'
     SERVERID = 'entmip-prod-web4'
     preselection = 'MONTP-ATS_parent_eleve'
-    return ac_reims_and_occitanie_montpellier(username, password, orig_url, ent_login, ent_verif, pronote_verif, SERVERID, preselection)
+    return _ac_reims_and_occitanie_montpellier(username, password, orig_url, ent_login, ent_verif, pronote_verif, SERVERID, preselection)
 
 
 def ac_reunion(username, password):
@@ -230,7 +230,7 @@ def ac_reunion(username, password):
 
 
 
-def ile_de_france_and_paris_classe_numerique(username, password, ent_login):
+def _ile_de_france_and_paris_classe_numerique(username, password, ent_login):
     """
     Function used by ile_de_france and paris_classe_numerique
 
@@ -282,7 +282,7 @@ def ile_de_france(username, password):
     """
     # ENT / PRONOTE required URLs
     ent_login = "https://ent.iledefrance.fr/auth/login?callback=https%3A%2F%2Fent.iledefrance.fr%2F"
-    return ile_de_france_and_paris_classe_numerique(username, password, ent_login)
+    return _ile_de_france_and_paris_classe_numerique(username, password, ent_login)
 
 def paris_classe_numerique(username, password):
     """
@@ -302,7 +302,7 @@ def paris_classe_numerique(username, password):
     """
     # ENT / PRONOTE required URLs
     ent_login = "https://ent.parisclassenumerique.fr/auth/login"
-    return ile_de_france_and_paris_classe_numerique(username, password, ent_login)
+    return _ile_de_france_and_paris_classe_numerique(username, password, ent_login)
 
 
 
