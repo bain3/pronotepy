@@ -148,7 +148,9 @@ class _ClientBase:
             log.info('login failed')
             return False
 
-    def get_week(self, date: datetime.date):
+    def get_week(self, date: Union[datetime.date, datetime.datetime]):
+        if isinstance(date, datetime.datetime):
+            return 1 + int((date.date() - self.start_day).days / 7)
         return 1 + int((date - self.start_day).days / 7)
 
     @property
@@ -270,15 +272,18 @@ class Client(_ClientBase):
     def __init__(self, pronote_url, username: str = '', password: str = '', ent: Optional[Callable] = None):
         super().__init__(pronote_url, username, password, ent)
 
-    def lessons(self, date_from: datetime.date, date_to: datetime.date = None) -> List[dataClasses.Lesson]:
+    def lessons(self, date_from: Union[datetime.date, datetime.datetime],
+                date_to: Union[datetime.date, datetime.datetime] = None) -> List[dataClasses.Lesson]:
         """
         Gets all lessons in a given timespan.
 
         :rtype: List[dataClasses.Lesson]
         :returns: List of lessons
 
-        :param date_from: first date
-        :param date_to: second date
+        :param date_from: Union[datetime.date, datetime.datetime]
+            first date
+        :param date_to: Union[datetime.date, datetime.datetime]
+            second date
         """
         user = self.parametres_utilisateur['donneesSec']['donnees']['ressource']
         data = {"ressource": user,
@@ -288,9 +293,17 @@ class Client(_ClientBase):
                 "Ressource": user}
         output = []
 
-        first_week = self.get_week(date_from)
         if not date_to:
             date_to = date_from
+
+        # convert date to datetime
+        if isinstance(date_from, datetime.date):
+            date_from = datetime.datetime.combine(date_from, datetime.datetime.min.time())
+
+        if isinstance(date_to, datetime.date):
+            date_to = datetime.datetime.combine(date_to, datetime.datetime.min.time())
+
+        first_week = self.get_week(date_from)
         last_week = self.get_week(date_to)
 
         # getting lessons for all the weeks.
@@ -302,7 +315,7 @@ class Client(_ClientBase):
                 output.append(dataClasses.Lesson(self, lesson))
 
         # since we only have week precision, we need to make it more precise on our own
-        return [lesson for lesson in output if date_from <= lesson.start.date() <= date_to]
+        return [lesson for lesson in output if date_from <= lesson.start <= date_to]
 
     def homework(self, date_from: datetime.date, date_to: datetime.date = None) -> List[dataClasses.Homework]:
         """
