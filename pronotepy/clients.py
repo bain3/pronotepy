@@ -293,15 +293,15 @@ class Client(_ClientBase):
                 "Ressource": user}
         output = []
 
-        if not date_to:
-            date_to = date_from
-
         # convert date to datetime
         if isinstance(date_from, datetime.date):
             date_from = datetime.datetime.combine(date_from, datetime.datetime.min.time())
 
         if isinstance(date_to, datetime.date):
             date_to = datetime.datetime.combine(date_to, datetime.datetime.min.time())
+
+        if not date_to:
+            date_to = datetime.datetime.combine(date_from, datetime.datetime.max.time())
 
         first_week = self.get_week(date_from)
         last_week = self.get_week(date_to)
