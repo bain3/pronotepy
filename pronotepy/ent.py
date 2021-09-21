@@ -256,8 +256,7 @@ def ile_de_france(username, password):
     # ENT Connection
     session = requests.Session()
 
-    cookies = requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
-    response = session.post(ent_login, headers=headers, data=payload, cookies=cookies)
+    response = session.post(ent_login, headers=headers, data=payload)
     return requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
 
 def paris_classe_numerique(username, password):
@@ -505,6 +504,5 @@ def ent_essonne(username, password):
     # ENT Connection
     session = requests.Session()
 
-    cookies = requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
-    response = session.post(ent_login, headers=headers, data=payload, cookies=cookies)
+    response = session.post(ent_login, headers=headers, data=payload)
     return requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
