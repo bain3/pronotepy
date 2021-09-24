@@ -45,8 +45,9 @@ Install directly from pypi using pip: `pip install pronotepy` (If you are on win
 
 **Latest**
 
-1. clone this repository
-2. run `pip install .` in the root directory
+You can install the latest version by installing directly from the repository zip: 
+
+`pip install https://github.com/bain3/pronotepy/archive/refs/heads/master.zip`
 
 I cannot assure that the latest version will be working.
 
