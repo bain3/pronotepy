@@ -21,7 +21,7 @@ __title__ = 'pronotepy'
 __author__ = 'bain, Xiloe'
 __license__ = 'MIT'
 __copyright__ = 'Copyright (c) bain, Xiloe'
-__version__ = '2.0.0'
+__version__ = '2.1.0'
 
 from .dataClasses import Util, Subject, Period, File, Grade, Lesson, Message, LessonContent, Information, ClientInfo, \
     Average, Acquisition, Evaluation, Homework, StudentClass, Student, Identity, Guardian, Object
