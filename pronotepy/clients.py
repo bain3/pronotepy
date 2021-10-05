@@ -75,6 +75,7 @@ class _ClientBase:
         self.periods_ = self.periods
         self.logged_in = self._login()
         self._expired = False
+        self._refreshing = False
 
     def _login(self) -> bool:
         """
@@ -237,7 +238,15 @@ class _ClientBase:
 
             log.info(
                 f'Have you tried turning it off and on again? ERROR: {e.pronote_error_code} | {e.pronote_error_msg}')
-            self.refresh()
+
+            # prevent refresh recursion
+            if self._refreshing:
+                raise e
+            else:
+                self._refreshing = True
+                self.refresh()
+                self._refreshing = False
+
             return self.communication.post(function_name, post_data)
 
 

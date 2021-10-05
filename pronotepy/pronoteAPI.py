@@ -22,7 +22,8 @@ log.setLevel(logging.DEBUG)
 error_messages = {
     22: '[ERROR 22] The object was from a previous session. Please read the "Long Term Usage" section in README on '
         'github.',
-    10: '[ERROR 10] Session has expired and pronotepy was not able to reinitialise the connection.'
+    10: '[ERROR 10] Session has expired and pronotepy was not able to reinitialise the connection.',
+    25: '[ERROR 25] Exceeded max authorization requests. Please wait before retrying...'
 }
 
 
