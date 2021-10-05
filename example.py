@@ -6,7 +6,7 @@ import pronotepy
 # Ex.: https://your-school.com/pronote/students <-- BAD
 #      https://0000000a.index-education.net/pronote/eleve.html <-- GOOD
 
-client = pronotepy.Client('https://0342066l.index-education.net/pronote/eleve.html?login=true',
+client = pronotepy.Client('https://demo.index-education.net/pronote/eleve.html',
                           username='demonstration',
                           password='pronotevs')
 
