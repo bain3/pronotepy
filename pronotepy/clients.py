@@ -72,10 +72,11 @@ class _ClientBase:
             self.func_options['donneesSec']['donnees']['General']['PremierLundi']['V'], '%d/%m/%Y').date()
         self.week = self.get_week(datetime.date.today())
 
+        self._refreshing = False
+
         self.periods_ = self.periods
         self.logged_in = self._login()
         self._expired = False
-        self._refreshing = False
 
     def _login(self) -> bool:
         """
