@@ -39,9 +39,6 @@ def atrium_sud(username, password):
 
     # Login payload
     soup = BeautifulSoup(response.text, 'html.parser')
-    input_ = soup.find('input', {'type': 'hidden', 'name': 'lt'})
-    lt = input_.get('value')
-
     input_ = soup.find('input', {'type': 'hidden', 'name': 'execution'})
     execution = input_.get('value')
 
@@ -49,7 +46,6 @@ def atrium_sud(username, password):
         'execution': execution,
         '_eventId': 'submit',
         'submit': '',
-        'lt': lt,
         'username': username,
         'password': password}
 
