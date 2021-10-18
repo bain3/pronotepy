@@ -416,6 +416,7 @@ class Lesson(Object):
                                                             default=[])
         self.num: int = self._resolver(int, "P", default=0)
         self.detention: bool = self._resolver(bool, "estRetenue", default=False)
+        self.test: bool = self._resolver(bool, "cahierDeTextes", "V", "estDevoir", default=False)
 
         # get correct ending time
         # Pronote gives us the place where the hour should be in a week, when we modulo that with the amount of
