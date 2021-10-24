@@ -60,9 +60,11 @@ POST /pronote/appelfonction/<espace_id>/<session_id>/<numero_ordre>
     "nom": "FonctionParametres",
     "session": "<session_id>", // int
     "numeroOrdre": "<numero_ordre>",
-    "donnees": {
-        "Uuid": "...",
-        "identifiantNav": "..."
+    "donneesSec": {
+        "donnees": {
+            "Uuid": "...",
+            "identifiantNav": "..."
+        }
     }
 }
 ```
