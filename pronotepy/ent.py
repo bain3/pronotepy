@@ -6,6 +6,64 @@ from bs4 import BeautifulSoup
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
+def ac_grenoble(username, password):
+    """
+    ENT ac Grenoble
+
+    Parameters
+    ----------
+    username : str
+        username
+    password : str
+        password
+    
+    Returns
+    -------
+    cookies : cookies
+        returns the ent session cookies
+    """
+    # ENT / PRONOTE required URLs
+    identity_provider = "https://cas.ent.auvergnerhonealpes.fr/login?selection=EDU&service=https://0380029A.index-education.net/pronote/&submit=Confirm"
+    login_service_provider = "https://educonnect.education.gouv.fr/idp/profile/SAML2/POST/SSO"
+
+    # Required Headers
+    headers = {
+        'connection': 'keep-alive',
+        'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:73.0) Gecko/20100101 Firefox/73.0'}
+
+    # SAML authentication
+    session = requests.Session()
+    response = session.get(identity_provider, headers=headers)
+
+    soup = BeautifulSoup(response.text, 'html.parser')
+    data = {
+        "RelayState": soup.find("input", {"name": "RelayState"})["value"],
+        "SAMLRequest": soup.find("input", {"name": "SAMLRequest"})["value"]
+            }
+
+    log.debug('[ENT Eaux claires] Logging in with ' + username)
+    response = session.post(login_service_provider, data=data, headers=headers)
+    ent_login = response.url
+
+    # Login payload
+
+    payload = {
+    "j_username": username,
+    "j_password": password,
+    "_eventId_proceed": ""
+    }
+    # Send user:pass to the ENT
+
+    cookies = requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
+    response = session.post(ent_login, headers=headers, data=payload, cookies=cookies)
+
+    #2nd SAML Authentication
+    
+    soup = BeautifulSoup(response.text, 'html.parser')
+    payload = {
+        "RelayState": soup.find("input", {"name": "RelayState"})["value"],
+        "SAMLResponse": soup.find("input", {"name": "SAMLResponse"})["value"]
+    }
 
 def atrium_sud(username, password):
     """
