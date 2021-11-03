@@ -25,7 +25,6 @@ def ac_grenoble(username, password):
     # ENT / PRONOTE required URLs
     identity_provider = "https://cas.ent.auvergnerhonealpes.fr/login?selection=EDU&service=https://0380029A.index-education.net/pronote/&submit=Confirm"
     login_service_provider = "https://educonnect.education.gouv.fr/idp/profile/SAML2/POST/SSO"
-    ent_login = ""
 
     # Required Headers
     headers = {
