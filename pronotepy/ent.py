@@ -584,4 +584,4 @@ def ent_elyco(username, password):
     "SAMLResponse": SAMLresp["value"],
     }
     response = session.post("https://cas3.e-lyco.fr/Shibboleth.sso/SAML2/POST", headers=headers, data=payload, cookies=cookies)
-    return cookies
+    return requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
