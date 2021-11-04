@@ -560,3 +560,28 @@ def ent_essonne(username, password):
 
     response = session.post(ent_login, headers=headers, data=payload)
     return requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
+
+def ent_elyco(username, password):
+    headers = {
+        'connection': 'keep-alive',
+        'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:73.0) Gecko/20100101 Firefox/73.0'}
+    url = "https://cas3.e-lyco.fr/discovery/WAYF?entityID=https%3A%2F%2Fcas3.e-lyco.fr%2Fshibboleth&returnX=https%3A%2F%2Fcas3.e-lyco.fr%2FShibboleth.sso%2FLogin%3FSAMLDS%3D1%26target%3Dss%253Amem%253Ad86ff322023918a01f987190fc64e21517c4e1b9090d559300864c2af1f7dab2&returnIDParam=entityID&action=selection&origin=https%3A%2F%2Feduconnect.education.gouv.fr%2Fidp"
+    session = requests.session()
+    response = session.get(url)
+    ent_login = response.url
+    payload = {
+        "j_username": username,
+        "j_password": password,
+        "_eventId_proceed": ""
+    }
+    cookies = requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
+    response = session.post(ent_login, headers=headers, data=payload, cookies=cookies)
+    soup = BeautifulSoup(response.content, 'html.parser')
+    RelayState=soup.find("input", {"name": "RelayState"})
+    SAMLresp=soup.find("input", {"name": "SAMLResponse"})
+    payload = {
+    "RelayState": RelayState["value"],
+    "SAMLResponse": SAMLresp["value"],
+    }
+    response = session.post("https://cas3.e-lyco.fr/Shibboleth.sso/SAML2/POST", headers=headers, data=payload, cookies=cookies)
+    return cookies
