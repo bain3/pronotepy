@@ -6,6 +6,37 @@ from bs4 import BeautifulSoup
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
+
+
+def educonnect(url: str, cookies, username: str, password: str):
+    headers = {
+        'connection': 'keep-alive',
+        'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:73.0) Gecko/20100101 Firefox/73.0'}
+
+    payload = {
+    "j_username": username,
+    "j_password": password,
+    "_eventId_proceed": ""
+    }
+
+    # Send user:pass to Educonnect
+    session = requests.session()
+
+    response = session.post(url, headers=headers, data=payload, cookies=cookies)
+
+    #2nd SAML Authentication
+    soup = BeautifulSoup(response.text, 'html.parser')
+    payload = {
+        "RelayState": soup.find("input", {"name": "RelayState"})["value"],
+        "SAMLResponse": soup.find("input", {"name": "SAMLResponse"})["value"]
+    }
+
+
+    cookies = requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
+    response = session.post(soup.find("form")["action"], headers=headers, data=payload, cookies=cookies)
+    return requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
+
+
 def ac_grenoble(username, password):
     """
     ENT ac Grenoble
@@ -25,7 +56,6 @@ def ac_grenoble(username, password):
     # ENT / PRONOTE required URLs
     identity_provider = "https://cas.ent.auvergnerhonealpes.fr/login?selection=EDU&service=https://0380029A.index-education.net/pronote/&submit=Confirm"
     login_service_provider = "https://educonnect.education.gouv.fr/idp/profile/SAML2/POST/SSO"
-    ent_login = ""
 
     # Required Headers
     headers = {
@@ -37,34 +67,16 @@ def ac_grenoble(username, password):
     response = session.get(identity_provider, headers=headers)
 
     soup = BeautifulSoup(response.text, 'html.parser')
-    data = {
+    payload = {
         "RelayState": soup.find("input", {"name": "RelayState"})["value"],
         "SAMLRequest": soup.find("input", {"name": "SAMLRequest"})["value"]
             }
 
     log.debug('[ENT Eaux claires] Logging in with ' + username)
-    response = session.post(login_service_provider, data=data, headers=headers)
-    ent_login = response.url
-
-    # Login payload
-
-    payload = {
-    "j_username": username,
-    "j_password": password,
-    "_eventId_proceed": ""
-    }
-    # Send user:pass to the ENT
+    response = session.post(login_service_provider, data=payload, headers=headers)
 
     cookies = requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
-    response = session.post(ent_login, headers=headers, data=payload, cookies=cookies)
-
-    #2nd SAML Authentication
-    
-    soup = BeautifulSoup(response.text, 'html.parser')
-    payload = {
-        "RelayState": soup.find("input", {"name": "RelayState"})["value"],
-        "SAMLResponse": soup.find("input", {"name": "SAMLResponse"})["value"]
-    }
+    return educonnect(response.url,cookies, username, password)
 
 def atrium_sud(username, password):
     """
