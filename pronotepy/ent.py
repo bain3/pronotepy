@@ -1,4 +1,5 @@
 import logging
+import typing
 
 import requests
 from bs4 import BeautifulSoup
@@ -7,16 +8,16 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
 
-
+@typing.no_type_check
 def educonnect(url: str, cookies, username: str, password: str):
     headers = {
         'connection': 'keep-alive',
         'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:73.0) Gecko/20100101 Firefox/73.0'}
 
     payload = {
-    "j_username": username,
-    "j_password": password,
-    "_eventId_proceed": ""
+        "j_username": username,
+        "j_password": password,
+        "_eventId_proceed": ""
     }
 
     # Send user:pass to Educonnect
@@ -24,16 +25,15 @@ def educonnect(url: str, cookies, username: str, password: str):
 
     response = session.post(url, headers=headers, data=payload, cookies=cookies)
 
-    #2nd SAML Authentication
+    # 2nd SAML Authentication
     soup = BeautifulSoup(response.text, 'html.parser')
     payload = {
         "RelayState": soup.find("input", {"name": "RelayState"})["value"],
         "SAMLResponse": soup.find("input", {"name": "SAMLResponse"})["value"]
     }
 
-
     cookies = requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
-    response = session.post(soup.find("form")["action"], headers=headers, data=payload, cookies=cookies)
+    session.post(soup.find("form")["action"], headers=headers, data=payload, cookies=cookies)
     return requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
 
 
@@ -70,13 +70,14 @@ def ac_grenoble(username, password):
     payload = {
         "RelayState": soup.find("input", {"name": "RelayState"})["value"],
         "SAMLRequest": soup.find("input", {"name": "SAMLRequest"})["value"]
-            }
+    }
 
     log.debug('[ENT Eaux claires] Logging in with ' + username)
     response = session.post(login_service_provider, data=payload, headers=headers)
 
     cookies = requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
-    return educonnect(response.url,cookies, username, password)
+    return educonnect(response.url, cookies, username, password)
+
 
 def atrium_sud(username, password):
     """
@@ -293,6 +294,7 @@ def ac_reunion(username, password):
 
     return requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
 
+
 def ile_de_france(username, password):
     """
     ENT for Ile de France
@@ -317,14 +319,15 @@ def ile_de_france(username, password):
         'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:73.0) Gecko/20100101 Firefox/73.0'}
 
     payload = {
-        'email' : username,
-        'password' : password,
+        'email': username,
+        'password': password,
     }
     # ENT Connection
     session = requests.Session()
 
     response = session.post(ent_login, headers=headers, data=payload)
     return requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
+
 
 def paris_classe_numerique(username, password):
     """
@@ -350,8 +353,8 @@ def paris_classe_numerique(username, password):
         'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:73.0) Gecko/20100101 Firefox/73.0'}
 
     payload = {
-        'email' : username,
-        'password' : password,
+        'email': username,
+        'password': password,
     }
     # ENT Connection
     session = requests.Session()
@@ -389,30 +392,27 @@ def ac_lyon(username, password):
     session = requests.Session()
     response = session.get(ent_login, headers=headers)
 
-
     soup = BeautifulSoup(response.text, 'html.parser')
     input_ = soup.find('input', {'type': 'hidden', 'name': 'execution'})
     executions = input_.get('value')
 
     payload = {
-        'username' : username,
-        'password' : password,
-        'selection' : "LYON-ATS_parent_eleve",
-        'codeFournisseurIdentite' : "ATS-LYON",
-        '_eventId' :	"submit",
+        'username': username,
+        'password': password,
+        'selection': "LYON-ATS_parent_eleve",
+        'codeFournisseurIdentite': "ATS-LYON",
+        '_eventId': "submit",
         'submit': "Confirm",
         'geolocation': "",
         'execution': executions
-      }
-
+    }
 
     cookies = requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
-    
-    response = session.post(ent_login, headers=headers, data=payload, cookies=cookies)
-    
 
-    
+    response = session.post(ent_login, headers=headers, data=payload, cookies=cookies)
+
     return requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
+
 
 def ac_orleans_tours(username, password):
     """
@@ -436,19 +436,19 @@ def ac_orleans_tours(username, password):
         'connection': 'keep-alive',
         'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:73.0) Gecko/20100101 Firefox/73.0'
     }
-    
+
     # Login payload
     payload = {
         "j_username": username,
         "j_password": password,
         "_eventId_proceed": ""
     }
-    
+
     # ENT / PRONOTE required URLs
     ent_login_page = "https://ent.netocentre.fr/cas/login?service=https://0451462V.index-education.net/pronote/eleve.html&idpId=parentEleveEN-IdP"
     ent_login = "https://educonnect.education.gouv.fr/idp/profile/SAML2/Redirect/SSO?execution=e1s1"
     pronote_verif = "https://ent.netocentre.fr/cas/Shibboleth.sso/SAML2/POST?client_name=EduConnect"
-    
+
     # ENT Connection
     session = requests.Session()
 
@@ -468,10 +468,10 @@ def ac_orleans_tours(username, password):
     # retrieving pronote ticket
     response = session.post(pronote_verif, headers=headers, data=cas_infos)
 
-
     cookies = requests.utils.cookiejar_from_dict(
         requests.utils.dict_from_cookiejar(session.cookies))
     return cookies
+
 
 def monbureaunumerique(username, password):
     """
@@ -518,7 +518,7 @@ def monbureaunumerique(username, password):
     # retrieving the "RelayState", "SAMLResponse" in the ent response for educonnect
     soup = BeautifulSoup(response.text, 'html.parser')
     cas_info = dict()
-    inputs = soup.findAll('input', {'type':'hidden'})
+    inputs = soup.findAll('input', {'type': 'hidden'})
     for input_ in inputs:
         cas_info[input_.get('name')] = input_.get('value')
 
@@ -540,6 +540,7 @@ def monbureaunumerique(username, password):
     cookies = requests.utils.cookiejar_from_dict(
         requests.utils.dict_from_cookiejar(session.cookies))
     return cookies
+
 
 def ent_essonne(username, password):
     """
@@ -565,14 +566,15 @@ def ent_essonne(username, password):
         'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:73.0) Gecko/20100101 Firefox/73.0'}
 
     payload = {
-        'email' : username,
-        'password' : password,
+        'email': username,
+        'password': password,
     }
     # ENT Connection
     session = requests.Session()
 
     response = session.post(ent_login, headers=headers, data=payload)
     return requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
+
 
 def ent_elyco(username, password):
     headers = {
@@ -590,11 +592,12 @@ def ent_elyco(username, password):
     cookies = requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
     response = session.post(ent_login, headers=headers, data=payload, cookies=cookies)
     soup = BeautifulSoup(response.content, 'html.parser')
-    RelayState=soup.find("input", {"name": "RelayState"})
-    SAMLresp=soup.find("input", {"name": "SAMLResponse"})
+    RelayState = soup.find("input", {"name": "RelayState"})
+    SAMLresp = soup.find("input", {"name": "SAMLResponse"})
     payload = {
-    "RelayState": RelayState["value"],
-    "SAMLResponse": SAMLresp["value"],
+        "RelayState": RelayState["value"],
+        "SAMLResponse": SAMLresp["value"],
     }
-    response = session.post("https://cas3.e-lyco.fr/Shibboleth.sso/SAML2/POST", headers=headers, data=payload, cookies=cookies)
+    response = session.post("https://cas3.e-lyco.fr/Shibboleth.sso/SAML2/POST", headers=headers, data=payload,
+                            cookies=cookies)
     return requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
