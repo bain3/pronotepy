@@ -171,6 +171,45 @@ class Subject(Object):
         del self._resolver
 
 
+class Absence(Object):
+    """
+    Represents an absence with a given period. You shouldn't have to create this class manually.
+
+    Attributes
+    ----------
+    id : str
+        the id of the absence (used internally)
+    from_date : datetime.datetime
+        starting time of the absence
+    to_date : datetime.datetime
+        end of the absence
+    justified : bool
+        is the absence justified
+    hours : str
+        the number of hours missed
+    days : int
+        the number of days missed
+    reasons: List[str]
+        The reason(s) for the absence
+    """
+
+    __slots__ = ['id', 'from_date', 'to_date', 'justified',
+                'hours' 'days', 'reasons']
+
+    def __init__(self, json_dict):
+        super().__init__(json_dict)
+
+        self.id: str = self._resolver(str, "N")
+        self.from_date: datetime.datetime = self._resolver(Util.datetime_parse, "dateDebut", "V")
+        self.to_date: datetime.datetime = self._resolver(Util.datetime_parse, "dateFin", "V")
+        self.justified: bool = self._resolver(bool, "justifie", default=False)
+        self.hours: Optional[str] = self._resolver(str, "NbrHeures", strict=False)
+        self.days: int = self._resolver(int, "NbrJours", default=0)
+        self.reasons: List[str] = self._resolver(lambda l: [i["L"] for i in l], "listeMotifs", "V", default=[])
+
+        del self._resolver
+
+
 class Period(Object):
     """
     Represents a period of the school year. You shouldn't have to create this class manually.
@@ -257,6 +296,25 @@ class Period(Object):
         response = self._client.post('DernieresEvaluations', 201, json_data)
         evaluations = response['donneesSec']['donnees']['listeEvaluations']['V']
         return [Evaluation(e) for e in evaluations]
+    
+    def absences(self) -> List[Absence]:
+        """
+        Gets all absences in a given period.
+
+        Returns
+        -------
+        List[Absence]
+            All the absences of the period
+        """
+        json_data = {
+            'periode': {'N': self.id, 'L': self.name, 'G': 2},
+            'DateDebut': {'_T': 7, 'V': self.start.strftime("%d/%m/%Y %H:%M:%S")},
+            'DateFin': { '_T': 7, 'V': self.end.strftime("%d/%m/%Y %H:%M:%S")}
+        }
+
+        response = self._client.post('PagePresence', 19, json_data)
+        absences = response['donneesSec']['donnees']['listeAbsences']['V']
+        return [Absence(a) for a in absences if a["G"] == 13]
 
 
 class Average(Object):
