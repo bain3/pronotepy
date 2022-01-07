@@ -275,7 +275,7 @@ class Period(Object):
 
         response = self._client.post('PagePresence', 19, json_data)
         absences = response['donneesSec']['donnees']['listeAbsences']['V']
-        return [Absence(a) for a in absences]
+        return [Absence(a) for a in absences if a["G"] == 13]
 
 
 class Average(Object):
