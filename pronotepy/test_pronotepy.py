@@ -46,7 +46,6 @@ class TestClient(unittest.TestCase):
 
 
 class TestPeriod(unittest.TestCase):
-
     period: pronotepy.Period
 
     @classmethod
@@ -71,6 +70,9 @@ class TestPeriod(unittest.TestCase):
         for evaluation in evaluations:
             for acquisition in evaluation.acquisitions:
                 self.assertIsNotNone(acquisition)
+
+    def test_absences(self):
+        self.period.absences()
 
 
 class TestInformation(unittest.TestCase):
@@ -98,7 +100,6 @@ class TestInformation(unittest.TestCase):
 
 
 class TestLesson(unittest.TestCase):
-
     lesson: pronotepy.Lesson
 
     @classmethod
@@ -114,7 +115,6 @@ class TestLesson(unittest.TestCase):
 
 
 class TestLessonContent(unittest.TestCase):
-
     lessonContent: pronotepy.LessonContent
 
     @classmethod
@@ -127,7 +127,6 @@ class TestLessonContent(unittest.TestCase):
 
 
 class TestParentClient(unittest.TestCase):
-
     client: pronotepy.ParentClient
 
     @classmethod
@@ -145,7 +144,6 @@ class TestParentClient(unittest.TestCase):
 
 
 class TestVieScolaireClient(unittest.TestCase):
-
     client: pronotepy.VieScolaireClient
 
     @classmethod
