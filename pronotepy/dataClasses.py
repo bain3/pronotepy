@@ -502,10 +502,10 @@ class Lesson(Object):
 
         for d in json_dict['ListeContenus']['V']:
             if not 'G' in d: continue
-            if d['G'] == 16: self.subject = Subject(d)
-            if d['G'] == 3: self.teacher_names.append(d['L'])
-            if d['G'] == 17: self.classrooms.append(d['L'])
-            if d['G'] == 2: self.group_names.append(d['L'])
+            elif d['G'] == 16: self.subject = Subject(d)
+            elif d['G'] == 3: self.teacher_names.append(d['L'])
+            elif d['G'] == 17: self.classrooms.append(d['L'])
+            elif d['G'] == 2: self.group_names.append(d['L'])
 
         # All values joined together to prevent breaking changes
         self.teacher_name: Optional[str] = ', '.join(self.teacher_names) if self.teacher_names else None
