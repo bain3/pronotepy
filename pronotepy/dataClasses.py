@@ -420,8 +420,12 @@ class Lesson(Object):
         the subject that the lesson is from
     teacher_name : Optional[str]
         name of the teacher
+    teacher_names : Optional[List[str]]
+        name of the teachers
     classroom : Optional[str]
         name of the classroom
+    classrooms : Optional[List[str]]
+        name of the classrooms
     canceled : bool
         if the lesson is canceled
     status : Optional[str]
@@ -436,6 +440,8 @@ class Lesson(Object):
         end of the lesson
     group_name : Optional[str]
         Name of the group.
+    group_names : Optional[List[str]]
+        Name of the groups.
     exempted : bool
         Specifies if the student's presence is exempt.
     virtual_classrooms : List[str]
@@ -446,17 +452,11 @@ class Lesson(Object):
         is marked as detention
     """
 
-    __slots__ = ['id', 'subject', 'teacher_name', 'classroom', 'start',
-                 'canceled', 'status', 'background_color', 'detention',
-                 'end', 'outing', 'group_name', 'exempted',
+    __slots__ = ['id', 'subject', 'teacher_name', 'teacher_names', 
+                 'classroom', 'classrooms', 'start', 'canceled',
+                 'status', 'background_color', 'detention', 'end',
+                 'outing', 'group_name', 'group_names', 'exempted',
                  '_client', '_content', 'virtual_classrooms', 'num']
-
-    transformers = {
-        16: ('subject', Subject),
-        3: ('teacher_name', _get_l),
-        17: ('classroom', _get_l),
-        2: ('group_name', _get_l)
-    }
 
     def __init__(self, client, json_dict):
         super().__init__(json_dict)
@@ -492,20 +492,26 @@ class Lesson(Object):
         self.end: datetime.datetime = self.start.replace(hour=end_time.hour, minute=end_time.minute)
 
         # get additional information about the lesson
-        self.teacher_name: Optional[str] = None
-        self.classroom: Optional[str] = None
-        self.group_name: Optional[str] = None
+        self.teacher_names: Optional[List[str]] = []
+        self.classrooms: Optional[List[str]] = []
+        self.group_names: Optional[List[str]] = []
         self.subject: Optional[Subject] = None
 
         if 'ListeContenus' not in json_dict:
             raise ParsingError("Error while parsing for lesson details", json_dict, ("ListeContenus", "V"))
 
         for d in json_dict['ListeContenus']['V']:
-            try:
-                self.__setattr__(self.__class__.transformers[d['G']][0], self.__class__.transformers[d['G']][1](d))
-            except KeyError:
-                pass
+            if not 'G' in d: continue
+            elif d['G'] == 16: self.subject = Subject(d)
+            elif d['G'] == 3: self.teacher_names.append(d['L'])
+            elif d['G'] == 17: self.classrooms.append(d['L'])
+            elif d['G'] == 2: self.group_names.append(d['L'])
 
+        # All values joined together to prevent breaking changes
+        self.teacher_name: Optional[str] = ', '.join(self.teacher_names) if self.teacher_names else None
+        self.classroom: Optional[str] = ', '.join(self.classrooms) if self.classrooms else None
+        self.group_name: Optional[str] = ', '.join(self.group_names) if self.group_names else None
+        
         del self._resolver
 
     @property
