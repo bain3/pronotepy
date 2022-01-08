@@ -4,7 +4,7 @@ with open("README.md", "r") as fh:
     long_description = fh.read()
 
 setuptools.setup(name='pronotepy',
-                 version='2.1.0',
+                 version='2.2.0',
                  description='A wrapper for the pronote "API"',
                  url='https://www.github.com/bain3/pronotepy',
                  author='bain',
