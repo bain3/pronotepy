@@ -24,6 +24,7 @@ class ExpiredObject(PronoteAPIError):
 
 class ChildNotFound(PronoteAPIError):
     """Child with this name was not found."""
+    pass
 
 
 class DataError(Exception):
@@ -39,3 +40,8 @@ class ParsingError(DataError):
         super().__init__(message)
         self.json_dict = json_dict
         self.path = path
+
+
+class ICalExportError(PronoteAPIError):
+    """Error while exporting ICal. Pronote did not return token"""
+    pass

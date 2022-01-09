@@ -327,6 +327,38 @@ class Client(_ClientBase):
         # since we only have week precision, we need to make it more precise on our own
         return [lesson for lesson in output if date_from <= lesson.start <= date_to]
 
+    def export_ical(self, timezone_shift: int = 0):
+        """
+        Exports ICal URL for the client's timetable
+        Parameters
+        ----------
+        timezone_shift : int
+            in what timezone should the exported calendar be in (hour shift)
+
+        Returns
+        -------
+        URL for the exported ICal file
+        """
+        user = self.parametres_utilisateur['donneesSec']['donnees']['ressource']
+        data = {
+            "ressource": user,
+            "avecAbsencesEleve": False, "avecConseilDeClasse": True,
+            "estEDTPermanence": False, "avecAbsencesRessource": True,
+            "avecDisponibilites": True, "avecInfosPrefsGrille": True,
+            "Ressource": user,
+            "NumeroSemaine": 1,
+            "numeroSemaine": 1
+        }
+        response = self.post("PageEmploiDuTemps", 16, data)
+        icalsecurise = response["donneesSec"]["donnees"].get("ParametreExportiCal")
+        if not icalsecurise:
+            raise ICalExportError("Pronote did not return ICal token")
+
+        ver = self.func_options["donneesSec"]["donnees"]["General"]["versionPN"]
+        param = f"lh={timezone_shift}".encode().hex()
+
+        return f"{self.communication.root_site}/ical/Edt.ics?icalsecurise={icalsecurise}&version={ver}&param={param}"
+
     def homework(self, date_from: datetime.date, date_to: datetime.date = None) -> List[dataClasses.Homework]:
         """
         Get homework between two given points.
