@@ -40,6 +40,12 @@ class TestClient(unittest.TestCase):
             self.assertLessEqual(start, hw.date)
             self.assertLessEqual(hw.date, end)
 
+    def test_export_ical(self):
+        import requests
+        ical = client.export_ical()
+        resp = requests.get(ical)
+        self.assertEqual(resp.status_code, 200)
+
     def test_refresh(self):
         client.refresh()
         self.assertEqual(client.session_check(), True)
