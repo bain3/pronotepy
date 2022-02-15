@@ -129,9 +129,13 @@ class _ClientBase:
             e.aes_key = MD5.new((u + motdepasse).encode()).digest()
 
         # challenge
-        dec = e.aes_decrypt(bytes.fromhex(challenge))
-        dec_no_alea = _enleverAlea(dec.decode())
-        ch = e.aes_encrypt(dec_no_alea.encode()).hex()
+        try:
+            dec = e.aes_decrypt(bytes.fromhex(challenge))
+            dec_no_alea = _enleverAlea(dec.decode())
+            ch = e.aes_encrypt(dec_no_alea.encode()).hex()
+        except CryptoError as e:
+            e.args += "exception happened during login -> probably bad username/password",
+            raise
 
         # send
         auth_json = {"connexion": 0, "challenge": ch, "espace": int(self.attributes['a'])}
