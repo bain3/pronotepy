@@ -83,15 +83,6 @@ class TestPeriod(unittest.TestCase):
 
 class TestInformation(unittest.TestCase):
 
-    def test_attribute_type(self) -> None:
-        information = client.information_and_surveys()
-        for info in information:
-            for attr_name, attr_type in typing.get_type_hints(pronotepy.Information).items():
-                with self.subTest(attr_name=attr_name, attr_type=attr_type):
-                    if isinstance(attr_type, typing._BaseGenericAlias):  # type: ignore
-                        attr_type = typing.get_args(attr_type)
-                    self.assertIsInstance(info.__getattribute__(attr_name), attr_type)
-
     def test_unread(self) -> None:
         information = client.information_and_surveys(only_unread=True)
         for info in information:
