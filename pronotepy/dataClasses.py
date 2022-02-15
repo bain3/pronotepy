@@ -299,6 +299,7 @@ class Period(Object):
         evaluations = response['donneesSec']['donnees']['listeEvaluations']['V']
         return [Evaluation(e) for e in evaluations]
 
+    @property
     def absences(self) -> List[Absence]:
         """
         Gets all absences in a given period.
