@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import base64
 import json as jsn
 import logging
@@ -5,7 +7,7 @@ import secrets
 import threading
 import zlib
 from time import time, sleep
-from typing import Union, Optional
+from typing import Union, Optional, TYPE_CHECKING, Any, List
 
 import requests
 from Crypto.Cipher import AES, PKCS1_v1_5
@@ -15,6 +17,11 @@ from Crypto.Util import Padding
 from bs4 import BeautifulSoup
 
 from .exceptions import *
+
+if TYPE_CHECKING:
+    from requests import Response
+    from requests.cookies import RequestsCookieJar
+    from .clients import _ClientBase
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -28,22 +35,22 @@ error_messages = {
 
 
 class _Communication(object):
-    def __init__(self, site, cookies, client):
+    def __init__(self, site: str, cookies: RequestsCookieJar, client: _ClientBase) -> None:
         """Handles all communication with the PRONOTE servers"""
         self.root_site, self.html_page = self.get_root_address(site)
         self.session = requests.Session()
         self.encryption = _Encryption()
-        self.attributes = {}
+        self.attributes: dict = {}
         self.request_number = 1
         self.cookies = cookies
         self.last_ping = 0
-        self.authorized_onglets = []
+        self.authorized_onglets: List[int] = []
         self.client = client
         self.compress_requests = False
         self.encrypt_requests = False
-        self.last_response = None
+        self.last_response: Response
 
-    def initialise(self):
+    def initialise(self) -> Tuple[Any, Any]:
         """
         Initialisation of the communication. Sets up the encryption and sends the IV for AES to PRONOTE.
         From this point, everything is encrypted with the communicated IV.
@@ -71,7 +78,7 @@ class _Communication(object):
                                      decryption_change={'iv': MD5.new(self.encryption.aes_iv_temp).digest()})
         return self.attributes, initial_response
 
-    def post(self, function_name: str, data: dict, decryption_change: Optional[dict] = None):
+    def post(self, function_name: str, data: dict, decryption_change: Optional[dict] = None) -> dict:
         """
         Handler for all POST requests by the api to PRONOTE servers. Automatically provides all needed data for the
         verification of posts. Session id and order numbers are preserved.
@@ -115,10 +122,10 @@ class _Communication(object):
 
         p_site = self.root_site + '/appelfonction/' + self.attributes['a'] + '/' + self.attributes['h'] + '/' + r_number
 
-        response = self.session.request('POST', p_site, json=json, cookies=self.cookies)
+        response: Response = self.session.request('POST', p_site, json=json, cookies=self.cookies)
 
         self.request_number += 2
-        self.last_ping = time()
+        self.last_ping = int(time())
         self.last_response = response
 
         # error protection
@@ -165,7 +172,7 @@ class _Communication(object):
 
         return response_data
 
-    def after_auth(self, data, auth_key):
+    def after_auth(self, data: dict, auth_key: bytes) -> None:
         """
         Key change after the authentification was successful.
 
@@ -181,11 +188,10 @@ class _Communication(object):
             self.cookies = self.last_response.cookies
         work = self.encryption.aes_decrypt(bytes.fromhex(data['donneesSec']['donnees']['cle']))
         key = MD5.new(_enBytes(work.decode()))
-        key = key.digest()
-        self.encryption.aes_key = key
+        self.encryption.aes_key = key.digest()
 
     @staticmethod
-    def _parse_html(html):
+    def _parse_html(html: bytes) -> dict:
         """Parses the html for the RSA keys
 
         Returns
@@ -196,24 +202,24 @@ class _Communication(object):
         parsed = BeautifulSoup(html, "html.parser")
         onload = parsed.find(id='id_body')
         if onload:
-            onload_c = onload['onload'][14:-37]
+            onload_c = onload['onload'][14:-37]  # type: ignore
         else:
             if b'IP' in html:
                 raise PronoteAPIError('Your IP address is suspended.')
             raise PronoteAPIError(
                 "Page html is different than expected. Be sure that pronote_url is the direct url to your pronote page.")
         attributes = {}
-        for attr in onload_c.split(','):
+        for attr in onload_c.split(','):  # type: ignore
             key, value = attr.split(':')
             attributes[key] = value.replace("'", '')
         return attributes
 
     @staticmethod
-    def get_root_address(addr):
+    def get_root_address(addr: str) -> tuple[str, str]:
         return '/'.join(addr.split('/')[:-1]), '/'.join(addr.split('/')[-1:])
 
 
-def _enleverAlea(text):
+def _enleverAlea(text: str) -> str:
     """Gets rid of the stupid thing that they did, idk what it really is for, but i guess it adds security"""
     sansalea = []
     for i, b in enumerate(text):
@@ -222,12 +228,12 @@ def _enleverAlea(text):
     return ''.join(sansalea)
 
 
-def _enBytes(string: str):
+def _enBytes(string: str) -> bytes:
     list_string = string.split(',')
     return bytes([int(i) for i in list_string])
 
 
-def _prepare_onglets(list_of_onglets):
+def _prepare_onglets(list_of_onglets):  # type: ignore
     output = []
 
     if type(list_of_onglets) != list:
@@ -241,34 +247,34 @@ def _prepare_onglets(list_of_onglets):
 
 
 class _Encryption(object):
-    def __init__(self):
+    def __init__(self) -> None:
         """The encryption part of the API. You shouldn't have to use this normally."""
         # aes
         self.aes_iv = bytes(16)
         self.aes_iv_temp = secrets.token_bytes(16)
         self.aes_key = MD5.new().digest()
         # rsa
-        self.rsa_keys = {}
+        self.rsa_keys: dict[str, str] = {}
 
-    def aes_encrypt(self, data: bytes):
+    def aes_encrypt(self, data: bytes) -> bytes:
         cipher = AES.new(self.aes_key, AES.MODE_CBC, self.aes_iv)
         padded = Padding.pad(data, 16)
         return cipher.encrypt(padded)
 
-    def aes_decrypt(self, data: bytes):
+    def aes_decrypt(self, data: bytes) -> bytes:
         cipher = AES.new(self.aes_key, AES.MODE_CBC, self.aes_iv)
         try:
             return Padding.unpad(cipher.decrypt(data), 16)
         except ValueError:
             raise CryptoError('Decryption failed while trying to un pad. (probably bad decryption key/iv)')
 
-    def aes_set_iv(self, iv=None):
+    def aes_set_iv(self, iv: bytes = None) -> None:
         if iv is None:
             self.aes_iv = MD5.new(self.aes_iv_temp).digest()
         else:
             self.aes_iv = iv
 
-    def rsa_encrypt(self, data: bytes):
+    def rsa_encrypt(self, data: bytes) -> bytes:
         key = RSA.construct((int(self.rsa_keys['MR'], 16), int(self.rsa_keys['ER'], 16)))
         # noinspection PyTypeChecker
         pkcs = PKCS1_v1_5.new(key)
@@ -276,20 +282,20 @@ class _Encryption(object):
 
 
 class _KeepAlive(threading.Thread):
-    def __init__(self, client):
+    def __init__(self, client: _ClientBase) -> None:
         super().__init__(target=self.alive)
         self._client = client
         self.keep_alive = True
 
-    def alive(self):
+    def alive(self) -> None:
         while self.keep_alive:
-            if time() - self._client._communication.last_ping >= 300:
+            if time() - self._client.communication.last_ping >= 300:
                 self._client.post('Presence', 7)
             sleep(1)
 
-    def __enter__(self):
+    def __enter__(self) -> None:
         self.start()
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:  # type: ignore
         self.keep_alive = False
         self.join()

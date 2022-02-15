@@ -38,7 +38,8 @@ class _ClientBase:
         Provides information about the current client. Name etc...
     """
 
-    def __init__(self, pronote_url, username: str = '', password: str = '', ent: Optional[Callable] = None):
+    def __init__(self, pronote_url: str, username: str = '', password: str = '',
+                 ent: Optional[Callable] = None) -> None:
         log.info('INIT')
         # start communication session
         if not len(password) + len(username):
@@ -66,7 +67,7 @@ class _ClientBase:
 
         self.parametres_utilisateur: dict = {}
         self.auth_cookie: dict = {}
-        self.info: Optional[dataClasses.ClientInfo] = None
+        self.info: dataClasses.ClientInfo
 
         self.start_day = datetime.datetime.strptime(
             self.func_options['donneesSec']['donnees']['General']['PremierLundi']['V'], '%d/%m/%Y').date()
@@ -74,6 +75,7 @@ class _ClientBase:
 
         self._refreshing = False
 
+        self.periods_: Optional[List[dataClasses.Period]]
         self.periods_ = self.periods
         self.logged_in = self._login()
         self._expired = False
@@ -150,7 +152,7 @@ class _ClientBase:
             log.info('login failed')
             return False
 
-    def get_week(self, date: Union[datetime.date, datetime.datetime]):
+    def get_week(self, date: Union[datetime.date, datetime.datetime]) -> int:
         if isinstance(date, datetime.datetime):
             return 1 + int((date.date() - self.start_day).days / 7)
         return 1 + int((date - self.start_day).days / 7)
@@ -170,14 +172,14 @@ class _ClientBase:
         json = self.func_options['donneesSec']['donnees']['General']['ListePeriodes']
         return [dataClasses.Period(self, j) for j in json]
 
-    def keep_alive(self):
+    def keep_alive(self) -> _KeepAlive:
         """
         Returns a context manager to keep the connection alive. When inside the context manager,
         it sends a "Presence" packet to the server after 5 minutes of inactivity from another thread.
         """
         return _KeepAlive(self)
 
-    def refresh(self):
+    def refresh(self) -> None:
         """
         Now this is the true jank part of this program. It refreshes the connection if something went wrong.
         This is the classical procedure if something is broken.
@@ -211,7 +213,7 @@ class _ClientBase:
             return True
         return False
 
-    def post(self, function_name: str, onglet: int = None, data: dict = None):
+    def post(self, function_name: str, onglet: int = None, data: dict = None) -> dict:
         """
         Preforms a raw post to the PRONOTE server. Adds signature, then passes it to _Communication.post
 
@@ -279,7 +281,8 @@ class Client(_ClientBase):
         Provides information about the current client. Name etc...
     """
 
-    def __init__(self, pronote_url, username: str = '', password: str = '', ent: Optional[Callable] = None):
+    def __init__(self, pronote_url: str, username: str = '', password: str = '',
+                 ent: Optional[Callable] = None) -> None:
         super().__init__(pronote_url, username, password, ent)
 
     def lessons(self, date_from: Union[datetime.date, datetime.datetime],
@@ -327,7 +330,7 @@ class Client(_ClientBase):
         # since we only have week precision, we need to make it more precise on our own
         return [lesson for lesson in output if date_from <= lesson.start <= date_to]
 
-    def export_ical(self, timezone_shift: int = 0):
+    def export_ical(self, timezone_shift: int = 0) -> str:
         """
         Exports ICal URL for the client's timetable
         Parameters
@@ -441,7 +444,7 @@ class Client(_ClientBase):
         id_period = \
             self.parametres_utilisateur['donneesSec']['donnees']['ressource']['listeOngletsPourPeriodes']['V'][0][
                 'periodeParDefaut']['V']['N']
-        return dataClasses.Util.get(self.periods_, id=id_period)[0]
+        return dataClasses.Util.get(self.periods, id=id_period)[0]
 
 
 class ParentClient(Client):
@@ -471,7 +474,8 @@ class ParentClient(Client):
         List of sub-clients representing all the children connected to the main parent account.
     """
 
-    def __init__(self, pronote_url, username: str = '', password: str = '', ent: Optional[Callable] = None):
+    def __init__(self, pronote_url: str, username: str = '', password: str = '',
+                 ent: Optional[Callable] = None) -> None:
         super().__init__(pronote_url, username, password, ent)
 
         self.children: List[dataClasses.ClientInfo] = []
@@ -505,7 +509,7 @@ class ParentClient(Client):
         self._selected_child = c
         self.parametres_utilisateur['donneesSec']['donnees']['ressource'] = self._selected_child.raw_resource
 
-    def post(self, function_name: str, onglet: int = None, data: dict = None):
+    def post(self, function_name: str, onglet: int = None, data: dict = None) -> dict:
         """
         Preforms a raw post to the PRONOTE server. Adds signature, then passes it to _Communication.post
 
@@ -565,7 +569,8 @@ class VieScolaireClient(_ClientBase):
         List of all classes this account has access to.
     """
 
-    def __init__(self, pronote_url, username: str = '', password: str = '', ent: Optional[Callable] = None):
+    def __init__(self, pronote_url: str, username: str = '', password: str = '',
+                 ent: Optional[Callable] = None) -> None:
         super().__init__(pronote_url, username, password, ent)
         self.classes = [dataClasses.StudentClass(self, json) for json in
                         self.parametres_utilisateur["donneesSec"]["donnees"]["listeClasses"]["V"]]
