@@ -133,8 +133,8 @@ class _ClientBase:
             dec = e.aes_decrypt(bytes.fromhex(challenge))
             dec_no_alea = _enleverAlea(dec.decode())
             ch = e.aes_encrypt(dec_no_alea.encode()).hex()
-        except CryptoError as e:
-            e.args += "exception happened during login -> probably bad username/password",
+        except CryptoError as ex:
+            ex.args += "exception happened during login -> probably bad username/password",
             raise
 
         # send
