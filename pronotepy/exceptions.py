@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import Tuple
 
 
 class PronoteAPIError(Exception):
@@ -45,3 +45,10 @@ class ParsingError(DataError):
 class ICalExportError(PronoteAPIError):
     """Error while exporting ICal. Pronote did not return token"""
     pass
+
+
+class DateParsingError(PronoteAPIError):
+    """Bad date string"""
+    def __init__(self, message: str, date_string: str):
+        super().__init__(message)
+        self.date_string = date_string
