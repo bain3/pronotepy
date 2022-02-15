@@ -1,5 +1,4 @@
 import datetime
-import typing
 import unittest
 
 import pronotepy
@@ -78,7 +77,8 @@ class TestPeriod(unittest.TestCase):
                 self.assertIsNotNone(acquisition)
 
     def test_absences(self) -> None:
-        self.period.absences()
+        all_absences = [period.absences for period in client.periods]
+        self.assertGreater(len(all_absences), 0)
 
 
 class TestInformation(unittest.TestCase):
