@@ -1,5 +1,4 @@
 import datetime
-import typing
 import unittest
 
 import pronotepy
@@ -10,10 +9,10 @@ client = pronotepy.Client('https://demo.index-education.net/pronote/eleve.html',
 class TestClient(unittest.TestCase):
     global client
 
-    def test__get_week(self):
+    def test__get_week(self) -> None:
         self.assertEqual(client.get_week(client.start_day + datetime.timedelta(days=8)), 2)
 
-    def test_lessons(self):
+    def test_lessons(self) -> None:
         start = client.start_day
         end = client.start_day + datetime.timedelta(days=8)
         lessons = client.lessons(start, end)
@@ -23,13 +22,13 @@ class TestClient(unittest.TestCase):
             self.assertLessEqual(start, lesson.start.date())
             self.assertLessEqual(lesson.start.date(), end)
 
-    def test_periods(self):
+    def test_periods(self) -> None:
         self.assertIsNotNone(client.periods)
 
-    def test_current_period(self):
+    def test_current_period(self) -> None:
         self.assertIsNotNone(client.current_period)
 
-    def test_homework(self):
+    def test_homework(self) -> None:
         start = client.start_day
         end = client.start_day + datetime.timedelta(days=31)
         homework = client.homework(start, end)
@@ -40,13 +39,13 @@ class TestClient(unittest.TestCase):
             self.assertLessEqual(start, hw.date)
             self.assertLessEqual(hw.date, end)
 
-    def test_export_ical(self):
+    def test_export_ical(self) -> None:
         import requests
         ical = client.export_ical()
         resp = requests.get(ical)
         self.assertEqual(resp.status_code, 200)
 
-    def test_refresh(self):
+    def test_refresh(self) -> None:
         client.refresh()
         self.assertEqual(client.session_check(), True)
 
@@ -59,45 +58,37 @@ class TestPeriod(unittest.TestCase):
         global client
         cls.period = client.current_period
 
-    def test_grades(self):
+    def test_grades(self) -> None:
         # We assume demo website will have grades
         grades = self.period.grades
         self.assertGreater(len(grades), 0)
 
-    def test_averages(self):
+    def test_averages(self) -> None:
         self.assertGreater(len(self.period.averages), 0)
 
-    def test_overall_average(self):
+    def test_overall_average(self) -> None:
         self.assertIsNotNone(self.period.overall_average)
 
-    def test_evaluations(self):
+    def test_evaluations(self) -> None:
         evaluations = self.period.evaluations
         self.assertGreater(len(evaluations), 0)
         for evaluation in evaluations:
             for acquisition in evaluation.acquisitions:
                 self.assertIsNotNone(acquisition)
 
-    def test_absences(self):
-        self.period.absences()
+    def test_absences(self) -> None:
+        all_absences = [period.absences for period in client.periods]
+        self.assertGreater(len(all_absences), 0)
 
 
 class TestInformation(unittest.TestCase):
 
-    def test_attribute_type(self):
-        information = client.information_and_surveys()
-        for info in information:
-            for attr_name, attr_type in typing.get_type_hints(pronotepy.Information).items():
-                with self.subTest(attr_name=attr_name, attr_type=attr_type):
-                    if isinstance(attr_type, typing._BaseGenericAlias):
-                        attr_type = typing.get_args(attr_type)
-                    self.assertIsInstance(info.__getattribute__(attr_name), attr_type)
-
-    def test_unread(self):
+    def test_unread(self) -> None:
         information = client.information_and_surveys(only_unread=True)
         for info in information:
             self.assertFalse(info.read)
 
-    def test_time_delta(self):
+    def test_time_delta(self) -> None:
         start = datetime.datetime(year=client.start_day.year, month=client.start_day.month, day=client.start_day.day)
         end = start + datetime.timedelta(days=100)
         information = client.information_and_surveys(date_from=start, date_to=end)
@@ -113,10 +104,10 @@ class TestLesson(unittest.TestCase):
         global client
         cls.lesson = client.lessons(client.start_day + datetime.timedelta(days=4))[0]
 
-    def test_normal(self):
+    def test_normal(self) -> None:
         self.assertIsNotNone(self.lesson.normal)
 
-    def test_content(self):
+    def test_content(self) -> None:
         self.assertIsInstance(self.lesson.content, pronotepy.LessonContent)
 
 
@@ -126,9 +117,12 @@ class TestLessonContent(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         global client
-        cls.lessonContent = client.lessons(client.start_day + datetime.timedelta(days=4))[0].content
+        content = client.lessons(client.start_day + datetime.timedelta(days=4))[0].content
+        if content is None:
+            raise Exception("Content is None!")
+        cls.lessonContent = content
 
-    def test_files(self):
+    def test_files(self) -> None:
         self.assertIsNotNone(self.lessonContent.files)
 
 
@@ -140,11 +134,11 @@ class TestParentClient(unittest.TestCase):
         cls.client = pronotepy.ParentClient('https://demo.index-education.net/pronote/parent.html',
                                             'demonstration', 'pronotevs')
 
-    def test_set_child(self):
+    def test_set_child(self) -> None:
         self.client.set_child(self.client.children[1])
         self.client.set_child('PARENT Fanny')
 
-    def test_homework(self):
+    def test_homework(self) -> None:
         self.assertIsNotNone(
             self.client.homework(self.client.start_day, self.client.start_day + datetime.timedelta(days=31)))
 
@@ -157,7 +151,7 @@ class TestVieScolaireClient(unittest.TestCase):
         cls.client = pronotepy.VieScolaireClient('https://demo.index-education.net/pronote/viescolaire.html',
                                                  'demonstration2', 'pronotevs')
 
-    def test_classes(self):
+    def test_classes(self) -> None:
         self.assertGreater(len(self.client.classes), 0)
 
         for cls in self.client.classes:
