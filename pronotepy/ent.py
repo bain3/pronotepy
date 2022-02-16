@@ -9,7 +9,7 @@ log.setLevel(logging.DEBUG)
 
 
 @typing.no_type_check
-def educonnect(url: str, cookies, username: str, password: str):
+def educonnect(url: str, session, username: str, password: str):
     headers = {
         'connection': 'keep-alive',
         'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:73.0) Gecko/20100101 Firefox/73.0'}
@@ -20,10 +20,7 @@ def educonnect(url: str, cookies, username: str, password: str):
         "_eventId_proceed": ""
     }
 
-    # Send user:pass to Educonnect
-    session = requests.session()
-
-    response = session.post(url, headers=headers, data=payload, cookies=cookies)
+    response = session.post(url, headers=headers, data=payload)
 
     # 2nd SAML Authentication
     soup = BeautifulSoup(response.text, 'html.parser')
@@ -75,8 +72,48 @@ def ac_grenoble(username, password):
     log.debug('[ENT Eaux claires] Logging in with ' + username)
     response = session.post(login_service_provider, data=payload, headers=headers)
 
-    cookies = requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
-    return educonnect(response.url, cookies, username, password)
+    return educonnect(response.url, session, username, password)
+
+
+def ac_rennes(username, password):
+    """
+    ENT ac Rennes Toutatice.fr
+
+    Parameters
+    ----------
+    username : str
+        username
+    password : str
+        password
+
+    Returns
+    -------
+    cookies : cookies
+        returns the ent session cookies
+    """
+    # Toutatice required URL
+    toutatice_url = "https://www.toutatice.fr/portail/auth/MonEspace"
+    toutatice_login = "https://www.toutatice.fr/wayf/Ctrl"
+
+    # Required Headers
+    headers = {
+        'connection': 'keep-alive',
+        'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:73.0) Gecko/20100101 Firefox/73.0'}
+
+    session = requests.Session()
+
+    response = session.get(toutatice_url, headers=headers)
+    soup = BeautifulSoup(response.text, 'html.parser')
+    payload = {
+        "entityID": soup.find("input", {"name": "entityID"})["value"],
+        "return": soup.find("input", {"name": "return"})["value"],
+        "_saml_idp": soup.find("input", {"name": "_saml_idp"})["value"]
+    }
+
+    log.debug('[ENT Toutatice] Logging in with ' + username)
+    response = session.post(toutatice_login, data=payload, headers=headers)
+
+    return educonnect(response.url, session, username, password)
 
 
 def atrium_sud(username, password):
