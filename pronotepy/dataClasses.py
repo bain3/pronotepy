@@ -880,8 +880,8 @@ class ClientInfo:
         """
         return self.raw_resource.get('Etablissement', {'V': {'L': ""}})['V']['L']
 
-    def _cache(self):
-        if not self.__cache:
+    def _cache(self) -> dict:
+        if self.__cache is None:
             # this does not have all the protection _ClientBase.post provides,
             # but we need to manually add the resource id
             self.__cache = self._client.communication.post(
