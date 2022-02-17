@@ -841,11 +841,13 @@ class ClientInfo:
       Raw json defining the resource
     """
 
-    __slots__ = ['id', 'raw_resource']
+    __slots__ = ['id', 'raw_resource', '_client', '__cache']
 
-    def __init__(self, json_: dict) -> None:
+    def __init__(self, client: _ClientBase, json_: dict) -> None:
         self.id: str = json_['N']
         self.raw_resource: dict = json_
+        self._client = client
+        self.__cache: Optional[dict] = None
 
     @property
     def name(self) -> str:
@@ -877,6 +879,55 @@ class ClientInfo:
         name of the student's establishment
         """
         return self.raw_resource.get('Etablissement', {'V': {'L': ""}})['V']['L']
+
+    def _cache(self):
+        if not self.__cache:
+            # this does not have all the protection _ClientBase.post provides,
+            # but we need to manually add the resource id
+            self.__cache = self._client.communication.post(
+                "PageInfosPerso",
+                {"_Signature_": {"onglet": 49, "ressource": {"N": self.id, "G": 4}}}
+            )["donneesSec"]["donnees"]["Informations"]
+
+        return self.__cache
+
+    @property
+    def address(self) -> tuple[str, str, str, str, str, str, str, str]:
+        """
+        Address of the client
+
+        Returns
+        -------
+        A tuple of 8 elements:
+            - 4 lines of address info
+            - postal code
+            - city
+            - province
+            - country
+        """
+        c = self._cache()
+        return c["adresse1"], c["adresse2"], c["adresse3"], c["adresse4"], c["codePostal"], c["ville"], c["province"], \
+               c["pays"]
+
+    @property
+    def email(self) -> str:
+        return self._cache()["eMail"]
+
+    @property
+    def phone(self) -> str:
+        """
+        Phone of the client
+
+        Returns
+        -------
+        Phone in the format +[country-code][phone-number]
+        """
+        c = self._cache()
+        return "+" + c["indicatifTel"] + c["telephonePortable"]
+
+    @property
+    def ine_number(self) -> str:
+        return self._cache()["numeroINE"]
 
 
 class Acquisition(Object):
@@ -1015,7 +1066,8 @@ class Identity(Object):
             self.address.append(option)
             i += 1
         self.formatted_address: str = ','.join([*self.address, self.postal_code, self.city, self.country])
-        self.first_names: List[str] = [json_dict.get("prenom", ""), json_dict.get("prenom2", ""), json_dict.get("prenom3", "")]
+        self.first_names: List[str] = [json_dict.get("prenom", ""), json_dict.get("prenom2", ""),
+                                       json_dict.get("prenom3", "")]
 
         del self._resolver
 

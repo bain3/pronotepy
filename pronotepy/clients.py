@@ -147,7 +147,7 @@ class _ClientBase:
 
             # getting listeOnglets separately because of pronote API change
             self.parametres_utilisateur = self.post('ParametresUtilisateur')
-            self.info = dataClasses.ClientInfo(self.parametres_utilisateur['donneesSec']['donnees']['ressource'])
+            self.info = dataClasses.ClientInfo(self, self.parametres_utilisateur['donneesSec']['donnees']['ressource'])
             self.communication.authorized_onglets = _prepare_onglets(
                 self.parametres_utilisateur['donneesSec']['donnees']['listeOnglets'])
             log.info("got onglets data.")
@@ -484,7 +484,7 @@ class ParentClient(Client):
 
         self.children: List[dataClasses.ClientInfo] = []
         for c in self.parametres_utilisateur['donneesSec']['donnees']['ressource']['listeRessources']:
-            self.children.append(dataClasses.ClientInfo(c))
+            self.children.append(dataClasses.ClientInfo(self, c))
 
         if not self.children:
             raise ChildNotFound('No children were found.')
