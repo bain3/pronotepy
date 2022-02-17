@@ -6,6 +6,8 @@ import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse, parse_qs
 
+from .exceptions import *
+
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
 
@@ -128,9 +130,9 @@ def ac_rennes(username, password):
     soup = BeautifulSoup(response.text, 'xml')
 
     if soup.find('erreurFonctionnelle'):
-        raise(Exception(soup.find("erreurFonctionnelle").text))
+        raise(PronoteAPIError('Toutatice ENT (ac_rennes) : ', soup.find("erreurFonctionnelle").text))
     elif soup.find('erreurTechnique'):
-        raise(Exception(soup.find("erreurTechnique").text))
+        raise(PronoteAPIError('Toutatice ENT (ac_rennes) : ', soup.find("erreurTechnique").text))
     else:
         params = {
             'conversation': soup.find("conversation").text,
