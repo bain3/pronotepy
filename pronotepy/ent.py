@@ -4,6 +4,7 @@ import typing
 
 import requests
 from bs4 import BeautifulSoup
+from urllib.parse import urlparse, parse_qs
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
@@ -95,6 +96,7 @@ def ac_rennes(username, password):
     # Toutatice required URL
     toutatice_url = "https://www.toutatice.fr/portail/auth/MonEspace"
     toutatice_login = "https://www.toutatice.fr/wayf/Ctrl"
+    toutatice_auth = "https://www.toutatice.fr/idp/Authn/RemoteUser"
 
     # Required Headers
     headers = {
@@ -114,7 +116,31 @@ def ac_rennes(username, password):
     log.debug('[ENT Toutatice] Logging in with ' + username)
     response = session.post(toutatice_login, data=payload, headers=headers)
 
-    return educonnect(response.url, session, username, password)
+    educonnect(response.url, session, username, password)
+
+    params = {
+        'conversation': parse_qs(urlparse(response.url).query)['execution'][0],
+        'redirectToLoaderRemoteUser': 0,
+        'sessionid': session.cookies.get('IDP_JSESSIONID')
+    }
+
+    response = session.get(toutatice_auth, headers=headers, params=params)
+    soup = BeautifulSoup(response.text, 'xml')
+
+    if soup.find('erreurFonctionnelle'):
+        raise(Exception(soup.find("erreurFonctionnelle").text))
+    elif soup.find('erreurTechnique'):
+        raise(Exception(soup.find("erreurTechnique").text))
+    else:
+        params = {
+            'conversation': soup.find("conversation").text,
+            'uidInSession': soup.find("uidInSession").text,
+            'sessionid': session.cookies.get('IDP_JSESSIONID')
+        }
+
+        t = session.get(toutatice_auth, headers=headers, params=params)
+
+    return requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
 
 
 def atrium_sud(username, password):
