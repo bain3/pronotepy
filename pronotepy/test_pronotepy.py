@@ -164,5 +164,34 @@ class TestVieScolaireClient(unittest.TestCase):
                 self.assertIsInstance(guardian.identity, pronotepy.Identity)
 
 
+class TestClientInfo(unittest.TestCase):
+    info: pronotepy.ClientInfo
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        global client
+        cls.info = client.info
+
+    def test_address(self) -> None:
+        address = self.info.address
+        self.assertIsNotNone(address, "Address was None")
+        self.assertEqual(len(address), 8, "Address information was not 8 elements long")
+        for i in address:
+            self.assertTrue(type(i) == str, f"Address information was not a string: {i}")
+
+    def test_ine_number(self) -> None:
+        self.assertEqual(self.info.ine_number, "001")
+
+    def test_phone(self) -> None:
+        self.assertRegex(self.info.phone, "\+[0-9]+")
+
+    def test_email(self) -> None:
+        self.assertRegex(
+            self.info.email,
+            "^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$",
+            "email did not match regex"
+        )
+
+
 if __name__ == '__main__':
     unittest.main()
