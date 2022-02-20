@@ -642,6 +642,40 @@ def ent_essonne(username, password):
     return requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
 
 
+def ent_hdf(username, password):
+    """
+    ENT Hauts de France
+
+    Parameters
+    ----------
+    username : str
+        username
+    password : str
+        password
+
+    Returns
+    -------
+    cookies : cookies
+        returns the ent session cookies
+    """
+    # ENT / PRONOTE required URLs
+    ent_login = "https://enthdf.fr/auth/login"
+    # Required Headers
+    headers = {
+        'connection': 'keep-alive',
+        'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:73.0) Gecko/20100101 Firefox/73.0'}
+
+    payload = {
+        'email': username,
+        'password': password,
+    }
+    # ENT Connection
+    session = requests.Session()
+
+    response = session.post(ent_login, headers=headers, data=payload)
+    return requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
+
+
 def ent_elyco(username, password):
     headers = {
         'connection': 'keep-alive',
