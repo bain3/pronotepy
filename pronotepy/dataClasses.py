@@ -483,6 +483,10 @@ class LessonContent(Object):
         title of the lesson content
     description : str
         description of the lesson content
+    category : str
+        category of the lesson content
+    files : tuple
+        files attached on lesson content
     """
 
     __slots__ = ['title', 'description', '_files', '_client']
@@ -494,6 +498,7 @@ class LessonContent(Object):
 
         self.title: str = self._resolver(str, 'L', strict=False)
         self.description: str = self._resolver(Util.html_parse, "descriptif", "V", strict=False)
+        self.category: str = self._resolver(str, "categorie", "V", "L", strict=False)
         self._files: Tuple[Any, ...] = self._resolver(tuple, "ListePieceJointe", "V")
 
         del self._resolver
