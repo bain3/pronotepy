@@ -492,8 +492,8 @@ class LessonContent(Object):
 
         self._client = client
 
-        self.title: str = self._resolver(str, 'L')
-        self.description: str = self._resolver(Util.html_parse, "descriptif", "V")
+        self.title: str = self._resolver(str, 'L', strict=False)
+        self.description: str = self._resolver(Util.html_parse, "descriptif", "V", strict=False)
         self._files: Tuple[Any, ...] = self._resolver(tuple, "ListePieceJointe", "V")
 
         del self._resolver
