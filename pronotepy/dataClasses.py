@@ -479,10 +479,14 @@ class LessonContent(Object):
 
     Attributes
     ----------
-    title : str
+    title : Optional[str]
         title of the lesson content
-    description : str
+    description : Optional[str]
         description of the lesson content
+    category : Optional[str]
+        category of the lesson content
+    files : tuple
+        files attached on lesson content
     """
 
     __slots__ = ['title', 'description', '_files', '_client']
@@ -492,8 +496,9 @@ class LessonContent(Object):
 
         self._client = client
 
-        self.title: str = self._resolver(str, 'L', strict=False)
-        self.description: str = self._resolver(Util.html_parse, "descriptif", "V", strict=False)
+        self.title: Optional[str] = self._resolver(str, 'L', strict=False)
+        self.description: Optional[str] = self._resolver(Util.html_parse, "descriptif", "V", strict=False)
+        self.category: Optional[str] = self._resolver(str, "categorie", "V", "L", strict=False)
         self._files: Tuple[Any, ...] = self._resolver(tuple, "ListePieceJointe", "V")
 
         del self._resolver
@@ -625,7 +630,7 @@ class Lesson(Object):
     def content(self) -> Optional[LessonContent]:
         """
         Gets content of the lesson. May be None if there is no description.
-        
+
         Notes
         -----
         This property is very inefficient and will send a request to pronote, so don't use it often.
@@ -659,7 +664,7 @@ class Homework(Object):
     description : str
         the description of the homework
     background_color : str
-        the background color of the homework 
+        the background color of the homework
     done : bool
         if the homework is marked done
     date : datetime.date
@@ -1023,7 +1028,7 @@ class Evaluation(Object):
 class Identity(Object):
     """
     Represents an Identity of a person
-    
+
     Attributes
     ----------
     postal_code : str
