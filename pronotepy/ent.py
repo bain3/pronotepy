@@ -701,3 +701,56 @@ def ent_elyco(username, password):
     response = session.post("https://cas3.e-lyco.fr/Shibboleth.sso/SAML2/POST", headers=headers, data=payload,
                             cookies=cookies)
     return requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
+
+
+
+
+def l_normandie(username:str,password:str):
+    """
+    ENT l'educ de Normandie
+
+    Parameters
+    ----------
+    username : str
+        username
+    password : str
+        password
+    
+    Returns
+    -------
+    cookies : cookies
+        returns the ent session cookies
+    """
+    
+    # URL required
+    teleservicesUrl = "https://teleservices.education.gouv.fr/mdp/Shibboleth.sso/Login?SAMLDS=1&target=ss:mem:0cbabc441187d789fdc65845af6ea345affc926e159a67ea87c5f4cae48c5962&authnContextClassRef=urn:oasis:names:tc:SAML:2.0:ac:classes:PasswordProtectedTransport urn:oasis:names:tc:SAML:2.0:ac:classes:TimeSyncToken&entityID=https://educonnect.education.gouv.fr/idp"
+    educonnectUrl = "https://educonnect.education.gouv.fr/idp/profile/SAML2/Unsolicited/SSO?providerId=https://ent.l-educdenormandie.fr/auth/saml/metadata/idp.xml&service=https://0142131r.index-education.net/pronote/mobile.eleve.html"
+    educdenormandieUrl = "https://ent.l-educdenormandie.fr/auth/saml/acs"
+    
+    # Headers
+    headers = {
+    'connection': 'keep-alive',
+    'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:73.0) Gecko/20100101 Firefox/73.0'}
+    
+    
+    payload = {
+        'j_username': username,
+        'j_password': password,
+        "_eventId_proceed": ""}
+
+    with requests.Session() as session:
+        
+        url = session.get(teleservicesUrl)
+
+        response = session.post(url.url,headers=headers,data=payload)
+
+        response = session.get(educonnectUrl)
+        soup = BeautifulSoup(response.text, 'html.parser')
+        payload2 = {
+            "SAMLResponse": soup.find("input", {"name": "SAMLResponse"})["value"]
+        }
+        
+        log.debug('[ENT Educ de Normandie] Logging in with ' + username)
+        response = session.post(educdenormandieUrl,headers=headers,data=payload2)
+        
+    return requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
