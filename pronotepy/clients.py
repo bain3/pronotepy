@@ -461,13 +461,10 @@ class Client(_ClientBase):
         if not date_to:
             date_to = date_from
 
-        first_week = self.get_week(date_from)
-        last_week = self.get_week(date_to)
-
         first_day = date_from - datetime.timedelta(days=date_from.weekday())
 
         # getting menus for all the weeks.
-        for week in range(first_week, last_week + 1):
+        while first_day <= date_to:
             data = {'date': {
                 '_T': 7,
                 'V': first_day.strftime('%d/%m/%Y') + " 0:0:0"

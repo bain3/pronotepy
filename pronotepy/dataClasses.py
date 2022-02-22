@@ -1291,8 +1291,10 @@ class Menu(Object):
 
             self.id: str = self._resolver(str, "N")
             self.name: str = self._resolver(str, "L")
-            self.labels: List[self.FoodLabel] = [self.FoodLabel(
-                client, label) for label in json_dict["listeLabelsAlimentaires"]["V"]]
+            self.labels: List[Menu.Food.FoodLabel] = self._resolver(
+                lambda labels: [self.FoodLabel(client, label) for label in labels],
+                "listeLabelsAlimentaires", "V"
+            )
 
             self._client = client
 
@@ -1308,41 +1310,21 @@ class Menu(Object):
         self.name: Optional[str] = self._resolver(str, "L", strict=False)
         self.date: datetime.date = self._resolver(Util.date_parse, 'Date', 'V')
 
-        self.is_lunch: bool = (self._resolver(int, 'G') == 0)
-        self.is_dinner: bool = (self._resolver(int, 'G') == 1)
+        self.is_lunch: bool = self._resolver(int, 'G') == 0
+        self.is_dinner: bool = self._resolver(int, 'G') == 1
 
-        d_dict = {meal['G']: meal for meal in json_dict["ListePlats"]["V"]}
+        def init_food(d: dict) -> List[Menu.Food]:
+            return [self.Food(client, x) for x in d["ListeAliments"]["V"]]
 
-        self.first_meal: Optional[List[self.Food]] = None
-        self.main_meal: Optional[List[self.Food]] = None
-        self.side_meal: Optional[List[self.Food]] = None
-        self.other_meal: Optional[List[self.Food]] = None
-        self.cheese: Optional[List[self.Food]] = None
-        self.dessert: Optional[List[self.Food]] = None
+        d_dict = {str(meal['G']): meal for meal in json_dict["ListePlats"]["V"]}
+        super().__init__(d_dict)
 
-        if d_dict.get(0):
-            self.first_meal = [self.Food(client, food)
-                               for food in d_dict[0]['ListeAliments']['V']]
-
-        if d_dict.get(1):
-            self.main_meal = [self.Food(client, food)
-                              for food in d_dict[1]['ListeAliments']['V']]
-
-        if d_dict.get(2):
-            self.side_meal = [self.Food(client, food)
-                              for food in d_dict[2]['ListeAliments']['V']]
-
-        if d_dict.get(3):
-            self.other_meal = [self.Food(client, food)
-                               for food in d_dict[3]['ListeAliments']['V']]
-
-        if d_dict.get(5):
-            self.cheese = [self.Food(client, food)
-                           for food in d_dict[5]['ListeAliments']['V']]
-
-        if d_dict.get(4):
-            self.dessert = [self.Food(client, food)
-                            for food in d_dict[4]['ListeAliments']['V']]
+        self.first_meal: Optional[List[Menu.Food]] = self._resolver(init_food, "0", strict=False)
+        self.main_meal: Optional[List[Menu.Food]] = self._resolver(init_food, "1", strict=False)
+        self.side_meal: Optional[List[Menu.Food]] = self._resolver(init_food, "2", strict=False)
+        self.other_meal: Optional[List[Menu.Food]] = self._resolver(init_food, "3", strict=False)
+        self.cheese: Optional[List[Menu.Food]] = self._resolver(init_food, "5", strict=False)
+        self.dessert: Optional[List[Menu.Food]] = self._resolver(init_food, "4", strict=False)
 
         self._client = client
 
