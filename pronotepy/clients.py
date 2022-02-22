@@ -442,6 +442,47 @@ class Client(_ClientBase):
 
         return info
 
+    def menus(self, date_from: datetime.date, date_to: datetime.date = None) -> List[dataClasses.Menu]:
+        """
+        Get menus between two given points.
+
+        date_from : datetime
+            The first date
+        date_to : datetime
+            The second date. If unspecified to the end of the year.
+
+        Returns
+        -------
+        List[Menu]
+            Menu between two given points
+        """
+        output = []
+
+        if not date_to:
+            date_to = date_from
+
+        first_week = self.get_week(date_from)
+        last_week = self.get_week(date_to)
+
+        first_day = date_from - datetime.timedelta(days=date_from.weekday())
+
+        # getting menus for all the weeks.
+        for week in range(first_week, last_week + 1):
+            data = {'date': {
+                '_T': 7,
+                'V': first_day.strftime('%d/%m/%Y') + " 0:0:0"
+            }}
+            response = self.post('PageMenus', 10, data)
+            l_list = response['donneesSec']['donnees']['ListeJours']['V']
+            for day in l_list:
+                for menu in day['ListeRepas']['V']:
+                    menu['Date'] = day['Date']
+                    output.append(dataClasses.Menu(self, menu))
+            first_day += datetime.timedelta(days=7)
+
+        # since we only have week precision, we need to make it more precise on our own
+        return [menu for menu in output if date_from <= menu.date <= date_to]
+
     @property
     def current_period(self) -> dataClasses.Period:
         """Get the current period."""

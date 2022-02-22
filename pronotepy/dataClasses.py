@@ -1219,3 +1219,131 @@ class StudentClass(Object):
         r = self._client.post("ListeRessources", 105,
                               {"classe": {"N": self.id, "G": 1}, "periode": {"N": period.id, "G": 1}})
         return [Student(self._client, j) for j in r["donneesSec"]["donnees"]["listeRessources"]["V"]]
+
+
+class Menu(Object):
+    """
+    Represents the menu of a meal
+
+    Attributes
+    ----------
+    id : str
+    self.name: Optional[str]
+    date : datetime.date
+        the date of the menu
+    is_lunch : bool
+        the menu is a lunch menu
+    is_dinner : bool
+        the menu is a dinner menu
+    first_meal : Optional[List[Food]]
+        food list of first meal
+    main_meal : Optional[List[Food]]
+        food list of main meal
+    side_meal : Optional[List[Food]]
+        food list of side meal
+    other_meal : Optional[List[Food]]
+        food list of other meal
+    cheese : Optional[List[Food]]
+        food list of cheese
+    dessert : Optional[List[Food]]
+        food list of dessert
+    """
+
+    class Food(Object):
+        """
+        Represents food of a menu
+
+        Attributes
+        ----------
+        id : str
+        name : str
+        labels : List[FoodLabel]
+        """
+
+        class FoodLabel(Object):
+            """
+            Represents the label of a food
+
+            Attributes
+            ----------
+            id : str
+            name: str
+            color: str
+            """
+
+            __slots__ = ["name", "id", "color", "_client"]
+
+            def __init__(self, client: _ClientBase, json_dict: dict) -> None:
+                super().__init__(json_dict)
+
+                self.id: str = self._resolver(str, "N")
+                self.name: str = self._resolver(str, "L")
+                self.color: str = self._resolver(str, 'couleur')
+
+                self._client = client
+
+                del self._resolver
+
+        __slots__ = ["name", "id", "labels", "_client"]
+
+        def __init__(self, client: _ClientBase, json_dict: dict) -> None:
+            super().__init__(json_dict)
+
+            self.id: str = self._resolver(str, "N")
+            self.name: str = self._resolver(str, "L")
+            self.labels: List[self.FoodLabel] = [self.FoodLabel(
+                client, label) for label in json_dict["listeLabelsAlimentaires"]["V"]]
+
+            self._client = client
+
+            del self._resolver
+
+    __slots__ = ["name", "id", "date", "is_lunch", "is_dinner", "first_meal",
+                 "main_meal", "side_meal", "other_meal", "cheese", "dessert", "_client"]
+
+    def __init__(self, client: _ClientBase, json_dict: dict) -> None:
+        super().__init__(json_dict)
+
+        self.id: str = self._resolver(str, "N")
+        self.name: Optional[str] = self._resolver(str, "L", strict=False)
+        self.date: datetime.date = self._resolver(Util.date_parse, 'Date', 'V')
+
+        self.is_lunch: bool = (self._resolver(int, 'G') == 0)
+        self.is_dinner: bool = (self._resolver(int, 'G') == 1)
+
+        d_dict = {meal['G']: meal for meal in json_dict["ListePlats"]["V"]}
+
+        self.first_meal: Optional[List[self.Food]] = None
+        self.main_meal: Optional[List[self.Food]] = None
+        self.side_meal: Optional[List[self.Food]] = None
+        self.other_meal: Optional[List[self.Food]] = None
+        self.cheese: Optional[List[self.Food]] = None
+        self.dessert: Optional[List[self.Food]] = None
+
+        if d_dict.get(0):
+            self.first_meal = [self.Food(client, food)
+                               for food in d_dict[0]['ListeAliments']['V']]
+
+        if d_dict.get(1):
+            self.main_meal = [self.Food(client, food)
+                              for food in d_dict[1]['ListeAliments']['V']]
+
+        if d_dict.get(2):
+            self.side_meal = [self.Food(client, food)
+                              for food in d_dict[2]['ListeAliments']['V']]
+
+        if d_dict.get(3):
+            self.other_meal = [self.Food(client, food)
+                               for food in d_dict[3]['ListeAliments']['V']]
+
+        if d_dict.get(5):
+            self.cheese = [self.Food(client, food)
+                           for food in d_dict[5]['ListeAliments']['V']]
+
+        if d_dict.get(4):
+            self.dessert = [self.Food(client, food)
+                            for food in d_dict[4]['ListeAliments']['V']]
+
+        self._client = client
+
+        del self._resolver
