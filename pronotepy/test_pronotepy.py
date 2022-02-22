@@ -39,6 +39,14 @@ class TestClient(unittest.TestCase):
             self.assertLessEqual(start, hw.date)
             self.assertLessEqual(hw.date, end)
 
+    def test_menus(self) -> None:
+        start = client.start_day
+        end = client.start_day + datetime.timedelta(days=8)
+        menus = client.menus(start, end)
+        for menu in menus:
+            self.assertLessEqual(start, menu.date)
+            self.assertLessEqual(menu.date, end)
+
     def test_export_ical(self) -> None:
         import requests
         ical = client.export_ical()
@@ -124,6 +132,23 @@ class TestLessonContent(unittest.TestCase):
 
     def test_files(self) -> None:
         self.assertIsNotNone(self.lessonContent.files)
+
+
+class TestMenu(unittest.TestCase):
+    menu: pronotepy.Menu
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        global client
+        i = 0
+        menus = client.menus(client.start_day + datetime.timedelta(days=i))
+        while len(menus) == 0:
+            i += 1
+            menus = client.menus(client.start_day + datetime.timedelta(days=i))
+        cls.menu = menus[0]
+
+    def test_lunch_dinner(self) -> None:
+        self.assertNotEqual(self.menu.is_lunch, self.menu.is_dinner, 'The menu is neither a lunch nor a dinner or is both')
 
 
 class TestParentClient(unittest.TestCase):
