@@ -698,5 +698,5 @@ def ent_hauts_de_france(username: str, password: str):
     return ent("https://enthdf.fr/auth/login", username, password)
 
 
-def ent_ile_de_france(username: str, password: str):
+def ile_de_france(username: str, password: str):
     return ent("https://ent.iledefrance.fr/auth/login?callback=https%3A%2F%2Fent.iledefrance.fr%2F", username, password)
