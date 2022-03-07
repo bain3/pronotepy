@@ -650,14 +650,15 @@ def l_normandie(username: str,password: str):
 
     return requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
 
+
 def ent(url: str, username: str, password: str) -> requests.cookies.RequestsCookieJar:
     """
-    ENT for given url (if supported and no specific function already exists) or can pass url as {'essonne', 'hauts-de-france', 'ile-de-france'}
+    ENT for given url. If a specific function for your ENT already exists you should use it!
 
     Parameters
     ----------
     url : str
-        url of the ENT or {'essonne', 'hauts-de-france', 'ile-de-france'}
+        url of the ENT
     username : str
         username
     password : str
@@ -668,12 +669,6 @@ def ent(url: str, username: str, password: str) -> requests.cookies.RequestsCook
     cookies : cookies
         returns the ent session cookies
     """
-
-    ent = {
-        "essonne": "https://www.moncollege-ent.essonne.fr/auth/login",
-        "hauts-de-france": "https://enthdf.fr/auth/login",
-        "ile-de-france": "https://ent.iledefrance.fr/auth/login?callback=https%3A%2F%2Fent.iledefrance.fr%2F"
-    }
     
     # Required Headers
     headers = {
@@ -693,3 +688,15 @@ def ent(url: str, username: str, password: str) -> requests.cookies.RequestsCook
     response = session.post(url, headers=headers, data=payload)
 
     return requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
+
+
+def ent_essonne(username: str, password: str):
+    return ent("https://www.moncollege-ent.essonne.fr/auth/login", username, password)
+
+
+def ent_hauts_de_france(username: str, password: str):
+    return ent("https://enthdf.fr/auth/login", username, password)
+
+
+def ent_ile_de_france(username: str, password: str):
+    return ent("https://ent.iledefrance.fr/auth/login?callback=https%3A%2F%2Fent.iledefrance.fr%2F", username, password)

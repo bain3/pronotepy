@@ -201,7 +201,8 @@ class _Communication(object):
         """
         parsed = BeautifulSoup(html, "html.parser")
 
-        if onload:= parsed.find(id='id_body'):
+        onload = parsed.find(id='id_body')
+        if onload:
             onload_c = onload['onload'][14:-37]  # type: ignore
         elif b'IP' in html:
             raise PronoteAPIError('Your IP address is suspended.')
@@ -266,7 +267,7 @@ class _Encryption(object):
             raise CryptoError('Decryption failed while trying to un pad. (probably bad decryption key/iv)')
 
     def aes_set_iv(self, iv: bytes = None) -> None:
-        self.aes_iv = MD5.new(self.aes_iv_temp).digest() if iv is None else iv
+        self.aes_iv = iv or MD5.new(self.aes_iv_temp).digest()
 
     def rsa_encrypt(self, data: bytes) -> bytes:
         key = RSA.construct((int(self.rsa_keys['MR'], 16), int(self.rsa_keys['ER'], 16)))
@@ -293,3 +294,4 @@ class _KeepAlive(threading.Thread):
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:  # type: ignore
         self.keep_alive = False
         self.join()
+        
