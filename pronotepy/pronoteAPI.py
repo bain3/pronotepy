@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import base64
 import json as jsn
-import logging
+from logging import getLogger, DEBUG
 import secrets
 import threading
 import zlib
@@ -23,8 +23,8 @@ if TYPE_CHECKING:
     from requests.cookies import RequestsCookieJar
     from .clients import _ClientBase
 
-log = logging.getLogger(__name__)
-log.setLevel(logging.DEBUG)
+log = getLogger(__name__)
+log.setLevel(DEBUG)
 
 error_messages = {
     22: '[ERROR 22] The object was from a previous session. Please read the "Long Term Usage" section in README on '
@@ -100,14 +100,14 @@ class _Communication(object):
         if self.compress_requests:
             # takes care of compression. it is done with zlib, with compression level set to 6. the headers
             # are stripped, and the output is converted to hex
-            log.debug(f"[_Communication.post] compressing data")
+            log.debug('[_Communication.post] compressing data')
             post_data = jsn.dumps(data).encode().hex()
             log.debug(post_data)
             post_data = zlib.compress(post_data.encode(), level=6)[2:-4].hex().upper()
         if self.encrypt_requests:
             # encryption is done with the communicated key, the output is converted to hex (the client makes the output
             # all CAPS, so we're doing the same)
-            log.debug("[_Communication.post] encrypt data")
+            log.debug('[_Communication.post] encrypt data')
             if type(post_data) == dict:
                 # get the data in json form, then proceed to encrypt
                 post_data = self.encryption.aes_encrypt(jsn.dumps(post_data).encode()).hex().upper()
@@ -120,7 +120,7 @@ class _Communication(object):
         json = {'session': int(self.attributes['h']), 'numeroOrdre': r_number, 'nom': function_name,
                 'donneesSec': post_data}
 
-        p_site = self.root_site + '/appelfonction/' + self.attributes['a'] + '/' + self.attributes['h'] + '/' + r_number
+        p_site = f'{self.root_site}/appelfonction/{self.attributes["a"]}/{self.attributes["h"]}/{r_number}'
 
         response: Response = self.session.request('POST', p_site, json=json, cookies=self.cookies)
 
@@ -200,12 +200,13 @@ class _Communication(object):
             HTML attributes
         """
         parsed = BeautifulSoup(html, "html.parser")
+
         onload = parsed.find(id='id_body')
         if onload:
             onload_c = onload['onload'][14:-37]  # type: ignore
+        elif b'IP' in html:
+            raise PronoteAPIError('Your IP address is suspended.')
         else:
-            if b'IP' in html:
-                raise PronoteAPIError('Your IP address is suspended.')
             raise PronoteAPIError(
                 "Page html is different than expected. Be sure that pronote_url is the direct url to your pronote page.")
         attributes = {}
@@ -221,16 +222,13 @@ class _Communication(object):
 
 def _enleverAlea(text: str) -> str:
     """Gets rid of the stupid thing that they did, idk what it really is for, but i guess it adds security"""
-    sansalea = []
-    for i, b in enumerate(text):
-        if i % 2 == 0:
-            sansalea.append(b)
+    sansalea = [b for i, b in enumerate(text) if i % 2 == 0]
     return ''.join(sansalea)
 
 
 def _enBytes(string: str) -> bytes:
     list_string = string.split(',')
-    return bytes([int(i) for i in list_string])
+    return bytes(int(i) for i in list_string)
 
 
 def _prepare_onglets(list_of_onglets):  # type: ignore
@@ -269,10 +267,7 @@ class _Encryption(object):
             raise CryptoError('Decryption failed while trying to un pad. (probably bad decryption key/iv)')
 
     def aes_set_iv(self, iv: bytes = None) -> None:
-        if iv is None:
-            self.aes_iv = MD5.new(self.aes_iv_temp).digest()
-        else:
-            self.aes_iv = iv
+        self.aes_iv = iv or MD5.new(self.aes_iv_temp).digest()
 
     def rsa_encrypt(self, data: bytes) -> bytes:
         key = RSA.construct((int(self.rsa_keys['MR'], 16), int(self.rsa_keys['ER'], 16)))
@@ -299,3 +294,4 @@ class _KeepAlive(threading.Thread):
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:  # type: ignore
         self.keep_alive = False
         self.join()
+        
