@@ -694,7 +694,7 @@ def ent_essonne(username: str, password: str):
     return ent("https://www.moncollege-ent.essonne.fr/auth/login", username, password)
 
 
-def ent_hauts_de_france(username: str, password: str):
+def ent_hdf(username: str, password: str):
     return ent("https://enthdf.fr/auth/login", username, password)
 
 
