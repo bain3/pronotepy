@@ -258,7 +258,7 @@ def occitanie_montpellier(username: str, password: str):
         username
     password : str
         password
-    
+
     Returns
     -------
     cookies : cookies
@@ -405,7 +405,7 @@ def ac_lyon(username, password):
         username
     password : str
         password
-    
+
     Returns
     -------
     cookies : cookies
@@ -587,9 +587,9 @@ def ent_elyco(username, password):
     }
 
     cookies = requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
-    
+
     response = session.post(ent_login, headers=headers, data=payload, cookies=cookies)
-    
+
     soup = BeautifulSoup(response.content, 'html.parser')
 
     payload = {
@@ -634,7 +634,7 @@ def l_normandie(username: str,password: str):
         "_eventId_proceed": ""}
 
     session = requests.Session()
-        
+
     url = session.get(teleservicesUrl)
 
     response = session.post(url.url,headers=headers,data=payload)
@@ -651,7 +651,7 @@ def l_normandie(username: str,password: str):
     return requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
 
 
-def ent(url: str, username: str, password: str) -> requests.cookies.RequestsCookieJar:
+def open_ent_ng(url: str, username: str, password: str) -> requests.cookies.RequestsCookieJar:
     """
     ENT for given url. If a specific function for your ENT already exists you should use it!
 
@@ -669,7 +669,7 @@ def ent(url: str, username: str, password: str) -> requests.cookies.RequestsCook
     cookies : cookies
         returns the ent session cookies
     """
-    
+
     # Required Headers
     headers = {
         'connection': 'keep-alive',
@@ -680,9 +680,6 @@ def ent(url: str, username: str, password: str) -> requests.cookies.RequestsCook
         'password': password,
     }
 
-    if url.lower() in ent:
-        url = ent[url.lower()]
-
     # ENT Connection
     session = requests.Session()
     response = session.post(url, headers=headers, data=payload)
@@ -691,12 +688,12 @@ def ent(url: str, username: str, password: str) -> requests.cookies.RequestsCook
 
 
 def ent_essonne(username: str, password: str):
-    return ent("https://www.moncollege-ent.essonne.fr/auth/login", username, password)
+    return open_ent_ng("https://www.moncollege-ent.essonne.fr/auth/login", username, password)
 
 
 def ent_hdf(username: str, password: str):
-    return ent("https://enthdf.fr/auth/login", username, password)
+    return open_ent_ng("https://enthdf.fr/auth/login", username, password)
 
 
 def ile_de_france(username: str, password: str):
-    return ent("https://ent.iledefrance.fr/auth/login?callback=https%3A%2F%2Fent.iledefrance.fr%2F", username, password)
+    return open_ent_ng("https://ent.iledefrance.fr/auth/login?callback=https%3A%2F%2Fent.iledefrance.fr%2F", username, password)
