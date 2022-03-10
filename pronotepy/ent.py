@@ -47,7 +47,7 @@ def ac_grenoble(username: str, password: str):
         username
     password : str
         password
-    
+
     Returns
     -------
     cookies : cookies
@@ -66,7 +66,7 @@ def ac_grenoble(username: str, password: str):
         "RelayState": soup.find("input", {"name": "RelayState"})["value"],
         "SAMLRequest": soup.find("input", {"name": "SAMLRequest"})["value"]
         }
-    
+
     log.debug(f'[ENT Eaux claires] Logging in with {username}')
     response = session.post(login_service_provider, data=payload, headers=HEADERS)
 
@@ -162,7 +162,7 @@ def atrium_sud(username: str, password: str):
     soup = BeautifulSoup(response.text, 'html.parser')
     input_ = soup.find('input', {'type': 'hidden', 'name': 'execution'})
     execution = input_.get('value')
-    
+
     payload = {
         'execution': execution,
         '_eventId': 'submit',
@@ -327,37 +327,6 @@ def ac_reunion(username: str, password: str):
     return requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
 
 
-def paris_classe_numerique(username: str, password):
-    """
-    ENT for PCN
-
-    Parameters
-    ----------
-    username : str
-        username
-    password : str
-        password
-
-    Returns
-    -------
-    cookies : cookies
-        returns the ent session cookies
-    """
-    # ENT / PRONOTE required URLs
-    ent_login = 'https://ent.parisclassenumerique.fr/auth/login'
-
-    # ENT Connection
-    session = requests.Session()
-    
-    cookies = requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
-    payload = {
-    'email': username,
-    'password': password,
-    }
-    response = session.post(ent_login, headers=HEADERS, data=payload, cookies=cookies)
-    return requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
-
-
 def ac_lyon(username, password):
     """
     ENT for Lyon
@@ -395,7 +364,7 @@ def ac_lyon(username, password):
         'geolocation': "",
         'execution': soup.find('input', {'type': 'hidden', 'name': 'execution'}).get('value')
         }
-    
+
     response = session.post(ent_login, headers=HEADERS, data=payload, cookies=cookies)
 
     return requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
@@ -518,14 +487,14 @@ def ent_elyco(username, password):
     ent_login = response.url
 
     cookies = requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
-    
+
     payload = {
     'j_username': username,
     'j_password': password,
     '_eventId_proceed': ''
     }
     response = session.post(ent_login, headers=HEADERS, data=payload, cookies=cookies)
-    
+
     soup = BeautifulSoup(response.content, 'html.parser')
 
     payload = {
@@ -621,4 +590,24 @@ def ent_hdf(username: str, password: str):
 
 
 def ile_de_france(username: str, password: str):
-    return open_ent_ng('https://ent.iledefrance.fr/auth/login?callback=https%3A%2F%2Fent.iledefrance.fr%2F', username, password)
+    return open_ent_ng('https://ent.iledefrance.fr/auth/login', username, password)
+
+
+def paris_classe_numerique(username: str, password: str):
+    return open_ent_ng('https://ent.parisclassenumerique.fr/auth/login', username, password)
+
+
+def ent77(username: str, password: str):
+    return open_ent_ng('https://ent77.seine-et-marne.fr/auth/login', username, password)
+
+
+def ent_mayotte(username: str, password: str):
+    return open_ent_ng('https://mayotte.opendigitaleducation.com/auth/login', username, password)
+
+
+def lyceeconnecte_aquitaine(username: str, password: str):
+    return open_ent_ng('https://mon.lyceeconnecte.fr/auth/login#/', username, password)
+
+
+def neoconnect_guadeloupe(username: str, password: str):
+    return open_ent_ng('https://neoconnect.opendigitaleducation.com/auth/login', username, password)
