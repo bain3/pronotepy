@@ -247,7 +247,7 @@ class Period(Object):
     @property
     def grades(self) -> List["Grade"]:
         """Get grades from the period."""
-        json_data = {'periode': {'N': self.id, 'L': self.name}}
+        json_data = {'Periode': {'N': self.id, 'L': self.name}}
         response = self._client.post('DernieresNotes', 198, json_data)
         log.debug(response)
         grades = response['donneesSec']['donnees']['listeDevoirs']['V']
@@ -257,7 +257,7 @@ class Period(Object):
     def averages(self) -> List["Average"]:
         """Get averages from the period."""
 
-        json_data = {'periode': {'N': self.id, 'L': self.name}}
+        json_data = {'Periode': {'N': self.id, 'L': self.name}}
         response = self._client.post('DernieresNotes', 198, json_data)
         crs = response['donneesSec']['donnees']['listeServices']['V']
         return [Average(c) for c in crs]
@@ -266,7 +266,7 @@ class Period(Object):
     def overall_average(self) -> float:
         """Get overall average from the period. If the period average is not provided by pronote, then it's calculated.
         Calculation may not be the same as the actual average. (max difference 0.01)"""
-        json_data = {'periode': {'N': self.id, 'L': self.name}}
+        json_data = {'Periode': {'N': self.id, 'L': self.name}}
         response = self._client.post('DernieresNotes', 198, json_data)
         average = response['donneesSec']['donnees'].get('moyGenerale')
         if average:
@@ -294,7 +294,7 @@ class Period(Object):
 
     @property
     def evaluations(self) -> List["Evaluation"]:
-        json_data = {'periode': {'N': self.id, 'L': self.name, 'G': 2}}
+        json_data = {'Periode': {'N': self.id, 'L': self.name, 'G': 2}}
         response = self._client.post('DernieresEvaluations', 201, json_data)
         evaluations = response['donneesSec']['donnees']['listeEvaluations']['V']
         return [Evaluation(e) for e in evaluations]
@@ -310,7 +310,7 @@ class Period(Object):
             All the absences of the period
         """
         json_data = {
-            'periode': {'N': self.id, 'L': self.name, 'G': 2},
+            'Periode': {'N': self.id, 'L': self.name, 'G': 2},
             'DateDebut': {'_T': 7, 'V': self.start.strftime("%d/%m/%Y %H:%M:%S")},
             'DateFin': {'_T': 7, 'V': self.end.strftime("%d/%m/%Y %H:%M:%S")}
         }
