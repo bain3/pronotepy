@@ -294,7 +294,7 @@ class Period(Object):
 
     @property
     def evaluations(self) -> List["Evaluation"]:
-        json_data = {'Periode': {'N': self.id, 'L': self.name, 'G': 2}}
+        json_data = {'periode': {'N': self.id, 'L': self.name, 'G': 2}}
         response = self._client.post('DernieresEvaluations', 201, json_data)
         evaluations = response['donneesSec']['donnees']['listeEvaluations']['V']
         return [Evaluation(e) for e in evaluations]
@@ -310,7 +310,7 @@ class Period(Object):
             All the absences of the period
         """
         json_data = {
-            'Periode': {'N': self.id, 'L': self.name, 'G': 2},
+            'periode': {'N': self.id, 'L': self.name, 'G': 2},
             'DateDebut': {'_T': 7, 'V': self.start.strftime("%d/%m/%Y %H:%M:%S")},
             'DateFin': {'_T': 7, 'V': self.end.strftime("%d/%m/%Y %H:%M:%S")}
         }
