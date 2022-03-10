@@ -28,12 +28,12 @@ def educonnect(url: str, session, username: str, password: str):
     # 2nd SAML Authentication
     soup = BeautifulSoup(response.text, 'html.parser')
     payload = {
-        "RelayState": soup.find("input", {"name": "RelayState"})["value"],
-        "SAMLResponse": soup.find("input", {"name": "SAMLResponse"})["value"]
+        'RelayState': soup.find('input', {'name': 'RelayState'})['value'],
+        'SAMLResponse': soup.find('input', {'name': 'SAMLResponse'})['value']
         }
 
     cookies = requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
-    session.post(soup.find("form")["action"], headers=HEADERS, data=payload, cookies=cookies)
+    session.post(soup.find('form')['action'], headers=HEADERS, data=payload, cookies=cookies)
     return requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
 
 
@@ -54,8 +54,8 @@ def ac_grenoble(username: str, password: str):
         returns the ent session cookies
     """
     # ENT / PRONOTE required URLs
-    identity_provider = "https://cas.ent.auvergnerhonealpes.fr/login?selection=EDU&service=https://0380029A.index-education.net/pronote/&submit=Confirm"
-    login_service_provider = "https://educonnect.education.gouv.fr/idp/profile/SAML2/POST/SSO"
+    identity_provider = 'https://cas.ent.auvergnerhonealpes.fr/login?selection=EDU&service=https://0380029A.index-education.net/pronote/&submit=Confirm'
+    login_service_provider = 'https://educonnect.education.gouv.fr/idp/profile/SAML2/POST/SSO'
 
     # SAML authentication
     session = requests.Session()
@@ -63,8 +63,8 @@ def ac_grenoble(username: str, password: str):
 
     soup = BeautifulSoup(response.text, 'html.parser')
     payload = {
-        "RelayState": soup.find("input", {"name": "RelayState"})["value"],
-        "SAMLRequest": soup.find("input", {"name": "SAMLRequest"})["value"]
+        'RelayState': soup.find('input', {'name': 'RelayState'})['value'],
+        'SAMLRequest': soup.find('input', {'name': 'SAMLRequest'})['value']
         }
     
     log.debug(f'[ENT Eaux claires] Logging in with {username}')
@@ -99,9 +99,9 @@ def ac_rennes(username: str, password: str):
     response = session.get(toutatice_url, headers=HEADERS)
     soup = BeautifulSoup(response.text, 'html.parser')
     payload = {
-        "entityID": soup.find("input", {"name": "entityID"})["value"],
-        "return": soup.find("input", {"name": "return"})["value"],
-        "_saml_idp": soup.find("input", {"name": "_saml_idp"})["value"]
+        'entityID': soup.find('input', {'name': 'entityID'})['value'],
+        'return': soup.find('input', {'name': 'return'})['value'],
+        '_saml_idp': soup.find('input', {'name': '_saml_idp'})['value']
         }
 
     log.debug(f'[ENT Toutatice] Logging in with {username}')
@@ -124,11 +124,11 @@ def ac_rennes(username: str, password: str):
         raise(PronoteAPIError('Toutatice ENT (ac_rennes) : ', soup.find('erreurTechnique').text))
     else:
         params = {
-            'conversation': soup.find("conversation").text,
-            'uidInSession': soup.find("uidInSession").text,
+            'conversation': soup.find('conversation').text,
+            'uidInSession': soup.find('uidInSession').text,
             'sessionid': session.cookies.get('IDP_JSESSIONID')
             }
-        t = session.get(toutatice_auth, headers=HEADERS, params=params)
+        session.get(toutatice_auth, headers=HEADERS, params=params)
 
     return requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
 
@@ -160,11 +160,9 @@ def atrium_sud(username: str, password: str):
 
     # Login payload
     soup = BeautifulSoup(response.text, 'html.parser')
-    input_ = soup.find('input', {'type': 'hidden', 'name': 'execution'})
-    execution = input_.get('value')
     
     payload = {
-        'execution': execution,
+        'execution': soup.find('input', {'type': 'hidden', 'name': 'execution'}).get('value'),
         '_eventId': 'submit',
         'submit': '',
         'username': username,
@@ -173,7 +171,7 @@ def atrium_sud(username: str, password: str):
 
     # Send user:pass to the ENT
     cookies = requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
-    response = session.post(ent_login, headers=HEADERS, data=payload, cookies=cookies)
+    session.post(ent_login, headers=HEADERS, data=payload, cookies=cookies)
     return requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
 
 
@@ -222,10 +220,9 @@ def ac_reims(username: str, password:str):
         cas_infos[input_.get('name')] = input_.get('value')
     cookies = requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
     session.cookies.update({'SERVERID': 'gdest-prod-web14', 'preselection': 'REIMS-ATS_parent_eleve'})
-    response = session.post(pronote_verif, headers=HEADERS, data=cas_infos, cookies=cookies)
+    session.post(pronote_verif, headers=HEADERS, data=cas_infos, cookies=cookies)
     # Get Pronote
-    cookies = requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
-    return cookies
+    return requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
 
 
 def occitanie_montpellier(username: str, password: str):
@@ -271,7 +268,7 @@ def occitanie_montpellier(username: str, password: str):
     cas_infos = {input_.get('name'): input_.get('value') for input_ in inputs}
     cookies = requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
     session.cookies.update({'SERVERID': 'entmip-prod-web4', 'preselection': 'MONTP-ATS_parent_eleve'})
-    response = session.post(pronote_verif, headers=HEADERS, data=cas_infos, cookies=cookies)
+    session.post(pronote_verif, headers=HEADERS, data=cas_infos, cookies=cookies)
     # Get Pronote
     return requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
 
@@ -322,7 +319,7 @@ def ac_reunion(username: str, password: str):
     pronote_url = response.url
 
     cookies = requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
-    response = session.get(pronote_url, headers=HEADERS, cookies=cookies)
+    session.get(pronote_url, headers=HEADERS, cookies=cookies)
 
     return requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
 
@@ -354,7 +351,7 @@ def paris_classe_numerique(username: str, password):
     'email': username,
     'password': password,
     }
-    response = session.post(ent_login, headers=HEADERS, data=payload, cookies=cookies)
+    session.post(ent_login, headers=HEADERS, data=payload, cookies=cookies)
     return requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
 
 
@@ -388,15 +385,15 @@ def ac_lyon(username, password):
     payload = {
         'username': username,
         'password': password,
-        'selection': "LYON-ATS_parent_eleve",
-        'codeFournisseurIdentite': "ATS-LYON",
-        '_eventId': "submit",
-        'submit': "Confirm",
-        'geolocation': "",
+        'selection': 'LYON-ATS_parent_eleve',
+        'codeFournisseurIdentite': 'ATS-LYON',
+        '_eventId': 'submit',
+        'submit': 'Confirm',
+        'geolocation': '',
         'execution': soup.find('input', {'type': 'hidden', 'name': 'execution'}).get('value')
         }
     
-    response = session.post(ent_login, headers=HEADERS, data=payload, cookies=cookies)
+    session.post(ent_login, headers=HEADERS, data=payload, cookies=cookies)
 
     return requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
 
@@ -445,10 +442,9 @@ def ac_orleans_tours(username, password):
         cas_infos[input_.get('name')] = input_.get('value')
 
     # retrieving pronote ticket
-    response = session.post(pronote_verif, headers=HEADERS, data=cas_infos)
+    session.post(pronote_verif, headers=HEADERS, data=cas_infos)
 
-    return requests.utils.cookiejar_from_dict(
-        requests.utils.dict_from_cookiejar(session.cookies))
+    return requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
 
 
 def monbureaunumerique(username, password):
@@ -505,10 +501,9 @@ def monbureaunumerique(username, password):
         cas_infos[input_.get('name')] = input_.get('value')
 
     # retrieving pronote ticket
-    response = session.post(pronote_verif, headers=HEADERS, data=cas_infos)
+    session.post(pronote_verif, headers=HEADERS, data=cas_infos)
 
-    return requests.utils.cookiejar_from_dict(
-        requests.utils.dict_from_cookiejar(session.cookies))
+    return requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
 
 
 def ent_elyco(username, password):
@@ -529,10 +524,10 @@ def ent_elyco(username, password):
     soup = BeautifulSoup(response.content, 'html.parser')
 
     payload = {
-        "RelayState": soup.find("input", {"name": "RelayState"})["value"],
-        "SAMLResponse": soup.find("input", {"name": "SAMLResponse"})["value"],
+        'RelayState': soup.find('input', {'name': 'RelayState'})['value'],
+        'SAMLResponse': soup.find('input', {'name': 'SAMLResponse'})['value'],
     }
-    response = session.post('https://cas3.e-lyco.fr/Shibboleth.sso/SAML2/POST', headers=HEADERS, data=payload, ookies=cookies)
+    session.post('https://cas3.e-lyco.fr/Shibboleth.sso/SAML2/POST', headers=HEADERS, data=payload, ookies=cookies)
     return requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
 
 
@@ -575,9 +570,9 @@ def l_normandie(username: str,password: str):
     log.debug(f'[ENT Educ de Normandie] Logging in with {username}')
 
     payload = {
-        "SAMLResponse": soup.find("input", {"name": "SAMLResponse"})["value"]
+        'SAMLResponse': soup.find('input', {'name': 'SAMLResponse'})['value']
     }
-    response = session.post(educdenormandieUrl, headers=HEADERS, data=payload)
+    session.post(educdenormandieUrl, headers=HEADERS, data=payload)
 
     return requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
 
@@ -607,7 +602,7 @@ def open_ent_ng(url: str, username: str, password: str) -> requests.cookies.Requ
         'email': username,
         'password': password
     }
-    response = session.post(url, headers=HEADERS, data=payload)
+    session.post(url, headers=HEADERS, data=payload)
 
     return requests.utils.cookiejar_from_dict(requests.utils.dict_from_cookiejar(session.cookies))
 
