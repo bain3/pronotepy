@@ -218,6 +218,29 @@ def cas_agora06(username: str, password: str) -> requests.cookies.RequestsCookie
     return simple_auth('https://cas.agora06.fr/login', username, password, form_attr=form_attr, params=params)
 
 
+def val_doise(username: str, password: str) -> requests.cookies.RequestsCookieJar:
+    """
+    ENT for Val d'Oise
+
+    Parameters
+    ----------
+    username : str
+        username
+    password : str
+        password
+
+    Returns
+    -------
+    cookies : cookies
+        returns the ent session cookies
+    """
+    log.debug(f'[ENT Val d Oise] Logging in with {username}')
+
+    form_attr = {'class': 'cas__login-form'}
+
+    return simple_auth('https://cas.moncollege.valdoise.fr/login', username, password, form_attr=form_attr)
+
+
 '''Don t know how to simplify this ENT. It s unlike any other system'''
 
 
