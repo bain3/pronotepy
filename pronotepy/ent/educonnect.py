@@ -272,3 +272,44 @@ def ent_elyco(username: str, password: str) -> requests.cookies.RequestsCookieJa
     educonnect(response.url, session, username, password)
 
     return session.cookies
+
+
+def eclat_bfc(username: str, password: str) -> requests.cookies.RequestsCookieJar:
+    """
+    ENT for Eclat BFC
+
+    Parameters
+    ----------
+    username : str
+        username
+    password : str
+        password
+
+    Returns
+    -------
+    cookies : cookies
+        returns the ent session cookies
+    """
+    # ENT / PRONOTE required URLs
+    ent_login = 'https://cas.eclat-bfc.fr/login'
+    # ENT Connection
+    session = requests.Session()
+
+    params = {
+        'selection': 'EDU',
+        'submit': 'Valider'
+    }
+
+    response = session.get(ent_login, params=params, headers=HEADERS)
+    soup = BeautifulSoup(response.text, 'html.parser')
+    payload = {
+        "RelayState": soup.find("input", {"name": "RelayState"})["value"],
+        "SAMLRequest": soup.find("input", {"name": "SAMLRequest"})["value"]
+        }
+
+    response = session.post(soup.find("form")['action'], data=payload, headers=HEADERS)
+    log.debug(f'[ENT Eclat BFC] Logging in with {username}')
+
+    educonnect(response.url, session, username, password)
+
+    return session.cookies
