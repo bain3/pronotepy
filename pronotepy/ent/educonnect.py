@@ -313,3 +313,41 @@ def eclat_bfc(username: str, password: str) -> requests.cookies.RequestsCookieJa
     educonnect(response.url, session, username, password)
 
     return session.cookies
+
+
+def cas_agora06_educonnect(username: str, password: str) -> requests.cookies.RequestsCookieJar:
+    """
+    ENT for Agora06 with Educonnect
+
+    Parameters
+    ----------
+    username : str
+        username
+    password : str
+        password
+
+    Returns
+    -------
+    cookies : cookies
+        returns the ent session cookies
+    """
+    # ENT / PRONOTE required URLs
+    ent_login_page = 'https://cas.agora06.fr/login?selection=EDU&submit=Valider'
+
+    # ENT Connection
+    session = requests.Session()
+
+    # Connection URL specifying the pronote service
+    response = session.get(ent_login_page, headers=HEADERS)
+    soup = BeautifulSoup(response.text, 'html.parser')
+    payload = {
+        "RelayState": soup.find("input", {"name": "RelayState"})["value"],
+        "SAMLRequest": soup.find("input", {"name": "SAMLRequest"})["value"]
+        }
+
+    response = session.post(soup.find("form")['action'], data=payload, headers=HEADERS)
+    log.debug(f'[CAS Agora 06] Logging in with {username}')
+
+    educonnect(response.url, session, username, password)
+
+    return session.cookies

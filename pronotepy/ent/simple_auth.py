@@ -189,6 +189,32 @@ def ac_clermont_ferrand(username: str, password: str) -> requests.cookies.Reques
     return simple_auth('https://cas.ent.auvergnerhonealpes.fr/login', username, password, form_attr=form_attr, params=params)
 
 
+def cas_agora06(username: str, password: str) -> requests.cookies.RequestsCookieJar:
+    """
+    ENT for Agora06 without Educonnect
+
+    Parameters
+    ----------
+    username : str
+        username
+    password : str
+        password
+
+    Returns
+    -------
+    cookies : cookies
+        returns the ent session cookies
+    """
+    log.debug(f'[CAS Agora 06] Logging in with {username}')
+
+    form_attr = {'class': 'cas__login-form'}
+    params = {
+        'selection': 'ATS-NICE',
+        'submit': 'Valider'
+    }
+    return simple_auth('https://cas.agora06.fr/login', username, password, form_attr=form_attr, params=params)
+
+
 '''Don t know how to simplify this ENT. It s unlike any other system'''
 
 
