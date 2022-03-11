@@ -57,6 +57,9 @@ def atrium_sud(username: str, password: str) -> requests.cookies.RequestsCookieJ
     return simple_auth('https://www.atrium-sud.fr/connexion/login', username, password, form_attr=form_attr)
 
 
+'''CAS with simple_auth'''
+
+
 def occitanie_toulouse(username: str, password: str) -> requests.cookies.RequestsCookieJar:
     """
     ENT for Occitanie Toulouse
