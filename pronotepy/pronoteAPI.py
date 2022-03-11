@@ -61,7 +61,7 @@ class _Communication(object):
             'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:73.0) Gecko/20100101 Firefox/73.0'}
 
         # get rsa keys and session id
-        log.debug(f"Requesing html: {self.root_site}/{self.html_page}")
+        log.debug(f'Requesing html: {self.root_site}/{self.html_page}')
         get_response = self.session.request('GET', f'{self.root_site}/{self.html_page}', headers=headers,
                                             cookies=self.cookies)
         self.attributes = self._parse_html(get_response.content)
@@ -70,8 +70,8 @@ class _Communication(object):
         uuid = base64.b64encode(self.encryption.rsa_encrypt(self.encryption.aes_iv_temp)).decode()
         # post
         json_post = {'Uuid': uuid, 'identifiantNav': None}
-        self.encrypt_requests = not self.attributes.get("sCrA", False)
-        self.compress_requests = not self.attributes.get("sCoA", False)
+        self.encrypt_requests = not self.attributes.get('sCrA', False)
+        self.compress_requests = not self.attributes.get('sCoA', False)
 
         # we need to catch this exception. the iv was not yet set and we need to decrypt it with the correct iv.
         initial_response = self.post('FonctionParametres', {'donnees': json_post},
@@ -133,10 +133,10 @@ class _Communication(object):
             raise requests.HTTPError(f'Status code: {response.status_code}')
         if 'Erreur' in response.json():
             r_json = response.json()
-            if r_json["Erreur"]["G"] == 22:
+            if r_json['Erreur']['G'] == 22:
                 raise ExpiredObject(error_messages.get(22))
             raise PronoteAPIError(
-                error_messages.get(r_json["Erreur"]["G"], f'Unknown error from pronote: {r_json["Erreur"]["G"]} '
+                error_messages.get(r_json['Erreur']['G'], f'Unknown error from pronote: {r_json["Erreur"]["G"]} '
                                                           f'| {r_json["Erreur"]["Titre"]}'),
                 pronote_error_code=r_json['Erreur']['G'],
                 pronote_error_msg=r_json['Erreur']['Titre'])
@@ -145,7 +145,7 @@ class _Communication(object):
 
         # checking for decryption change
         if decryption_change is not None:
-            log.debug("[_Communication.post] decryption change")
+            log.debug('[_Communication.post] decryption change')
             if 'iv' in decryption_change:
                 self.encryption.aes_iv = decryption_change['iv']
             if 'key' in decryption_change:
@@ -155,20 +155,20 @@ class _Communication(object):
 
         if self.encrypt_requests:
             # decrypt the received message, the output will either be a hex string, or the json dictionary
-            log.debug("[_Communication.post] decrypting")
+            log.debug('[_Communication.post] decrypting')
             decrypted: bytes = self.encryption.aes_decrypt(bytes.fromhex(response_data['donneesSec']))
             if not self.compress_requests:
                 response_data['donneesSec'] = jsn.loads(decrypted.decode())
             else:
                 response_data['donneesSec'] = decrypted
         if self.compress_requests:
-            log.debug("[_Communication.post] decompressing")
+            log.debug('[_Communication.post] decompressing')
             d: Union[bytes, str] = response_data['donneesSec']
             try:
                 response_data['donneesSec'] = jsn.loads(
                     zlib.decompress(bytes.fromhex(d) if type(d) == str else d, wbits=-15).decode())  # type: ignore
             except jsn.JSONDecodeError:
-                raise PronoteAPIError("JSONDecodeError while requesting from pronote.")
+                raise PronoteAPIError('JSONDecodeError while requesting from pronote.')
 
         return response_data
 
@@ -199,7 +199,7 @@ class _Communication(object):
         dict
             HTML attributes
         """
-        parsed = BeautifulSoup(html, "html.parser")
+        parsed = BeautifulSoup(html, 'html.parser')
 
         onload = parsed.find(id='id_body')
         if onload:
@@ -208,7 +208,7 @@ class _Communication(object):
             raise PronoteAPIError('Your IP address is suspended.')
         else:
             raise PronoteAPIError(
-                "Page html is different than expected. Be sure that pronote_url is the direct url to your pronote page.")
+                'Page html is different than expected. Be sure that pronote_url is the direct url to your pronote page.')
         attributes = {}
         for attr in onload_c.split(','):  # type: ignore
             key, value = attr.split(':')
