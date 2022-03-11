@@ -83,6 +83,32 @@ def occitanie_toulouse(username: str, password: str) -> requests.cookies.Request
     return simple_auth('https://cas.mon-ent-occitanie.fr/login', username, password, form_attr=form_attr, params=params)
 
 
+def occitanie_montpellier(username: str, password: str) -> requests.cookies.RequestsCookieJar:
+    """
+    ENT for Montpellier without Educonnect
+
+    Parameters
+    ----------
+    username : str
+        username
+    password : str
+        password
+
+    Returns
+    -------
+    cookies : cookies
+        returns the ent session cookies
+    """
+    log.debug(f'[ENT Montpellier] Logging in with {username}')
+
+    form_attr = {'class': 'cas__login-form'}
+    params = {
+        'selection': 'CSES-ENT_parent_eleve',
+        'submit': 'Valider'}
+
+    return simple_auth('https://cas.mon-ent-occitanie.fr/login', username, password, form_attr=form_attr, params=params)
+
+
 def ac_lyon(username: str, password: str) -> requests.cookies.RequestsCookieJar:
     """
     ENT for AC Lyon without Educonnect

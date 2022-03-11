@@ -102,7 +102,7 @@ def ac_rennes(username: str, password: str) -> requests.cookies.RequestsCookieJa
     return session.cookies
 
 
-def occitanie_montpellier(username: str, password: str) -> requests.cookies.RequestsCookieJar:
+def occitanie_montpellier_educonnect(username: str, password: str) -> requests.cookies.RequestsCookieJar:
     """
     ENT for Occitanie Montpellier
 
