@@ -26,8 +26,12 @@ def educonnect(url: str, session, username: str, password: str):
     response = session.post(url, headers=HEADERS, data=payload)
     # 2nd SAML Authentication
     soup = BeautifulSoup(response.text, 'html.parser')
+    input_SAMLResponse = soup.find("input", {"name": "SAMLResponse"})
+    if not input_SAMLResponse:
+        return
+
     payload = {
-        "SAMLResponse": soup.find("input", {"name": "SAMLResponse"})["value"]
+        "SAMLResponse": input_SAMLResponse["value"]
         }
 
     input_relayState = soup.find("input", {"name": "RelayState"})
@@ -246,34 +250,66 @@ def occitanie_montpellier(username: str, password: str):
         returns the ent session cookies
     """
     # ENT / PRONOTE required URLs
-    ent_login = 'https://famille.ac-montpellier.fr/login/ct_logon_vk.jsp?CT_ORIG_URL=/fim42/sso/SSO?SPEntityID=sp-ent-entmip-prod&ct_orig_uri=/fim42/sso/SSO?SPEntityID=sp-ent-entmip-prod'
-    ent_verif = 'https://famille.ac-montpellier.fr/aten-web/connexion/controlesConnexion?CT_ORIG_URL=%2Ffim42%2Fsso%2FSSO%3FSPEntityID%3Dsp-ent-entmip-prod&amp;ct_orig_uri=%2Ffim42%2Fsso%2FSSO%3FSPEntityID%3Dsp-ent-entmip-prod'
-    pronote_verif = 'https://cas.mon-ent-occitanie.fr/saml/SAMLAssertionConsumer'
+    ent_login = 'https://cas.mon-ent-occitanie.fr/login'
     # ENT Connection
     session = requests.Session()
-    response = session.get(ent_login, headers=HEADERS)
-    log.debug(f'[ENT Occitanie] Logging in with {username}')
-    # Send user:pass to the ENT
-    cookies = session.cookies
-    # Login payload
-    payload = {
-        'auth_mode': 'BASIC',
-        'orig_url': '%2Ffim42%2Fsso%2FSSO%3FSPEntityID%3Dsp-ent-entmip-prod',
-        'user': username,
-        'password': password
-        }
-    response = session.post(ent_login, headers=HEADERS, data=payload, cookies=cookies)
-    # Get the CAS verification shit
-    cookies = session.cookies
-    response = session.get(ent_verif, headers=HEADERS, cookies=cookies)
-    # Get the actual values
+
+    params = {
+        'selection': 'MONT-EDU_parent_eleve',
+        'submit': 'Valider'
+    }
+
+    response = session.get(ent_login, params=params, headers=HEADERS)
     soup = BeautifulSoup(response.text, 'html.parser')
-    inputs = soup.findAll('input', {'type': 'hidden'})
-    cas_infos = {input_.get('name'): input_.get('value') for input_ in inputs}
-    cookies = session.cookies
-    session.cookies.update({'SERVERID': 'entmip-prod-web4', 'preselection': 'MONTP-ATS_parent_eleve'})
-    response = session.post(pronote_verif, headers=HEADERS, data=cas_infos, cookies=cookies)
-    # Get Pronote
+    payload = {
+        "RelayState": soup.find("input", {"name": "RelayState"})["value"],
+        "SAMLRequest": soup.find("input", {"name": "SAMLRequest"})["value"]
+        }
+
+    response = session.post(soup.find("form")['action'], data=payload, headers=HEADERS)
+    log.debug(f'[ENT Occitanie] Logging in with {username}')
+
+    educonnect(response.url, session, username, password)
+
+    return session.cookies
+
+
+def occitanie_toulouse(username: str, password: str):
+    """
+    ENT for Occitanie Toulouse
+
+    Parameters
+    ----------
+    username : str
+        username
+    password : str
+        password
+
+    Returns
+    -------
+    cookies : cookies
+        returns the ent session cookies
+    """
+    # ENT / PRONOTE required URLs
+    ent_login = 'https://cas.mon-ent-occitanie.fr/login'
+    # ENT Connection
+    session = requests.Session()
+
+    params = {
+        'selection': 'TOULO-ENT_parent_eleve',
+        'submit': 'Valider'
+    }
+
+    response = session.get(ent_login, params=params, headers=HEADERS)
+    soup = BeautifulSoup(response.text, 'html.parser')
+    payload = {}
+    for input_ in soup.find('form', class_='cas__login-form').findAll('input'):
+        payload[input_['name']] = input_.get('value')
+    payload['username'] = username
+    payload['password'] = password
+
+    session.post(ent_login, data=payload, headers=HEADERS)
+
     return session.cookies
 
 
@@ -514,9 +550,12 @@ def l_normandie(username: str, password: str):
     response = session.get(ent_login_page, params=params, headers=HEADERS)
     response = educonnect(response.url, session, username, password)
 
-    soup = BeautifulSoup(response.text, 'html.parser')
-    if soup.find('title').get_text() == 'Authentification':
+    if not response:
         return open_ent_ng(response.url, username, password)
+    else:
+        soup = BeautifulSoup(response.text, 'html.parser')
+        if soup.find('title').get_text() == 'Authentification':
+            return open_ent_ng(response.url, username, password)
 
     log.debug(f'[ENT Educ de Normandie] Logging in with {username}')
 
