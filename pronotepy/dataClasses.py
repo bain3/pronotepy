@@ -129,11 +129,10 @@ class Object:
                     log.debug(
                         f"Could not get value for (path: {','.join(path)}), setting to default.")
                     json_value = default
+                elif strict:
+                    # in strict mode we do not want to give unpredictable output
+                    raise ParsingError("Error while parsing received json", self.json_dict, path)
                 else:
-                    if strict:
-                        # in strict mode we do not want to give unpredictable output
-                        raise ParsingError("Error while parsing received json", self.json_dict, path)
-
                     json_value = None
             else:
                 try:
@@ -270,7 +269,7 @@ class Period(Object):
         response = self._client.post('DernieresNotes', 198, json_data)
         average = response['donneesSec']['donnees'].get('moyGenerale')
         if average:
-            average = average['V']
+            return average['V']
         elif response['donneesSec']['donnees']['listeServices']['V']:
             a: float = 0
             total = 0
@@ -284,10 +283,7 @@ class Period(Object):
                 if flt:
                     a += flt
                     total += 1
-            if total:
-                average = round(a / total, 2)
-            else:
-                average = -1
+            average = round(a / total, 2) if total else -1
         else:
             average = -1
         return average
@@ -457,12 +453,11 @@ class File(Object):
         response = self._client.communication.session.get(self.url)
         if not file_name:
             file_name = self.name
-        if response.status_code == 200:
-            with open(file_name, 'wb') as handle:
-                for block in response.iter_content(1024):
-                    handle.write(block)
-        else:
+        if response.status_code != 200:
             raise FileNotFoundError("The file was not found on pronote. The url may be badly formed.")
+        with open(file_name, 'wb') as handle:
+            for block in response.iter_content(1024):
+                handle.write(block)
 
     @property
     def data(self) -> bytes:
