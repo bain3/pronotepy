@@ -398,7 +398,7 @@ class Grade(Object):
         self.date: datetime.date = self._resolver(Util.date_parse, "date", "V")
         self.subject: Subject = self._resolver(Subject, "service", "V")
         self.period: Period = self._resolver(lambda p: Util.get(Period.instances, id=p)[0], "periode", "V", "N")
-        self.average: str = self._resolver(Util.grade_parse, "moyenne", "V")
+        self.average: str = self._resolver(Util.grade_parse, "moyenne", "V", strict=False)
         self.max: str = self._resolver(Util.grade_parse, "noteMax", "V")
         self.min: str = self._resolver(Util.grade_parse, "noteMin", "V")
         self.coefficient: str = self._resolver(str, "coefficient")
