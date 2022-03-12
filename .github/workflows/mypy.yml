@@ -6,9 +6,6 @@ on:
       - 'pronotepy/**.py'
     branches:
       - master
-  pull_request:
-    branches:
-      - master
   workflow_dispatch:
     
 
