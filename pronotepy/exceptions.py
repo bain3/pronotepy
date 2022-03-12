@@ -64,3 +64,9 @@ class DateParsingError(PronoteAPIError):
     def __init__(self, message: str, date_string: str):
         super().__init__(message)
         self.date_string = date_string
+
+
+class UnsupportedOperation(PronoteAPIError):
+    """The PRONOTE server does not have the functionality"""
+
+    pass

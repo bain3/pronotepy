@@ -23,7 +23,7 @@ from Crypto.Util import Padding
 
 if TYPE_CHECKING:
     from .clients import _ClientBase
-from .exceptions import ParsingError, DateParsingError
+from .exceptions import ParsingError, DateParsingError, UnsupportedOperation
 
 log = logging.getLogger(__name__)
 
@@ -161,9 +161,7 @@ class Object:
                     json_value = default
                 elif strict:
                     # in strict mode we do not want to give unpredictable output
-                    raise ParsingError(
-                        "Error while parsing received json", self.json_dict, path
-                    )
+                    raise ParsingError("Could not follow path", self.json_dict, path)
                 else:
                     json_value = None
             else:
@@ -302,7 +300,12 @@ class Period(Object):
         json_data = {"Periode": {"N": self.id, "L": self.name}}
         response = self._client.post("DernieresNotes", 198, json_data)
         crs = response["donneesSec"]["donnees"]["listeServices"]["V"]
-        return [Average(c) for c in crs]
+        try:
+            return [Average(c) for c in crs]
+        except ParsingError as e:
+            if e.path == ["moyEleve", "V"]:
+                raise UnsupportedOperation("Could not get averages")
+            raise
 
     @property
     def overall_average(self) -> float:
@@ -313,6 +316,7 @@ class Period(Object):
         average = response["donneesSec"]["donnees"].get("moyGenerale")
         if average:
             return average["V"]
+        # VVVVVVVV will be removed in v3.0.0
         elif response["donneesSec"]["donnees"]["listeServices"]["V"]:
             a: float = 0
             total = 0
