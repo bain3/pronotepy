@@ -3,14 +3,18 @@ import unittest
 
 import pronotepy
 
-client = pronotepy.Client('https://demo.index-education.net/pronote/eleve.html', 'demonstration', 'pronotevs')
+client = pronotepy.Client(
+    "https://demo.index-education.net/pronote/eleve.html", "demonstration", "pronotevs"
+)
 
 
 class TestClient(unittest.TestCase):
     global client
 
     def test__get_week(self) -> None:
-        self.assertEqual(client.get_week(client.start_day + datetime.timedelta(days=8)), 2)
+        self.assertEqual(
+            client.get_week(client.start_day + datetime.timedelta(days=8)), 2
+        )
 
     def test_lessons(self) -> None:
         start = client.start_day
@@ -49,6 +53,7 @@ class TestClient(unittest.TestCase):
 
     def test_export_ical(self) -> None:
         import requests
+
         ical = client.export_ical()
         resp = requests.get(ical)
         self.assertEqual(resp.status_code, 200)
@@ -90,18 +95,23 @@ class TestPeriod(unittest.TestCase):
 
 
 class TestInformation(unittest.TestCase):
-
     def test_unread(self) -> None:
         information = client.information_and_surveys(only_unread=True)
         for info in information:
             self.assertFalse(info.read)
 
     def test_time_delta(self) -> None:
-        start = datetime.datetime(year=client.start_day.year, month=client.start_day.month, day=client.start_day.day)
+        start = datetime.datetime(
+            year=client.start_day.year,
+            month=client.start_day.month,
+            day=client.start_day.day,
+        )
         end = start + datetime.timedelta(days=100)
         information = client.information_and_surveys(date_from=start, date_to=end)
         for info in information:
-            self.assertTrue(start <= info.start_date <= end, msg="date outside the research limits")
+            self.assertTrue(
+                start <= info.start_date <= end, msg="date outside the research limits"
+            )
 
 
 class TestLesson(unittest.TestCase):
@@ -125,7 +135,9 @@ class TestLessonContent(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         global client
-        content = client.lessons(client.start_day + datetime.timedelta(days=4))[0].content
+        content = client.lessons(client.start_day + datetime.timedelta(days=4))[
+            0
+        ].content
         if content is None:
             raise Exception("Content is None!")
         cls.lessonContent = content
@@ -148,7 +160,11 @@ class TestMenu(unittest.TestCase):
         cls.menu = menus[0]
 
     def test_lunch_dinner(self) -> None:
-        self.assertNotEqual(self.menu.is_lunch, self.menu.is_dinner, 'The menu is neither a lunch nor a dinner or is both')
+        self.assertNotEqual(
+            self.menu.is_lunch,
+            self.menu.is_dinner,
+            "The menu is neither a lunch nor a dinner or is both",
+        )
 
 
 class TestParentClient(unittest.TestCase):
@@ -156,16 +172,23 @@ class TestParentClient(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        cls.client = pronotepy.ParentClient('https://demo.index-education.net/pronote/parent.html',
-                                            'demonstration', 'pronotevs')
+        cls.client = pronotepy.ParentClient(
+            "https://demo.index-education.net/pronote/parent.html",
+            "demonstration",
+            "pronotevs",
+        )
 
     def test_set_child(self) -> None:
         self.client.set_child(self.client.children[1])
-        self.client.set_child('PARENT Fanny')
+        self.client.set_child("PARENT Fanny")
 
     def test_homework(self) -> None:
         self.assertIsNotNone(
-            self.client.homework(self.client.start_day, self.client.start_day + datetime.timedelta(days=31)))
+            self.client.homework(
+                self.client.start_day,
+                self.client.start_day + datetime.timedelta(days=31),
+            )
+        )
 
 
 class TestVieScolaireClient(unittest.TestCase):
@@ -173,8 +196,11 @@ class TestVieScolaireClient(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls) -> None:
-        cls.client = pronotepy.VieScolaireClient('https://demo.index-education.net/pronote/viescolaire.html',
-                                                 'demonstration2', 'pronotevs')
+        cls.client = pronotepy.VieScolaireClient(
+            "https://demo.index-education.net/pronote/viescolaire.html",
+            "demonstration2",
+            "pronotevs",
+        )
 
     def test_classes(self) -> None:
         self.assertGreater(len(self.client.classes), 0)
@@ -202,21 +228,23 @@ class TestClientInfo(unittest.TestCase):
         self.assertIsNotNone(address, "Address was None")
         self.assertEqual(len(address), 8, "Address information was not 8 elements long")
         for i in address:
-            self.assertTrue(type(i) == str, f"Address information was not a string: {i}")
+            self.assertTrue(
+                type(i) == str, f"Address information was not a string: {i}"
+            )
 
     def test_ine_number(self) -> None:
         self.assertEqual(self.info.ine_number, "001")
 
     def test_phone(self) -> None:
-        self.assertRegex(self.info.phone, "\+[0-9]+")
+        self.assertRegex(self.info.phone, r"\+[0-9]+")
 
     def test_email(self) -> None:
         self.assertRegex(
             self.info.email,
-            "^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$",
-            "email did not match regex"
+            r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$",
+            "email did not match regex",
         )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

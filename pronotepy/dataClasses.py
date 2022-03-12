@@ -5,7 +5,18 @@ import json
 import logging
 import re
 from html import unescape
-from typing import Union, List, Callable, Any, TypeVar, Optional, Tuple, Set, Iterable, TYPE_CHECKING
+from typing import (
+    Union,
+    List,
+    Callable,
+    Any,
+    TypeVar,
+    Optional,
+    Tuple,
+    Set,
+    Iterable,
+    TYPE_CHECKING,
+)
 from urllib.parse import quote
 
 from Crypto.Util import Padding
@@ -17,16 +28,27 @@ from .exceptions import ParsingError, DateParsingError
 log = logging.getLogger(__name__)
 
 
-def _get_l(d: dict) -> str: return d['L']
+def _get_l(d: dict) -> str:
+    return d["L"]
 
 
-class MissingType: pass
+class MissingType:
+    pass
 
 
 class Util:
     """Utilities for the API wrapper"""
-    grade_translate = ['Absent', 'Dispense', 'NonNote', 'Inapte', 'NonRendu', 'AbsentZero', 'NonRenduZero',
-                       'Felicitations']
+
+    grade_translate = [
+        "Absent",
+        "Dispense",
+        "NonNote",
+        "Inapte",
+        "NonRendu",
+        "AbsentZero",
+        "NonRenduZero",
+        "Felicitations",
+    ]
 
     @classmethod
     def get(cls, iterable: Iterable, **kwargs: Any) -> list:
@@ -49,7 +71,7 @@ class Util:
 
     @classmethod
     def grade_parse(cls, string: str) -> str:
-        if '|' in string:
+        if "|" in string:
             return cls.grade_translate[int(string[1]) - 1]
         else:
             return string
@@ -58,11 +80,13 @@ class Util:
     def date_parse(formatted_date: str) -> datetime.date:
         """convert date to a datetime.date object"""
         if re.match(r"\d{2}/\d{2}/\d{4}$", formatted_date):
-            return datetime.datetime.strptime(formatted_date, '%d/%m/%Y').date()
+            return datetime.datetime.strptime(formatted_date, "%d/%m/%Y").date()
         elif re.match(r"\d{2}/\d{2}/\d{4} \d{2}:\d{2}:\d{2}$", formatted_date):
-            return datetime.datetime.strptime(formatted_date, '%d/%m/%Y %H:%M:%S').date()
+            return datetime.datetime.strptime(
+                formatted_date, "%d/%m/%Y %H:%M:%S"
+            ).date()
         elif re.match(r"\d{2}/\d{2}/\d{2} \d{2}h\d{2}$", formatted_date):
-            return datetime.datetime.strptime(formatted_date, '%d/%m/%y %Hh%M').date()
+            return datetime.datetime.strptime(formatted_date, "%d/%m/%y %Hh%M").date()
         else:
             raise DateParsingError("Could not parse date", formatted_date)
 
@@ -70,18 +94,18 @@ class Util:
     def datetime_parse(formatted_date: str) -> datetime.datetime:
         """convert date to a datetime.datetime object"""
         if re.match(r"\d{2}/\d{2}/\d{4}$", formatted_date):
-            return datetime.datetime.strptime(formatted_date, '%d/%m/%Y')
+            return datetime.datetime.strptime(formatted_date, "%d/%m/%Y")
         elif re.match(r"\d{2}/\d{2}/\d{4} \d{2}:\d{2}:\d{2}$", formatted_date):
-            return datetime.datetime.strptime(formatted_date, '%d/%m/%Y %H:%M:%S')
+            return datetime.datetime.strptime(formatted_date, "%d/%m/%Y %H:%M:%S")
         elif re.match(r"\d{2}/\d{2}/\d{2} \d{2}h\d{2}$", formatted_date):
-            return datetime.datetime.strptime(formatted_date, '%d/%m/%y %Hh%M')
+            return datetime.datetime.strptime(formatted_date, "%d/%m/%y %Hh%M")
         else:
             raise DateParsingError("Could not parse date", formatted_date)
 
     @staticmethod
     def html_parse(html_text: str) -> str:
         """remove tags from html text"""
-        return unescape(re.sub(re.compile('<.*?>'), '', html_text))
+        return unescape(re.sub(re.compile("<.*?>"), "", html_text))
 
 
 class Object:
@@ -100,8 +124,13 @@ class Object:
         def __init__(self, json_dict: dict):
             self.json_dict = json_dict
 
-        def __call__(self, converter: Callable[[Any], R], *path: str, default: Union[MissingType, R] = _missing,
-                     strict: bool = True) -> R:
+        def __call__(
+            self,
+            converter: Callable[[Any], R],
+            *path: str,
+            default: Union[MissingType, R] = _missing,
+            strict: bool = True,
+        ) -> R:
             """
 
             Parameters
@@ -127,18 +156,23 @@ class Object:
                 # we have failed to get the correct value, try to return a default
                 if default is not self._missing:
                     log.debug(
-                        f"Could not get value for (path: {','.join(path)}), setting to default.")
+                        f"Could not get value for (path: {','.join(path)}), setting to default."
+                    )
                     json_value = default
                 elif strict:
                     # in strict mode we do not want to give unpredictable output
-                    raise ParsingError("Error while parsing received json", self.json_dict, path)
+                    raise ParsingError(
+                        "Error while parsing received json", self.json_dict, path
+                    )
                 else:
                     json_value = None
             else:
                 try:
                     json_value = converter(json_value)
                 except Exception as e:
-                    raise ParsingError(f"Error while converting value: {e}", self.json_dict, path)
+                    raise ParsingError(
+                        f"Error while converting value: {e}", self.json_dict, path
+                    )
 
             return json_value
 
@@ -160,7 +194,7 @@ class Subject(Object):
         if the subject is in groups
     """
 
-    __slots__ = ['id', 'name', 'groups']
+    __slots__ = ["id", "name", "groups"]
 
     def __init__(self, parsed_json: dict) -> None:
         super().__init__(parsed_json)
@@ -194,19 +228,24 @@ class Absence(Object):
         The reason(s) for the absence
     """
 
-    __slots__ = ['id', 'from_date', 'to_date', 'justified',
-                 'hours' 'days', 'reasons']
+    __slots__ = ["id", "from_date", "to_date", "justified", "hours" "days", "reasons"]
 
     def __init__(self, json_dict: dict) -> None:
         super().__init__(json_dict)
 
         self.id: str = self._resolver(str, "N")
-        self.from_date: datetime.datetime = self._resolver(Util.datetime_parse, "dateDebut", "V")
-        self.to_date: datetime.datetime = self._resolver(Util.datetime_parse, "dateFin", "V")
+        self.from_date: datetime.datetime = self._resolver(
+            Util.datetime_parse, "dateDebut", "V"
+        )
+        self.to_date: datetime.datetime = self._resolver(
+            Util.datetime_parse, "dateFin", "V"
+        )
         self.justified: bool = self._resolver(bool, "justifie", default=False)
         self.hours: Optional[str] = self._resolver(str, "NbrHeures", strict=False)
         self.days: int = self._resolver(int, "NbrJours", default=0)
-        self.reasons: List[str] = self._resolver(lambda l: [i["L"] for i in l], "listeMotifs", "V", default=[])
+        self.reasons: List[str] = self._resolver(
+            lambda l: [i["L"] for i in l], "listeMotifs", "V", default=[]
+        )
 
         del self._resolver
 
@@ -227,7 +266,7 @@ class Period(Object):
         date on which the period ends
     """
 
-    __slots__ = ['_client', 'id', 'name', 'start', 'end']
+    __slots__ = ["_client", "id", "name", "start", "end"]
     instances: Set[Any] = set()
 
     def __init__(self, client: _ClientBase, json_dict: dict) -> None:
@@ -238,44 +277,48 @@ class Period(Object):
 
         self.id: str = self._resolver(str, "N")
         self.name: str = self._resolver(str, "L")
-        self.start: datetime.datetime = self._resolver(Util.datetime_parse, "dateDebut", "V")
-        self.end: datetime.datetime = self._resolver(Util.datetime_parse, "dateFin", "V")
+        self.start: datetime.datetime = self._resolver(
+            Util.datetime_parse, "dateDebut", "V"
+        )
+        self.end: datetime.datetime = self._resolver(
+            Util.datetime_parse, "dateFin", "V"
+        )
 
         del self._resolver
 
     @property
     def grades(self) -> List["Grade"]:
         """Get grades from the period."""
-        json_data = {'Periode': {'N': self.id, 'L': self.name}}
-        response = self._client.post('DernieresNotes', 198, json_data)
+        json_data = {"Periode": {"N": self.id, "L": self.name}}
+        response = self._client.post("DernieresNotes", 198, json_data)
         log.debug(response)
-        grades = response['donneesSec']['donnees']['listeDevoirs']['V']
+        grades = response["donneesSec"]["donnees"]["listeDevoirs"]["V"]
         return [Grade(g) for g in grades]
 
     @property
     def averages(self) -> List["Average"]:
         """Get averages from the period."""
 
-        json_data = {'Periode': {'N': self.id, 'L': self.name}}
-        response = self._client.post('DernieresNotes', 198, json_data)
-        crs = response['donneesSec']['donnees']['listeServices']['V']
+        json_data = {"Periode": {"N": self.id, "L": self.name}}
+        response = self._client.post("DernieresNotes", 198, json_data)
+        crs = response["donneesSec"]["donnees"]["listeServices"]["V"]
         return [Average(c) for c in crs]
 
     @property
     def overall_average(self) -> float:
         """Get overall average from the period. If the period average is not provided by pronote, then it's calculated.
         Calculation may not be the same as the actual average. (max difference 0.01)"""
-        json_data = {'Periode': {'N': self.id, 'L': self.name}}
-        response = self._client.post('DernieresNotes', 198, json_data)
-        average = response['donneesSec']['donnees'].get('moyGenerale')
+        json_data = {"Periode": {"N": self.id, "L": self.name}}
+        response = self._client.post("DernieresNotes", 198, json_data)
+        average = response["donneesSec"]["donnees"].get("moyGenerale")
         if average:
-            return average['V']
-        elif response['donneesSec']['donnees']['listeServices']['V']:
+            return average["V"]
+        elif response["donneesSec"]["donnees"]["listeServices"]["V"]:
             a: float = 0
             total = 0
-            services = response['donneesSec']['donnees']['listeServices']['V']
+            services = response["donneesSec"]["donnees"]["listeServices"]["V"]
             for s in services:
-                avrg = s['moyEleve']['V'].replace(',', '.')
+                avrg = s["moyEleve"]["V"].replace(",", ".")
                 try:
                     flt = float(avrg)
                 except ValueError:
@@ -290,9 +333,9 @@ class Period(Object):
 
     @property
     def evaluations(self) -> List["Evaluation"]:
-        json_data = {'periode': {'N': self.id, 'L': self.name, 'G': 2}}
-        response = self._client.post('DernieresEvaluations', 201, json_data)
-        evaluations = response['donneesSec']['donnees']['listeEvaluations']['V']
+        json_data = {"periode": {"N": self.id, "L": self.name, "G": 2}}
+        response = self._client.post("DernieresEvaluations", 201, json_data)
+        evaluations = response["donneesSec"]["donnees"]["listeEvaluations"]["V"]
         return [Evaluation(e) for e in evaluations]
 
     @property
@@ -306,13 +349,13 @@ class Period(Object):
             All the absences of the period
         """
         json_data = {
-            'periode': {'N': self.id, 'L': self.name, 'G': 2},
-            'DateDebut': {'_T': 7, 'V': self.start.strftime("%d/%m/%Y %H:%M:%S")},
-            'DateFin': {'_T': 7, 'V': self.end.strftime("%d/%m/%Y %H:%M:%S")}
+            "periode": {"N": self.id, "L": self.name, "G": 2},
+            "DateDebut": {"_T": 7, "V": self.start.strftime("%d/%m/%Y %H:%M:%S")},
+            "DateFin": {"_T": 7, "V": self.end.strftime("%d/%m/%Y %H:%M:%S")},
         }
 
-        response = self._client.post('PagePresence', 19, json_data)
-        absences = response['donneesSec']['donnees']['listeAbsences']['V']
+        response = self._client.post("PagePresence", 19, json_data)
+        absences = response["donneesSec"]["donnees"]["listeAbsences"]["V"]
         return [Absence(a) for a in absences if a["G"] == 13]
 
 
@@ -338,14 +381,24 @@ class Average(Object):
         subject the average is from
     """
 
-    __slots__ = ['student', 'out_of', 'default_out_of', 'class_average', 'min', 'max', 'subject']
+    __slots__ = [
+        "student",
+        "out_of",
+        "default_out_of",
+        "class_average",
+        "min",
+        "max",
+        "subject",
+    ]
 
     def __init__(self, json_dict: dict) -> None:
         super().__init__(json_dict)
 
         self.student: str = self._resolver(Util.grade_parse, "moyEleve", "V")
         self.out_of: str = self._resolver(Util.grade_parse, "baremeMoyEleve", "V")
-        self.default_out_of: str = self._resolver(Util.grade_parse, "baremeMoyEleveParDefault", "V", default="")
+        self.default_out_of: str = self._resolver(
+            Util.grade_parse, "baremeMoyEleveParDefault", "V", default=""
+        )
         self.class_average: str = self._resolver(Util.grade_parse, "moyClasse", "V")
         self.min: str = self._resolver(Util.grade_parse, "moyMin", "V")
         self.max: str = self._resolver(Util.grade_parse, "moyMax", "V")
@@ -385,8 +438,20 @@ class Grade(Object):
         the comment on the grade description
     """
 
-    __slots__ = ['id', 'grade', 'out_of', 'default_out_of', 'date', 'subject',
-                 'period', 'average', 'max', 'min', 'coefficient', 'comment']
+    __slots__ = [
+        "id",
+        "grade",
+        "out_of",
+        "default_out_of",
+        "date",
+        "subject",
+        "period",
+        "average",
+        "max",
+        "min",
+        "coefficient",
+        "comment",
+    ]
 
     def __init__(self, json_dict: dict) -> None:
         super().__init__(json_dict)
@@ -394,11 +459,17 @@ class Grade(Object):
         self.id: str = self._resolver(str, "N")
         self.grade: str = self._resolver(Util.grade_parse, "note", "V")
         self.out_of: str = self._resolver(Util.grade_parse, "bareme", "V")
-        self.default_out_of: str = self._resolver(Util.grade_parse, "baremeParDefault", "V", strict=False)
+        self.default_out_of: str = self._resolver(
+            Util.grade_parse, "baremeParDefault", "V", strict=False
+        )
         self.date: datetime.date = self._resolver(Util.date_parse, "date", "V")
         self.subject: Subject = self._resolver(Subject, "service", "V")
-        self.period: Period = self._resolver(lambda p: Util.get(Period.instances, id=p)[0], "periode", "V", "N")
-        self.average: str = self._resolver(Util.grade_parse, "moyenne", "V", strict=False)
+        self.period: Period = self._resolver(
+            lambda p: Util.get(Period.instances, id=p)[0], "periode", "V", "N"
+        )
+        self.average: str = self._resolver(
+            Util.grade_parse, "moyenne", "V", strict=False
+        )
         self.max: str = self._resolver(Util.grade_parse, "noteMax", "V")
         self.min: str = self._resolver(Util.grade_parse, "noteMin", "V")
         self.coefficient: str = self._resolver(str, "coefficient")
@@ -421,21 +492,26 @@ class File(Object):
         url of the file
     """
 
-    __slots__ = ['name', 'id', '_client', 'url', '_data']
+    __slots__ = ["name", "id", "_client", "url", "_data"]
 
     def __init__(self, client: _ClientBase, json_dict: dict) -> None:
         super().__init__(json_dict)
 
         self._client = client
 
-        self.name: str = self._resolver(str, 'L')
-        self.id: str = self._resolver(str, 'N')
+        self.name: str = self._resolver(str, "L")
+        self.id: str = self._resolver(str, "N")
 
-        padd = Padding.pad(json.dumps({'N': self.id, 'G': 1}).replace(' ', '').encode(), 16)
+        padd = Padding.pad(
+            json.dumps({"N": self.id, "G": 1}).replace(" ", "").encode(), 16
+        )
         magic_stuff = client.communication.encryption.aes_encrypt(padd).hex()
 
-        self.url = f"{client.communication.root_site}/FichiersExternes/{magic_stuff}/" + \
-                   quote(self.name, safe='~()*!.\'') + f"?Session={client.attributes['h']}"
+        self.url = (
+            f"{client.communication.root_site}/FichiersExternes/{magic_stuff}/"
+            + quote(self.name, safe="~()*!.'")
+            + f"?Session={client.attributes['h']}"
+        )
 
         self._data = None
 
@@ -454,8 +530,10 @@ class File(Object):
         if not file_name:
             file_name = self.name
         if response.status_code != 200:
-            raise FileNotFoundError("The file was not found on pronote. The url may be badly formed.")
-        with open(file_name, 'wb') as handle:
+            raise FileNotFoundError(
+                "The file was not found on pronote. The url may be badly formed."
+            )
+        with open(file_name, "wb") as handle:
             for block in response.iter_content(1024):
                 handle.write(block)
 
@@ -484,16 +562,20 @@ class LessonContent(Object):
         files attached on lesson content
     """
 
-    __slots__ = ['title', 'description', '_files', '_client']
+    __slots__ = ["title", "description", "_files", "_client"]
 
     def __init__(self, client: _ClientBase, json_dict: dict) -> None:
         super().__init__(json_dict)
 
         self._client = client
 
-        self.title: Optional[str] = self._resolver(str, 'L', strict=False)
-        self.description: Optional[str] = self._resolver(Util.html_parse, "descriptif", "V", strict=False)
-        self.category: Optional[str] = self._resolver(str, "categorie", "V", "L", strict=False)
+        self.title: Optional[str] = self._resolver(str, "L", strict=False)
+        self.description: Optional[str] = self._resolver(
+            Util.html_parse, "descriptif", "V", strict=False
+        )
+        self.category: Optional[str] = self._resolver(
+            str, "categorie", "V", "L", strict=False
+        )
         self._files: Tuple[Any, ...] = self._resolver(tuple, "ListePieceJointe", "V")
 
         del self._resolver
@@ -548,11 +630,28 @@ class Lesson(Object):
         is marked as detention
     """
 
-    __slots__ = ['id', 'subject', 'teacher_name', 'teacher_names',
-                 'classroom', 'classrooms', 'start', 'canceled',
-                 'status', 'background_color', 'detention', 'end',
-                 'outing', 'group_name', 'group_names', 'exempted',
-                 '_client', '_content', 'virtual_classrooms', 'num']
+    __slots__ = [
+        "id",
+        "subject",
+        "teacher_name",
+        "teacher_names",
+        "classroom",
+        "classrooms",
+        "start",
+        "canceled",
+        "status",
+        "background_color",
+        "detention",
+        "end",
+        "outing",
+        "group_name",
+        "group_names",
+        "exempted",
+        "_client",
+        "_content",
+        "virtual_classrooms",
+        "num",
+    ]
 
     def __init__(self, client: _ClientBase, json_dict: dict) -> None:
         super().__init__(json_dict)
@@ -562,30 +661,53 @@ class Lesson(Object):
         self.id: str = self._resolver(str, "N")
         self.canceled: bool = self._resolver(bool, "estAnnule", default=False)
         self.status: Optional[str] = self._resolver(str, "Statut", strict=False)
-        self.background_color: Optional[str] = self._resolver(str, "CouleurFond", strict=False)
+        self.background_color: Optional[str] = self._resolver(
+            str, "CouleurFond", strict=False
+        )
         self.outing: bool = self._resolver(bool, "estSortiePedagogique", default=False)
-        self.start: datetime.datetime = self._resolver(Util.datetime_parse, "DateDuCours", "V")
+        self.start: datetime.datetime = self._resolver(
+            Util.datetime_parse, "DateDuCours", "V"
+        )
         self.exempted: bool = self._resolver(bool, "dispenseEleve", default=False)
-        self.virtual_classrooms: List[str] = self._resolver(lambda l: [i["url"] for i in l], "listeVisios", "V",
-                                                            default=[])
+        self.virtual_classrooms: List[str] = self._resolver(
+            lambda l: [i["url"] for i in l], "listeVisios", "V", default=[]
+        )
         self.num: int = self._resolver(int, "P", default=0)
         self.detention: bool = self._resolver(bool, "estRetenue", default=False)
-        self.test: bool = self._resolver(bool, "cahierDeTextes", "V", "estDevoir", default=False)
+        self.test: bool = self._resolver(
+            bool, "cahierDeTextes", "V", "estDevoir", default=False
+        )
 
         # get correct ending time
         # Pronote gives us the place where the hour should be in a week, when we modulo that with the amount of
         # hours in a day we can get the "place" when the hour starts. Then we just add the duration (and substract 1)
-        end_place = json_dict['place'] % (len(
-            client.func_options['donneesSec']['donnees']['General']['ListeHeuresFin']['V']) - 1) + json_dict[
-                        'duree'] - 1
+        end_place = (
+            json_dict["place"]
+            % (
+                len(
+                    client.func_options["donneesSec"]["donnees"]["General"][
+                        "ListeHeuresFin"
+                    ]["V"]
+                )
+                - 1
+            )
+            + json_dict["duree"]
+            - 1
+        )
 
         # With the end "place" now known we can look up the ending time in func_options
-        end_time = next(filter(
-            lambda x: x['G'] == end_place,
-            client.func_options['donneesSec']['donnees']['General']['ListeHeuresFin']['V']
-        ))
-        end_time = datetime.datetime.strptime(end_time['L'], "%Hh%M").time()
-        self.end: datetime.datetime = self.start.replace(hour=end_time.hour, minute=end_time.minute)
+        end_time = next(
+            filter(
+                lambda x: x["G"] == end_place,
+                client.func_options["donneesSec"]["donnees"]["General"][
+                    "ListeHeuresFin"
+                ]["V"],
+            )
+        )
+        end_time = datetime.datetime.strptime(end_time["L"], "%Hh%M").time()
+        self.end: datetime.datetime = self.start.replace(
+            hour=end_time.hour, minute=end_time.minute
+        )
 
         # get additional information about the lesson
         self.teacher_names: Optional[List[str]] = []
@@ -593,25 +715,35 @@ class Lesson(Object):
         self.group_names: Optional[List[str]] = []
         self.subject: Optional[Subject] = None
 
-        if 'ListeContenus' not in json_dict:
-            raise ParsingError("Error while parsing for lesson details", json_dict, ("ListeContenus", "V"))
+        if "ListeContenus" not in json_dict:
+            raise ParsingError(
+                "Error while parsing for lesson details",
+                json_dict,
+                ("ListeContenus", "V"),
+            )
 
-        for d in json_dict['ListeContenus']['V']:
-            if 'G' not in d:
+        for d in json_dict["ListeContenus"]["V"]:
+            if "G" not in d:
                 continue
-            elif d['G'] == 16:
+            elif d["G"] == 16:
                 self.subject = Subject(d)
-            elif d['G'] == 3:
-                self.teacher_names.append(d['L'])
-            elif d['G'] == 17:
-                self.classrooms.append(d['L'])
-            elif d['G'] == 2:
-                self.group_names.append(d['L'])
+            elif d["G"] == 3:
+                self.teacher_names.append(d["L"])
+            elif d["G"] == 17:
+                self.classrooms.append(d["L"])
+            elif d["G"] == 2:
+                self.group_names.append(d["L"])
 
         # All values joined together to prevent breaking changes
-        self.teacher_name: Optional[str] = ', '.join(self.teacher_names) if self.teacher_names else None
-        self.classroom: Optional[str] = ', '.join(self.classrooms) if self.classrooms else None
-        self.group_name: Optional[str] = ', '.join(self.group_names) if self.group_names else None
+        self.teacher_name: Optional[str] = (
+            ", ".join(self.teacher_names) if self.teacher_names else None
+        )
+        self.classroom: Optional[str] = (
+            ", ".join(self.classrooms) if self.classrooms else None
+        )
+        self.group_name: Optional[str] = (
+            ", ".join(self.group_names) if self.group_names else None
+        )
 
         del self._resolver
 
@@ -634,11 +766,11 @@ class Lesson(Object):
             return self._content
         week = self._client.get_week(self.start.date())
         data = {"domaine": {"_T": 8, "V": f"[{week}..{week}]"}}
-        response = self._client.post('PageCahierDeTexte', 89, data)
+        response = self._client.post("PageCahierDeTexte", 89, data)
         contents = {}
-        for lesson in response['donneesSec']['donnees']['ListeCahierDeTextes']['V']:
-            if lesson['cours']['V']['N'] == self.id and lesson['listeContenus']['V']:
-                contents = lesson['listeContenus']['V'][0]
+        for lesson in response["donneesSec"]["donnees"]["ListeCahierDeTextes"]["V"]:
+            if lesson["cours"]["V"]["N"] == self.id and lesson["listeContenus"]["V"]:
+                contents = lesson["listeContenus"]["V"][0]
                 break
         if not contents:
             return None
@@ -666,7 +798,16 @@ class Homework(Object):
         deadline
     """
 
-    __slots__ = ['id', 'subject', 'description', 'done', 'background_color', '_client', 'date', '_files']
+    __slots__ = [
+        "id",
+        "subject",
+        "description",
+        "done",
+        "background_color",
+        "_client",
+        "date",
+        "_files",
+    ]
 
     def __init__(self, client: _ClientBase, json_dict: dict) -> None:
         super().__init__(json_dict)
@@ -692,9 +833,7 @@ class Homework(Object):
         status : bool
             The status to which to change
         """
-        data = {'listeTAF': [
-            {'N': self.id, 'TAFFait': status}
-        ]}
+        data = {"listeTAF": [{"N": self.id, "TAFFait": status}]}
         self._client.post("SaisieTAFFaitEleve", 88, data)
         self.done = status
 
@@ -732,22 +871,40 @@ class Information(Object):
         if the survey response is anonymous
     """
 
-    __slots__ = ['id', 'title', 'author', 'read', 'creation_date', 'start_date', 'end_date', 'category',
-                 'survey', 'anonymous_response', '_raw_content', '_client']
+    __slots__ = [
+        "id",
+        "title",
+        "author",
+        "read",
+        "creation_date",
+        "start_date",
+        "end_date",
+        "category",
+        "survey",
+        "anonymous_response",
+        "_raw_content",
+        "_client",
+    ]
 
     def __init__(self, client: _ClientBase, json_dict: dict) -> None:
         super().__init__(json_dict)
 
         self._client = client
 
-        self.id: str = self._resolver(str, 'N')
+        self.id: str = self._resolver(str, "N")
         self.title: Optional[str] = self._resolver(str, "L", strict=False)
         self.author: str = self._resolver(str, "auteur")
         self._raw_content: list = self._resolver(list, "listeQuestions", "V")
         self.read: bool = self._resolver(bool, "lue")
-        self.creation_date: datetime.datetime = self._resolver(Util.datetime_parse, "dateCreation", "V")
-        self.start_date: datetime.datetime = self._resolver(Util.datetime_parse, "dateDebut", "V")
-        self.end_date: datetime.datetime = self._resolver(Util.datetime_parse, "dateFin", "V")
+        self.creation_date: datetime.datetime = self._resolver(
+            Util.datetime_parse, "dateCreation", "V"
+        )
+        self.start_date: datetime.datetime = self._resolver(
+            Util.datetime_parse, "dateDebut", "V"
+        )
+        self.end_date: datetime.datetime = self._resolver(
+            Util.datetime_parse, "dateFin", "V"
+        )
         self.category: str = self._resolver(str, "categorie", "V", "L")
         self.survey: bool = self._resolver(bool, "estSondage")
         self.anonymous_response: bool = self._resolver(bool, "reponseAnonyme")
@@ -756,7 +913,7 @@ class Information(Object):
 
     @property
     def content(self) -> str:
-        return Util.html_parse(self._raw_content[0]['texte']['V'])
+        return Util.html_parse(self._raw_content[0]["texte"]["V"])
 
     def mark_as_read(self, status: bool) -> None:
         data = {
@@ -772,7 +929,7 @@ class Information(Object):
                     "lue": status,
                 }
             ],
-            "saisieActualite": False
+            "saisieActualite": False,
         }
         self._client.post("SaisieActualites", 8, data)
         self.read = status
@@ -796,36 +953,39 @@ class Message(Object):
         the date when the message was sent
     """
 
-    __slots__ = ['id', 'author', 'recipients', 'seen', 'date', '_client', '_listePM']
+    __slots__ = ["id", "author", "recipients", "seen", "date", "_client", "_listePM"]
 
     def __init__(self, client: _ClientBase, json_dict: dict) -> None:
         super().__init__(json_dict)
         self._client = client
-        self._listePM = json_dict['listePossessionsMessages']['V']
+        self._listePM = json_dict["listePossessionsMessages"]["V"]
 
         self.id: str = self._resolver(str, "N")
         self.author: str = self._resolver(str, "public_gauche")
         self.recipients: list = self._resolver(list, "listePublic")
         self.seen: bool = self._resolver(bool, "lu")
-        self.date: datetime.datetime = self._resolver(lambda d: Util.datetime_parse(" ".join(d.split()[1:])),
-                                                      "libelleDate")
+        self.date: datetime.datetime = self._resolver(
+            lambda d: Util.datetime_parse(" ".join(d.split()[1:])), "libelleDate"
+        )
 
         del self._resolver
 
     @property
     def content(self) -> Optional[str]:
         """Returns the content of the message"""
-        data = {'message': {'N': self.id},
-                'marquerCommeLu': False,
-                'estNonPossede': False,
-                'listePossessionsMessages': self._listePM}
-        resp = self._client.post('ListeMessages', 131, data)
-        for m in resp['donneesSec']['donnees']['listeMessages']['V']:
-            if m['N'] == self.id:
-                if type(m['contenu']) == dict:
-                    return Util.html_parse(m['contenu']['V'])
+        data = {
+            "message": {"N": self.id},
+            "marquerCommeLu": False,
+            "estNonPossede": False,
+            "listePossessionsMessages": self._listePM,
+        }
+        resp = self._client.post("ListeMessages", 131, data)
+        for m in resp["donneesSec"]["donnees"]["listeMessages"]["V"]:
+            if m["N"] == self.id:
+                if type(m["contenu"]) == dict:
+                    return Util.html_parse(m["contenu"]["V"])
                 else:
-                    return m['contenu']
+                    return m["contenu"]
         return None
 
 
@@ -841,10 +1001,10 @@ class ClientInfo:
       Raw json defining the resource
     """
 
-    __slots__ = ['id', 'raw_resource', '_client', '__cache']
+    __slots__ = ["id", "raw_resource", "_client", "__cache"]
 
     def __init__(self, client: _ClientBase, json_: dict) -> None:
-        self.id: str = json_['N']
+        self.id: str = json_["N"]
         self.raw_resource: dict = json_
         self._client = client
         self.__cache: Optional[dict] = None
@@ -854,15 +1014,17 @@ class ClientInfo:
         """
         Name of the client
         """
-        return self.raw_resource['L']
+        return self.raw_resource["L"]
 
     @property
     def delegue(self) -> List[str]:
         """
         list of classes of which the user is a delegue of
         """
-        if self.raw_resource['estDelegue']:
-            return [class_['L'] for class_ in self.raw_resource['listeClassesDelegue']['V']]
+        if self.raw_resource["estDelegue"]:
+            return [
+                class_["L"] for class_ in self.raw_resource["listeClassesDelegue"]["V"]
+            ]
         else:
             return []
 
@@ -871,14 +1033,14 @@ class ClientInfo:
         """
         name of the student's class
         """
-        return self.raw_resource.get('classeDEleve', {}).get('L', '')
+        return self.raw_resource.get("classeDEleve", {}).get("L", "")
 
     @property
     def establishment(self) -> str:
         """
         name of the student's establishment
         """
-        return self.raw_resource.get('Etablissement', {'V': {'L': ""}})['V']['L']
+        return self.raw_resource.get("Etablissement", {"V": {"L": ""}})["V"]["L"]
 
     def _cache(self) -> dict:
         if self.__cache is None:
@@ -886,7 +1048,7 @@ class ClientInfo:
             # but we need to manually add the resource id
             self.__cache = self._client.communication.post(
                 "PageInfosPerso",
-                {"_Signature_": {"onglet": 49, "ressource": {"N": self.id, "G": 4}}}
+                {"_Signature_": {"onglet": 49, "ressource": {"N": self.id, "G": 4}}},
             )["donneesSec"]["donnees"]["Informations"]
 
         return self.__cache
@@ -906,8 +1068,16 @@ class ClientInfo:
             - country
         """
         c = self._cache()
-        return c["adresse1"], c["adresse2"], c["adresse3"], c["adresse4"], c["codePostal"], c["ville"], c["province"], \
-               c["pays"]
+        return (
+            c["adresse1"],
+            c["adresse2"],
+            c["adresse3"],
+            c["adresse4"],
+            c["codePostal"],
+            c["ville"],
+            c["province"],
+            c["pays"],
+        )
 
     @property
     def email(self) -> str:
@@ -958,8 +1128,19 @@ class Acquisition(Object):
     """
 
     __slots__ = [
-        "order", "level", "id", "abbreviation", "coefficient", "domain", "domain_id", "name", "name_id", "pillar",
-        "pillar_id", "pillar_prefix"]
+        "order",
+        "level",
+        "id",
+        "abbreviation",
+        "coefficient",
+        "domain",
+        "domain_id",
+        "name",
+        "name_id",
+        "pillar",
+        "pillar_id",
+        "pillar_prefix",
+    ]
 
     def __init__(self, json_dict: dict) -> None:
         super().__init__(json_dict)
@@ -971,7 +1152,9 @@ class Acquisition(Object):
         self.domain: str = self._resolver(str, "domaine", "V", "L")
         self.domain_id: str = self._resolver(str, "domaine", "V", "N")
         self.name: Optional[str] = self._resolver(str, "item", "V", "L", strict=False)
-        self.name_id: Optional[str] = self._resolver(str, "item", "V", "N", strict=False)
+        self.name_id: Optional[str] = self._resolver(
+            str, "item", "V", "N", strict=False
+        )
         self.order: int = self._resolver(int, "ordre")
         self.pillar: str = self._resolver(str, "pilier", "V", "L")
         self.pillar_id: str = self._resolver(str, "pilier", "V", "N")
@@ -1000,21 +1183,38 @@ class Evaluation(Object):
     """
 
     __slots__ = [
-        "name", "name", "id", "domain", "teacher", "coefficient", "description", "subject", "paliers", "acquisitions",
-        "date"]
+        "name",
+        "name",
+        "id",
+        "domain",
+        "teacher",
+        "coefficient",
+        "description",
+        "subject",
+        "paliers",
+        "acquisitions",
+        "date",
+    ]
 
     def __init__(self, json_dict: dict) -> None:
         super().__init__(json_dict)
         self.name: str = self._resolver(str, "L")
         self.id: str = self._resolver(str, "N")
-        self.domain: Optional[str] = self._resolver(str, "domaine", "V", "L", strict=False)
+        self.domain: Optional[str] = self._resolver(
+            str, "domaine", "V", "L", strict=False
+        )
         self.teacher: str = self._resolver(str, "individu", "V", "L")
         self.coefficient: int = self._resolver(int, "coefficient")
         self.description: str = self._resolver(str, "descriptif")
         self.subject: Subject = self._resolver(Subject, "matiere", "V")
-        self.paliers: List[str] = self._resolver(lambda x: [_get_l(y) for y in x], "listePaliers", "V")
+        self.paliers: List[str] = self._resolver(
+            lambda x: [_get_l(y) for y in x], "listePaliers", "V"
+        )
         self.acquisitions: List[Acquisition] = self._resolver(
-            lambda x: sorted([Acquisition(y) for y in x], key=lambda z: z.order), "listeNiveauxDAcquisitions", "V")
+            lambda x: sorted([Acquisition(y) for y in x], key=lambda z: z.order),
+            "listeNiveauxDAcquisitions",
+            "V",
+        )
         self.date: datetime.date = self._resolver(Util.date_parse, "date", "V")
 
         del self._resolver
@@ -1041,33 +1241,61 @@ class Identity(Object):
     formatted_address : str
         concatenated address information into a single string
     """
-    __slots__ = ["postal_code", "date_of_birth", "email", "last_name", "country", "mobile_number", "landline_number",
-                 "other_phone_number", "city", "place_of_birth", "first_names", "address", "formatted_address"]
+
+    __slots__ = [
+        "postal_code",
+        "date_of_birth",
+        "email",
+        "last_name",
+        "country",
+        "mobile_number",
+        "landline_number",
+        "other_phone_number",
+        "city",
+        "place_of_birth",
+        "first_names",
+        "address",
+        "formatted_address",
+    ]
 
     def __init__(self, json_dict: dict) -> None:
         super().__init__(json_dict)
 
         self.postal_code: str = self._resolver(str, "CP")
-        self.date_of_birth: Optional[datetime.date] = self._resolver(Util.date_parse, "dateNaiss", strict=False)
+        self.date_of_birth: Optional[datetime.date] = self._resolver(
+            Util.date_parse, "dateNaiss", strict=False
+        )
         self.email: Optional[str] = self._resolver(str, "email", strict=False)
         self.last_name: str = self._resolver(str, "nom")
         self.country: str = self._resolver(str, "pays")
         self.mobile_number: Optional[str] = self._resolver(str, "telPort", strict=False)
-        self.landline_number: Optional[str] = self._resolver(str, "telFixe", strict=False)
-        self.other_phone_number: Optional[str] = self._resolver(str, "telAutre", strict=False)
+        self.landline_number: Optional[str] = self._resolver(
+            str, "telFixe", strict=False
+        )
+        self.other_phone_number: Optional[str] = self._resolver(
+            str, "telAutre", strict=False
+        )
         self.city: str = self._resolver(str, "ville")
-        self.place_of_birth: Optional[str] = self._resolver(str, "villeNaiss", strict=False)
+        self.place_of_birth: Optional[str] = self._resolver(
+            str, "villeNaiss", strict=False
+        )
 
         self.address: List[str] = []
         i = 1
         while True:
             option = json_dict.get("adresse" + str(i))
-            if not option: break
+            if not option:
+                break
             self.address.append(option)
             i += 1
-        self.formatted_address: str = ','.join([*self.address, self.postal_code, self.city, self.country])
-        self.first_names: List[str] = [json_dict.get("prenom", ""), json_dict.get("prenom2", ""),
-                                       json_dict.get("prenom3", "")]
+        self.formatted_address: str = ",".join(
+            [*self.address, self.postal_code, self.city, self.country]
+        )
+        self.first_names: List[str] = [
+            json_dict.get("prenom", ""),
+            json_dict.get("prenom2", ""),
+            json_dict.get("prenom3", ""),
+        ]
 
         del self._resolver
 
@@ -1091,22 +1319,40 @@ class Guardian(Object):
     full_name : str
     is_legal : bool
     """
-    __slots__ = ["identity", "accepteInfosProf", "authorized_email", "authorized_pick_up_kid", "urgency_contact",
-                 "preferred_responsible_contact", "accomodates_kid", "relatives_link", "responsibility_level",
-                 "financially_responsible", "full_name", "is_legal"]
+
+    __slots__ = [
+        "identity",
+        "accepteInfosProf",
+        "authorized_email",
+        "authorized_pick_up_kid",
+        "urgency_contact",
+        "preferred_responsible_contact",
+        "accomodates_kid",
+        "relatives_link",
+        "responsibility_level",
+        "financially_responsible",
+        "full_name",
+        "is_legal",
+    ]
 
     def __init__(self, json_dict: dict) -> None:
         super().__init__(json_dict)
 
         self.accepteInfosProf: bool = self._resolver(bool, "accepteInfosProf")
         self.authorized_email: bool = self._resolver(bool, "autoriseEmail")
-        self.authorized_pick_up_kid: bool = self._resolver(bool, "autoriseRecupererEnfant")
+        self.authorized_pick_up_kid: bool = self._resolver(
+            bool, "autoriseRecupererEnfant"
+        )
         self.urgency_contact: bool = self._resolver(bool, "contactUrgence")
-        self.preferred_responsible_contact: bool = self._resolver(bool, "estResponsablePreferentiel")
+        self.preferred_responsible_contact: bool = self._resolver(
+            bool, "estResponsablePreferentiel"
+        )
         self.accomodates_kid: bool = self._resolver(bool, "hebergeEnfant")
         self.relatives_link: str = self._resolver(str, "lienParente")
         self.responsibility_level: str = self._resolver(str, "niveauResponsabilite")
-        self.financially_responsible: bool = self._resolver(bool, "responsableFinancier")
+        self.financially_responsible: bool = self._resolver(
+            bool, "responsableFinancier"
+        )
         self.full_name: str = self._resolver(str, "nom")
 
         self.identity = Identity(json_dict)
@@ -1132,18 +1378,37 @@ class Student(Object):
     options : List[str]
         language options
     """
-    __slots__ = ["_client", "full_name", "id", "enrollment_date", "date_of_birth", "projects", "last_name",
-                 "first_names", "sex", "options", "_cache"]
+
+    __slots__ = [
+        "_client",
+        "full_name",
+        "id",
+        "enrollment_date",
+        "date_of_birth",
+        "projects",
+        "last_name",
+        "first_names",
+        "sex",
+        "options",
+        "_cache",
+    ]
 
     def __init__(self, client: _ClientBase, json_dict: dict) -> None:
         super().__init__(json_dict)
 
         self.full_name: str = self._resolver(str, "L")
         self.id: str = self._resolver(str, "N")
-        self.enrollment_date: datetime.date = self._resolver(Util.date_parse, "entree", "V")
+        self.enrollment_date: datetime.date = self._resolver(
+            Util.date_parse, "entree", "V"
+        )
         self.date_of_birth: datetime.date = self._resolver(Util.date_parse, "neLe", "V")
         self.projects: List[str] = self._resolver(
-            lambda p: [f"{x.get('typeAmenagement', '')} ({x.get('handicap', '')})" for x in p], "listeProjets", "V")
+            lambda p: [
+                f"{x.get('typeAmenagement', '')} ({x.get('handicap', '')})" for x in p
+            ],
+            "listeProjets",
+            "V",
+        )
         self.last_name: str = self._resolver(str, "nom")
         self.first_names: str = self._resolver(str, "prenoms")
         self.sex: str = self._resolver(str, "sexe")
@@ -1168,8 +1433,11 @@ class Student(Object):
         Identity of this student
         """
         if self._cache is None:
-            self._cache = self._client.post("FicheEleve", 105,
-                                            {"Eleve": {"N": self.id}, "AvecEleve": True, "AvecResponsables": True})
+            self._cache = self._client.post(
+                "FicheEleve",
+                105,
+                {"Eleve": {"N": self.id}, "AvecEleve": True, "AvecResponsables": True},
+            )
         return Identity(self._cache["donneesSec"]["donnees"]["Identite"])
 
     @property
@@ -1178,9 +1446,15 @@ class Student(Object):
         List of responsible persons (parents).
         """
         if self._cache is None:
-            self._cache = self._client.post("FicheEleve", 105,
-                                            {"Eleve": {"N": self.id}, "AvecEleve": True, "AvecResponsables": True})
-        return [Guardian(j) for j in self._cache["donneesSec"]["donnees"]["Responsables"]["V"]]
+            self._cache = self._client.post(
+                "FicheEleve",
+                105,
+                {"Eleve": {"N": self.id}, "AvecEleve": True, "AvecResponsables": True},
+            )
+        return [
+            Guardian(j)
+            for j in self._cache["donneesSec"]["donnees"]["Responsables"]["V"]
+        ]
 
 
 class StudentClass(Object):
@@ -1195,6 +1469,7 @@ class StudentClass(Object):
         is the teacher responsible for the class
     grade : str
     """
+
     __slots__ = ["name", "id", "responsible", "grade", "_client"]
 
     def __init__(self, client: _ClientBase, json_dict: dict) -> None:
@@ -1211,9 +1486,15 @@ class StudentClass(Object):
 
     def students(self, period: Period = None) -> List[Student]:
         period = period or self._client.periods[0]
-        r = self._client.post("ListeRessources", 105,
-                              {"classe": {"N": self.id, "G": 1}, "periode": {"N": period.id, "G": 1}})
-        return [Student(self._client, j) for j in r["donneesSec"]["donnees"]["listeRessources"]["V"]]
+        r = self._client.post(
+            "ListeRessources",
+            105,
+            {"classe": {"N": self.id, "G": 1}, "periode": {"N": period.id, "G": 1}},
+        )
+        return [
+            Student(self._client, j)
+            for j in r["donneesSec"]["donnees"]["listeRessources"]["V"]
+        ]
 
 
 class Menu(Object):
@@ -1273,7 +1554,7 @@ class Menu(Object):
 
                 self.id: str = self._resolver(str, "N")
                 self.name: str = self._resolver(str, "L")
-                self.color: str = self._resolver(str, 'couleur')
+                self.color: str = self._resolver(str, "couleur")
 
                 self._client = client
 
@@ -1288,38 +1569,63 @@ class Menu(Object):
             self.name: str = self._resolver(str, "L")
             self.labels: List[Menu.Food.FoodLabel] = self._resolver(
                 lambda labels: [self.FoodLabel(client, label) for label in labels],
-                "listeLabelsAlimentaires", "V"
+                "listeLabelsAlimentaires",
+                "V",
             )
 
             self._client = client
 
             del self._resolver
 
-    __slots__ = ["name", "id", "date", "is_lunch", "is_dinner", "first_meal",
-                 "main_meal", "side_meal", "other_meal", "cheese", "dessert", "_client"]
+    __slots__ = [
+        "name",
+        "id",
+        "date",
+        "is_lunch",
+        "is_dinner",
+        "first_meal",
+        "main_meal",
+        "side_meal",
+        "other_meal",
+        "cheese",
+        "dessert",
+        "_client",
+    ]
 
     def __init__(self, client: _ClientBase, json_dict: dict) -> None:
         super().__init__(json_dict)
 
         self.id: str = self._resolver(str, "N")
         self.name: Optional[str] = self._resolver(str, "L", strict=False)
-        self.date: datetime.date = self._resolver(Util.date_parse, 'Date', 'V')
+        self.date: datetime.date = self._resolver(Util.date_parse, "Date", "V")
 
-        self.is_lunch: bool = self._resolver(int, 'G') == 0
-        self.is_dinner: bool = self._resolver(int, 'G') == 1
+        self.is_lunch: bool = self._resolver(int, "G") == 0
+        self.is_dinner: bool = self._resolver(int, "G") == 1
 
         def init_food(d: dict) -> List[Menu.Food]:
             return [self.Food(client, x) for x in d["ListeAliments"]["V"]]
 
-        d_dict = {str(meal['G']): meal for meal in json_dict["ListePlats"]["V"]}
+        d_dict = {str(meal["G"]): meal for meal in json_dict["ListePlats"]["V"]}
         super().__init__(d_dict)
 
-        self.first_meal: Optional[List[Menu.Food]] = self._resolver(init_food, "0", strict=False)
-        self.main_meal: Optional[List[Menu.Food]] = self._resolver(init_food, "1", strict=False)
-        self.side_meal: Optional[List[Menu.Food]] = self._resolver(init_food, "2", strict=False)
-        self.other_meal: Optional[List[Menu.Food]] = self._resolver(init_food, "3", strict=False)
-        self.cheese: Optional[List[Menu.Food]] = self._resolver(init_food, "5", strict=False)
-        self.dessert: Optional[List[Menu.Food]] = self._resolver(init_food, "4", strict=False)
+        self.first_meal: Optional[List[Menu.Food]] = self._resolver(
+            init_food, "0", strict=False
+        )
+        self.main_meal: Optional[List[Menu.Food]] = self._resolver(
+            init_food, "1", strict=False
+        )
+        self.side_meal: Optional[List[Menu.Food]] = self._resolver(
+            init_food, "2", strict=False
+        )
+        self.other_meal: Optional[List[Menu.Food]] = self._resolver(
+            init_food, "3", strict=False
+        )
+        self.cheese: Optional[List[Menu.Food]] = self._resolver(
+            init_food, "5", strict=False
+        )
+        self.dessert: Optional[List[Menu.Food]] = self._resolver(
+            init_food, "4", strict=False
+        )
 
         self._client = client
 
