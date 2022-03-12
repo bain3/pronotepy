@@ -322,7 +322,10 @@ class Period(Object):
             total = 0
             services = response["donneesSec"]["donnees"]["listeServices"]["V"]
             for s in services:
-                avrg = s["moyEleve"]["V"].replace(",", ".")
+                try:
+                    avrg = s["moyEleve"]["V"].replace(",", ".")
+                except KeyError:
+                    raise UnsupportedOperation("Could not get averages")
                 try:
                     flt = float(avrg)
                 except ValueError:
