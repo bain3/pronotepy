@@ -207,9 +207,9 @@ class _Communication(object):
             try:
                 response_data["donneesSec"] = jsn.loads(
                     zlib.decompress(
-                        bytes.fromhex(d) if type(d) == str else d, wbits=-15
+                        bytes.fromhex(d) if type(d) == str else d, wbits=-15  # type: ignore
                     ).decode()
-                )  # type: ignore
+                )
             except jsn.JSONDecodeError:
                 raise PronoteAPIError("JSONDecodeError while requesting from pronote.")
 
