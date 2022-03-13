@@ -16,7 +16,7 @@ HEADERS = {
 }
 
 
-def open_ent_ng(url: str, username: str, password: str) -> requests.cookies.RequestsCookieJar:
+def _open_ent_ng(url: str, username: str, password: str) -> requests.cookies.RequestsCookieJar:
     """
     ENT which has an authentication like https://ent.iledefrance.fr/auth/login
 
@@ -62,7 +62,7 @@ def ent_essonne(username: str, password: str) -> requests.cookies.RequestsCookie
         returns the ent session cookies
     """
     log.debug(f'[ENT Essonne] Logging in with {username}')
-    return open_ent_ng('https://www.moncollege-ent.essonne.fr/auth/login', username, password)
+    return _open_ent_ng('https://www.moncollege-ent.essonne.fr/auth/login', username, password)
 
 
 def ile_de_france(username: str, password: str) -> requests.cookies.RequestsCookieJar:
@@ -82,7 +82,7 @@ def ile_de_france(username: str, password: str) -> requests.cookies.RequestsCook
         returns the ent session cookies
     """
     log.debug(f'[ENT Ile de France] Logging in with {username}')
-    return open_ent_ng('https://ent.iledefrance.fr/auth/login', username, password)
+    return _open_ent_ng('https://ent.iledefrance.fr/auth/login', username, password)
 
 
 def paris_classe_numerique(username: str, password: str) -> requests.cookies.RequestsCookieJar:
@@ -102,7 +102,7 @@ def paris_classe_numerique(username: str, password: str) -> requests.cookies.Req
         returns the ent session cookies
     """
     log.debug(f'[ENT Paris classe numerique] Logging in with {username}')
-    return open_ent_ng('https://ent.parisclassenumerique.fr/auth/login', username, password)
+    return _open_ent_ng('https://ent.parisclassenumerique.fr/auth/login', username, password)
 
 
 def ent77(username: str, password: str) -> requests.cookies.RequestsCookieJar:
@@ -122,7 +122,7 @@ def ent77(username: str, password: str) -> requests.cookies.RequestsCookieJar:
         returns the ent session cookies
     """
     log.debug(f'[ENT 77] Logging in with {username}')
-    return open_ent_ng('https://ent77.seine-et-marne.fr/auth/login', username, password)
+    return _open_ent_ng('https://ent77.seine-et-marne.fr/auth/login', username, password)
 
 
 def ent_mayotte(username: str, password: str) -> requests.cookies.RequestsCookieJar:
@@ -142,7 +142,7 @@ def ent_mayotte(username: str, password: str) -> requests.cookies.RequestsCookie
         returns the ent session cookies
     """
     log.debug(f'[ENT Mayotte] Logging in with {username}')
-    return open_ent_ng('https://mayotte.opendigitaleducation.com/auth/login', username, password)
+    return _open_ent_ng('https://mayotte.opendigitaleducation.com/auth/login', username, password)
 
 
 def lyceeconnecte_aquitaine(username: str, password: str) -> requests.cookies.RequestsCookieJar:
@@ -162,7 +162,7 @@ def lyceeconnecte_aquitaine(username: str, password: str) -> requests.cookies.Re
         returns the ent session cookies
     """
     log.debug(f'[ENT Aquitaine] Logging in with {username}')
-    return open_ent_ng('https://mon.lyceeconnecte.fr/auth/login#/', username, password)
+    return _open_ent_ng('https://mon.lyceeconnecte.fr/auth/login#/', username, password)
 
 
 def neoconnect_guadeloupe(username: str, password: str) -> requests.cookies.RequestsCookieJar:
@@ -182,4 +182,4 @@ def neoconnect_guadeloupe(username: str, password: str) -> requests.cookies.Requ
         returns the ent session cookies
     """
     log.debug(f'[ENT Guadeloupe] Logging in with {username}')
-    return open_ent_ng('https://neoconnect.opendigitaleducation.com/auth/login', username, password)
+    return _open_ent_ng('https://neoconnect.opendigitaleducation.com/auth/login', username, password)

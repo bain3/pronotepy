@@ -7,8 +7,8 @@ from bs4 import BeautifulSoup
 from urllib.parse import urlparse, parse_qs
 
 from ..exceptions import *
-from .open_ent_ng import open_ent_ng
-from .educonnect import educonnect
+from .open_ent_ng import _open_ent_ng
+from .educonnect import _educonnect
 
 log = getLogger(__name__)
 log.setLevel(DEBUG)
@@ -18,7 +18,7 @@ HEADERS = {
 }
 
 
-def open_ent_ng_educonnect(domain: str, username: str, password: str) -> requests.cookies.RequestsCookieJar:
+def _open_ent_ng_edu(domain: str, username: str, password: str) -> requests.cookies.RequestsCookieJar:
     """
     ENT which has an authentication like https://connexion.l-educdenormandie.fr/
 
@@ -76,7 +76,7 @@ def l_normandie(username: str, password: str) -> requests.cookies.RequestsCookie
     """
     log.debug(f'[ENT Educ de Normandie] Logging in with {username}')
 
-    return open_ent_ng_educonnect('https://ent.l-educdenormandie.fr', username, password)
+    return _open_ent_ng_edu('https://ent.l-educdenormandie.fr', username, password)
 
 
 def ent_hdf(username: str, password: str) -> requests.cookies.RequestsCookieJar:
@@ -97,7 +97,7 @@ def ent_hdf(username: str, password: str) -> requests.cookies.RequestsCookieJar:
     """
     log.debug(f'[ENT HDF] Logging in with {username}')
 
-    return open_ent_ng_educonnect('https://enthdf.fr', username, password)
+    return _open_ent_ng_edu('https://enthdf.fr', username, password)
 
 
 def ent_somme(username: str, password: str) -> requests.cookies.RequestsCookieJar:

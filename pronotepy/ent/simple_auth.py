@@ -16,7 +16,7 @@ HEADERS = {
 }
 
 
-def simple_auth(url: str, username: str, password: str, form_attr: dict = {}, params: dict = {}) -> requests.cookies.RequestsCookieJar:
+def _simple_auth(url: str, username: str, password: str, form_attr: dict = {}, params: dict = {}) -> requests.cookies.RequestsCookieJar:
     # ENT Connection
     session = requests.Session()
     response = session.get(url, params=params, headers=HEADERS)
@@ -54,10 +54,10 @@ def atrium_sud(username: str, password: str) -> requests.cookies.RequestsCookieJ
 
     form_attr = {'id': 'fm1'}
 
-    return simple_auth('https://www.atrium-sud.fr/connexion/login', username, password, form_attr=form_attr)
+    return _simple_auth('https://www.atrium-sud.fr/connexion/login', username, password, form_attr=form_attr)
 
 
-'''CAS with simple_auth'''
+'''CAS with _simple_auth'''
 
 
 def occitanie_toulouse(username: str, password: str) -> requests.cookies.RequestsCookieJar:
@@ -83,7 +83,7 @@ def occitanie_toulouse(username: str, password: str) -> requests.cookies.Request
         'selection': 'TOULO-ENT_parent_eleve',
         'submit': 'Valider'}
 
-    return simple_auth('https://cas.mon-ent-occitanie.fr/login', username, password, form_attr=form_attr, params=params)
+    return _simple_auth('https://cas.mon-ent-occitanie.fr/login', username, password, form_attr=form_attr, params=params)
 
 
 def occitanie_montpellier(username: str, password: str) -> requests.cookies.RequestsCookieJar:
@@ -109,7 +109,7 @@ def occitanie_montpellier(username: str, password: str) -> requests.cookies.Requ
         'selection': 'CSES-ENT_parent_eleve',
         'submit': 'Valider'}
 
-    return simple_auth('https://cas.mon-ent-occitanie.fr/login', username, password, form_attr=form_attr, params=params)
+    return _simple_auth('https://cas.mon-ent-occitanie.fr/login', username, password, form_attr=form_attr, params=params)
 
 
 def ac_lyon(username: str, password: str) -> requests.cookies.RequestsCookieJar:
@@ -136,7 +136,7 @@ def ac_lyon(username: str, password: str) -> requests.cookies.RequestsCookieJar:
         'submit': 'Valider'
     }
 
-    return simple_auth('https://cas.ent.auvergnerhonealpes.fr/login', username, password, form_attr=form_attr, params=params)
+    return _simple_auth('https://cas.ent.auvergnerhonealpes.fr/login', username, password, form_attr=form_attr, params=params)
 
 
 def ac_grenoble(username: str, password: str) -> requests.cookies.RequestsCookieJar:
@@ -163,7 +163,7 @@ def ac_grenoble(username: str, password: str) -> requests.cookies.RequestsCookie
         'submit': 'Valider'
     }
 
-    return simple_auth('https://cas.ent.auvergnerhonealpes.fr/login', username, password, form_attr=form_attr, params=params)
+    return _simple_auth('https://cas.ent.auvergnerhonealpes.fr/login', username, password, form_attr=form_attr, params=params)
 
 
 def ac_clermont_ferrand(username: str, password: str) -> requests.cookies.RequestsCookieJar:
@@ -189,7 +189,7 @@ def ac_clermont_ferrand(username: str, password: str) -> requests.cookies.Reques
         'selection': 'CLERMONT-ATS_parent_eleve',
         'submit': 'Valider'
     }
-    return simple_auth('https://cas.ent.auvergnerhonealpes.fr/login', username, password, form_attr=form_attr, params=params)
+    return _simple_auth('https://cas.ent.auvergnerhonealpes.fr/login', username, password, form_attr=form_attr, params=params)
 
 
 def cas_agora06(username: str, password: str) -> requests.cookies.RequestsCookieJar:
@@ -215,7 +215,7 @@ def cas_agora06(username: str, password: str) -> requests.cookies.RequestsCookie
         'selection': 'ATS-NICE',
         'submit': 'Valider'
     }
-    return simple_auth('https://cas.agora06.fr/login', username, password, form_attr=form_attr, params=params)
+    return _simple_auth('https://cas.agora06.fr/login', username, password, form_attr=form_attr, params=params)
 
 
 def val_doise(username: str, password: str) -> requests.cookies.RequestsCookieJar:
@@ -238,7 +238,7 @@ def val_doise(username: str, password: str) -> requests.cookies.RequestsCookieJa
 
     form_attr = {'class': 'cas__login-form'}
 
-    return simple_auth('https://cas.moncollege.valdoise.fr/login', username, password, form_attr=form_attr)
+    return _simple_auth('https://cas.moncollege.valdoise.fr/login', username, password, form_attr=form_attr)
 
 
 '''Don t know how to simplify this ENT. It s unlike any other system'''

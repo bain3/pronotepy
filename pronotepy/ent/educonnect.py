@@ -17,7 +17,7 @@ HEADERS = {
 
 
 @typing.no_type_check
-def educonnect(url: str, session, username: str, password: str) -> requests.Response:
+def _educonnect(url: str, session, username: str, password: str) -> requests.Response:
     payload = {
         'j_username': username,
         'j_password': password,
@@ -76,7 +76,7 @@ def ac_rennes(username: str, password: str) -> requests.cookies.RequestsCookieJa
     log.debug(f'[ENT Toutatice] Logging in with {username}')
     response = session.post(toutatice_login, data=payload, headers=HEADERS)
 
-    educonnect(response.url, session, username, password)
+    _educonnect(response.url, session, username, password)
 
     params = {
         'conversation': parse_qs(urlparse(response.url).query)['execution'][0],
@@ -111,11 +111,11 @@ def ent_elyco(username: str, password: str) -> requests.cookies.RequestsCookieJa
         'returnX': 'https://cas3.e-lyco.fr/Shibboleth.sso/Login',
         'returnIDParam': 'entityID',
         'action': 'selection',
-        'origin': 'https://educonnect.education.gouv.fr/idp'
+        'origin': 'https://_educonnect.education.gouv.fr/idp'
     }
 
     response = session.get(ent_login_page, params=params, headers=HEADERS)
     log.debug(f'[ENT Elyco] Logging in with {username}')
-    educonnect(response.url, session, username, password)
+    _educonnect(response.url, session, username, password)
 
     return session.cookies

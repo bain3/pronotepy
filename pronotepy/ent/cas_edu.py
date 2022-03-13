@@ -7,7 +7,7 @@ from bs4 import BeautifulSoup
 from urllib.parse import urlparse, parse_qs
 
 from ..exceptions import *
-from .educonnect import educonnect
+from .educonnect import _educonnect
 
 log = getLogger(__name__)
 log.setLevel(DEBUG)
@@ -17,7 +17,7 @@ HEADERS = {
 }
 
 
-def cas_edu(url: str, username: str, password: str) -> requests.cookies.RequestsCookieJar:
+def _cas_edu(url: str, username: str, password: str) -> requests.cookies.RequestsCookieJar:
     # ENT Connection
     session = requests.Session()
 
@@ -54,7 +54,7 @@ def occitanie_montpellier_educonnect(username: str, password: str) -> requests.c
     """
     log.debug(f'[ENT Occitanie] Logging in with {username}')
 
-    return cas_edu('https://cas.mon-ent-occitanie.fr/login?selection=MONT-EDU_parent_eleve', username, password)
+    return _cas_edu('https://cas.mon-ent-occitanie.fr/login?selection=MONT-EDU_parent_eleve', username, password)
 
 
 def ent_auvergnerhonealpe(username: str, password: str) -> requests.cookies.RequestsCookieJar:
@@ -75,7 +75,7 @@ def ent_auvergnerhonealpe(username: str, password: str) -> requests.cookies.Requ
     """
     log.debug(f'[ENT Auvergne Rhone Alpes] Logging in with {username}')
 
-    return cas_edu('https://cas.ent.auvergnerhonealpes.fr/login?selection=EDU', username, password)
+    return _cas_edu('https://cas.ent.auvergnerhonealpes.fr/login?selection=EDU', username, password)
 
 
 def ac_orleans_tours(username: str, password: str) -> requests.cookies.RequestsCookieJar:
@@ -96,7 +96,7 @@ def ac_orleans_tours(username: str, password: str) -> requests.cookies.RequestsC
     """
     log.debug(f'[ENT ac Orleans Tours] Logging in with {username}')
 
-    return cas_edu('https://ent.netocentre.fr/cas/login?&idpId=parentEleveEN-IdP', username, password)
+    return _cas_edu('https://ent.netocentre.fr/cas/login?&idpId=parentEleveEN-IdP', username, password)
 
 
 def monbureaunumerique(username: str, password: str) -> requests.cookies.RequestsCookieJar:
@@ -117,7 +117,7 @@ def monbureaunumerique(username: str, password: str) -> requests.cookies.Request
     """
     log.debug(f'[ENT Mon bureau numérique] Logging in with {username}')
 
-    return cas_edu('https://cas.monbureaunumerique.fr/login?selection=EDU', username, password)
+    return _cas_edu('https://cas.monbureaunumerique.fr/login?selection=EDU', username, password)
 
 
 def ac_reims(username: str, password: str) -> requests.cookies.RequestsCookieJar:
@@ -157,7 +157,7 @@ def eclat_bfc(username: str, password: str) -> requests.cookies.RequestsCookieJa
     """
     log.debug(f'[ENT Eclat BFC] Logging in with {username}')
 
-    return cas_edu('https://cas.eclat-bfc.fr/login?selection=EDU', username, password)
+    return _cas_edu('https://cas.eclat-bfc.fr/login?selection=EDU', username, password)
 
 
 def cas_agora06_educonnect(username: str, password: str) -> requests.cookies.RequestsCookieJar:
@@ -178,4 +178,4 @@ def cas_agora06_educonnect(username: str, password: str) -> requests.cookies.Req
     """
     log.debug(f'[CAS Agora 06] Logging in with {username}')
 
-    return cas_edu('https://cas.agora06.fr/login?selection=EDU', username, password)
+    return _cas_edu('https://cas.agora06.fr/login?selection=EDU', username, password)
