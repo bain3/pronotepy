@@ -52,3 +52,8 @@ class DateParsingError(PronoteAPIError):
     def __init__(self, message: str, date_string: str):
         super().__init__(message)
         self.date_string = date_string
+
+
+class ENTLoginError(PronoteAPIError):
+    """Error whil login with ENT"""
+    pass

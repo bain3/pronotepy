@@ -16,32 +16,6 @@ HEADERS = {
 }
 
 
-@typing.no_type_check
-def _educonnect(url: str, session, username: str, password: str) -> requests.Response:
-    payload = {
-        'j_username': username,
-        'j_password': password,
-        '_eventId_proceed': ''
-    }
-    response = session.post(url, headers=HEADERS, data=payload)
-    # 2nd SAML Authentication
-    soup = BeautifulSoup(response.text, 'html.parser')
-    input_SAMLResponse = soup.find("input", {"name": "SAMLResponse"})
-    if not input_SAMLResponse:
-        return
-
-    payload = {
-        "SAMLResponse": input_SAMLResponse["value"]
-        }
-
-    input_relayState = soup.find("input", {"name": "RelayState"})
-    if input_relayState:
-        payload["RelayState"] = input_relayState['value']
-
-    response = session.post(soup.find("form")["action"], headers=HEADERS, data=payload)
-    return response
-
-
 def ac_rennes(username: str, password: str) -> requests.cookies.RequestsCookieJar:
     """
     ENT ac Rennes Toutatice.fr
@@ -117,5 +91,49 @@ def ent_elyco(username: str, password: str) -> requests.cookies.RequestsCookieJa
     response = session.get(ent_login_page, params=params, headers=HEADERS)
     log.debug(f'[ENT Elyco] Logging in with {username}')
     _educonnect(response.url, session, username, password)
+
+    return session.cookies
+
+
+def ac_reunion(username: str, password: str) -> requests.cookies.RequestsCookieJar:
+    """
+    ENT for AC Reunion
+
+    Parameters
+    ----------
+    username : str
+        username
+    password : str
+        password
+
+    Returns
+    -------
+    cookies : cookies
+        returns the ent session cookies
+    """
+    # ENT / PRONOTE required URLs
+    ent_login = 'https://portail.college-jeandesme.re:8443/login?service=https:%2F%2Fportail.college-jeandesme.re%2Fpronote%2Feleve.html'
+
+    # ENT Connection
+    session = requests.Session()
+    response = session.get(ent_login, headers=HEADERS)
+
+    log.debug(f'[ENT Reunion] Logging in with {username}')
+
+    # Login payload
+    soup = BeautifulSoup(response.text, 'html.parser')
+    payload = {
+        'service': 'https://portail.college-jeandesme.re/pronote/eleve.html',
+        'lt': soup.find('input', {'type': 'hidden', 'name': 'lt'}).get('value'),
+        'previous_user': f'{username}@default',
+        'username': username,
+        'password': password,
+    }
+    # Send user:pass to the ENT
+    response = session.post(ent_login, headers=HEADERS, data=payload)
+
+    response = session.get(response.url, headers=HEADERS)
+
+    response = session.get(response.url, headers=HEADERS)
 
     return session.cookies
