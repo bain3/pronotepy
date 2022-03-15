@@ -1,6 +1,6 @@
 from functools import partial
 
-from .generic_func import _cas, _cas_edu, _open_ent_ng_edu, _open_ent_ng, _simple_auth
+from .generic_func import _cas, _cas_edu, _open_ent_ng_edu, _open_ent_ng, _wayf, _oze_ent, _simple_auth
 
 ac_clermont_ferrand = partial(
     _cas, url='https://cas.ent.auvergnerhonealpes.fr/login?selection=CLERMONT-ATS_parent_eleve')
@@ -10,6 +10,20 @@ ac_lyon = partial(
     _cas, url='https://cas.ent.auvergnerhonealpes.fr/login?selection=LYON-ATS_parent_eleve')
 cas_agora06 = partial(
     _cas, url='https://cas.agora06.fr/login?selection=ATS-NICE')
+cas_arsene76 = partial(
+    _cas, url='https://cas.arsene76.fr/login?selection=ATS_parent_eleve')
+cas_cybercolleges42 = partial(
+    _cas, url='https://cas.cybercolleges42.fr/login?selection=ATS_parent_eleve')
+cas_ent27 = partial(
+    _cas, url='https://cas.ent27.fr/login?selection=ATS_parent_eleve')
+cas_seinesaintdenis = partial(
+    _cas, url='https://cas.webcollege.seinesaintdenis.fr/login?selection=ATS_parent_eleve')
+cas_kosmos = partial(
+    _cas, url='https://cas.kosmoseducation.com/login')
+ecollege_haute_garonne = partial(
+    _cas, url='https://cas.ecollege.haute-garonne.fr/login?selection=ATS_parent_eleve')
+ent_creuse = partial(
+    _cas, url='https://cas.entcreuse.fr/login')
 occitanie_toulouse = partial(
     _cas, url='https://cas.mon-ent-occitanie.fr/login?selection=TOULO-ENT_parent_eleve')
 occitanie_montpellier = partial(
@@ -20,10 +34,14 @@ ac_orleans_tours = partial(
     _cas_edu, url='https://ent.netocentre.fr/cas/login?&idpId=parentEleveEN-IdP')
 cas_agora06_educonnect = partial(
     _cas_edu, url='https://cas.agora06.fr/login?selection=EDU')
+cas_seinesaintdenis_edu = partial(
+    _cas_edu, url='https://cas.webcollege.seinesaintdenis.fr/login?selection=EDU_parent_eleve')
 eclat_bfc = partial(
     _cas_edu, url='https://cas.eclat-bfc.fr/login?selection=EDU')
 ent_auvergnerhonealpe = partial(
     _cas_edu, url='https://cas.ent.auvergnerhonealpes.fr/login?selection=EDU')
+laclasse_educonnect = partial(
+    _cas_edu, url='https://www.laclasse.com/sso/educonnect')
 monbureaunumerique = partial(
     _cas_edu, url='https://cas.monbureaunumerique.fr/login?selection=EDU')
 ac_reims = monbureaunumerique
@@ -49,5 +67,13 @@ l_normandie = partial(
 lyceeconnecte_aquitaine = partial(
     _open_ent_ng_edu, domain='https://lyceeconnecte.fr/')
 
+ent_elyco = partial(_wayf, domain='https://cas3.e-lyco.fr')
+ent2d_bordeaux = partial(_wayf, domain='https://ds.ac-bordeaux.fr', entityID='https://ent2d.ac-bordeaux.fr/shibboleth',
+                         returnX='https://ent2d.ac-bordeaux.fr/Shibboleth.sso/Login?SAMLDS=1&target=https%3A%2F%2Fent2d.ac-bordeaux.fr%2Fargos%2Fpr%2Findex%2Findex')
+
+enc_hauts_de_seine = partial(_oze_ent, url='https://enc.hauts-de-seine.fr/')
+ozecollege_yvelines = partial(_oze_ent, url='https://ozecollege.yvelines.fr/')
+
 atrium_sud = partial(
     _simple_auth, url='https://www.atrium-sud.fr/connexion/login', form_attr={'id': 'fm1'})
+laclasse_lyon = partial(_simple_auth, url='https://www.laclasse.com/sso/login')

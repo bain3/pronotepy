@@ -4,7 +4,7 @@ import typing
 
 import requests
 from bs4 import BeautifulSoup
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import urlparse
 
 from ..exceptions import *
 
@@ -38,7 +38,7 @@ def _educonnect(session: requests.Session, username: str, password: str, url: st
     if not url:
         raise ENTLoginError('Missing url attribute')
 
-    log.debug(f'[ENT {url}] Logging in with {username}')
+    log.debug(f'[EduConnect {url}] Logging in with {username}')
 
     payload = {
         'j_username': username,
@@ -220,6 +220,101 @@ def _open_ent_ng(username: str, password: str, url: str = '') -> requests.cookie
         'password': password
     }
     response = session.post(url, headers=HEADERS, data=payload)
+    return session.cookies
+
+
+def _wayf(username: str, password: str, domain: str = '', entityID: str = '', returnX: str = '') -> requests.cookies.RequestsCookieJar:
+    """
+    Generic function for WAYF
+
+    Parameters
+    ----------
+    username : str
+        username
+    password : str
+        password
+    domain : str
+        domain of the ENT
+    entityID : str
+        request param entityID
+    returnX : str
+        request param returnX
+
+    Returns
+    -------
+    cookies : cookies
+        returns the ent session cookies
+    """
+    if not domain:
+        raise ENTLoginError('Missing domain attribute')
+    if not entityID:
+        entityID = f'{domain}/shibboleth'
+    if not returnX:
+        returnX = f'{domain}/Shibboleth.sso/Login'
+
+    log.debug(f'[ENT {domain}] Logging in with {username}')
+
+    ent_login_page = f'{domain}/discovery/WAYF'
+
+    # ENT Connection
+    session = requests.Session()
+
+    params = {
+        'entityID': entityID,
+        'returnX': returnX,
+        'returnIDParam': 'entityID',
+        'action': 'selection',
+        'origin': 'https://_educonnect.education.gouv.fr/idp'
+    }
+
+    response = session.get(ent_login_page, params=params, headers=HEADERS)
+    _educonnect(response.url, session, username, password)
+
+    return session.cookies
+
+
+def _oze_ent(username: str, password: str, url: str = '') -> requests.cookies.RequestsCookieJar:
+    """
+    Generic function for Oze ENT
+
+    Parameters
+    ----------
+    username : str
+        username
+    password : str
+        password
+    url : str
+        url of the ENT
+
+    Returns
+    -------
+    cookies : cookies
+        returns the ent session cookies
+    """
+    if not url:
+        raise ENTLoginError('Missing url attribute')
+
+    log.debug(f'[ENT {url}] Logging in with {username}')
+
+    # ENT Connection
+    session = requests.Session()
+    response = session.get(url, headers=HEADERS)
+
+    domain = urlparse(url).netloc
+
+    if not domain in username:
+        username = f'{username}@{domain}'
+
+    soup = BeautifulSoup(response.text, 'html.parser')
+    form = soup.find('form', {'id': 'auth_form'})
+    payload = {}
+    for input_ in form.findAll('input'):
+        payload[input_['name']] = input_.get('value')
+    payload['username'] = username
+    payload['password'] = password
+
+    session.post(response.url, data=payload, headers=HEADERS)
+
     return session.cookies
 
 

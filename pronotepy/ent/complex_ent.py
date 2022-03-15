@@ -76,25 +76,6 @@ def ac_rennes(username: str, password: str) -> requests.cookies.RequestsCookieJa
     return session.cookies
 
 
-def ent_elyco(username: str, password: str) -> requests.cookies.RequestsCookieJar:
-    ent_login_page = 'https://cas3.e-lyco.fr/discovery/WAYF'
-    session = requests.Session()
-
-    params = {
-        'entityID': 'https://cas3.e-lyco.fr/shibboleth',
-        'returnX': 'https://cas3.e-lyco.fr/Shibboleth.sso/Login',
-        'returnIDParam': 'entityID',
-        'action': 'selection',
-        'origin': 'https://_educonnect.education.gouv.fr/idp'
-    }
-
-    response = session.get(ent_login_page, params=params, headers=HEADERS)
-    log.debug(f'[ENT Elyco] Logging in with {username}')
-    _educonnect(response.url, session, username, password)
-
-    return session.cookies
-
-
 def ac_reunion(username: str, password: str) -> requests.cookies.RequestsCookieJar:
     """
     ENT for AC Reunion
