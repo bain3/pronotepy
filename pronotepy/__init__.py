@@ -17,11 +17,11 @@ IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMA
 TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 """
 
-__title__ = 'pronotepy'
-__author__ = 'bain, Xiloe'
-__license__ = 'MIT'
-__copyright__ = 'Copyright (c) bain, Xiloe'
-__version__ = '2.3.0'
+__title__ = "pronotepy"
+__author__ = "bain, Xiloe"
+__license__ = "MIT"
+__copyright__ = "Copyright (c) bain, Xiloe"
+__version__ = "2.4.0"
 
 from .dataClasses import *
 from .clients import *

@@ -119,7 +119,10 @@ Pronotepy will try and reconnect when the old session expires, but it cannot ass
 Feel free to contribute anything. Any help is appreciated. To contribute, please create a pull request with your changes.
 
 Setting up the development environment is just cloning the repository and making sure you have all the dependencies by
-running pip with the requirements.txt file.
+running pip with the requirements.txt file. Please also install `mypy` and `black` for type checking and formatting respectively
+you can find out how mypy is ran in github actions by looking at its configuration file.
+
+Please run these tools before you submit your PR. Thanks!
 
 ## Adding content
 

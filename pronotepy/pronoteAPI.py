@@ -28,14 +28,16 @@ log.setLevel(DEBUG)
 
 error_messages = {
     22: '[ERROR 22] The object was from a previous session. Please read the "Long Term Usage" section in README on '
-        'github.',
-    10: '[ERROR 10] Session has expired and pronotepy was not able to reinitialise the connection.',
-    25: '[ERROR 25] Exceeded max authorization requests. Please wait before retrying...'
+    "github.",
+    10: "[ERROR 10] Session has expired and pronotepy was not able to reinitialise the connection.",
+    25: "[ERROR 25] Exceeded max authorization requests. Please wait before retrying...",
 }
 
 
 class _Communication(object):
-    def __init__(self, site: str, cookies: RequestsCookieJar, client: _ClientBase) -> None:
+    def __init__(
+        self, site: str, cookies: RequestsCookieJar, client: _ClientBase
+    ) -> None:
         """Handles all communication with the PRONOTE servers"""
         self.root_site, self.html_page = self.get_root_address(site)
         self.session = requests.Session()
@@ -57,28 +59,43 @@ class _Communication(object):
         """
         # some headers to be real
         headers = {
-            'connection': 'keep-alive',
-            'User-Agent': 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:73.0) Gecko/20100101 Firefox/73.0'}
+            "connection": "keep-alive",
+            "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:73.0) Gecko/20100101 Firefox/73.0",
+        }
 
         # get rsa keys and session id
-        log.debug(f'Requesing html: {self.root_site}/{self.html_page}')
-        get_response = self.session.request('GET', f'{self.root_site}/{self.html_page}', headers=headers,
-                                            cookies=self.cookies)
+        log.debug(f"Requesing html: {self.root_site}/{self.html_page}")
+        get_response = self.session.request(
+            "GET",
+            f"{self.root_site}/{self.html_page}",
+            headers=headers,
+            cookies=self.cookies,
+        )
         self.attributes = self._parse_html(get_response.content)
         # uuid
-        self.encryption.rsa_keys = {'MR': self.attributes['MR'], 'ER': self.attributes['ER']}
-        uuid = base64.b64encode(self.encryption.rsa_encrypt(self.encryption.aes_iv_temp)).decode()
+        self.encryption.rsa_keys = {
+            "MR": self.attributes["MR"],
+            "ER": self.attributes["ER"],
+        }
+        uuid = base64.b64encode(
+            self.encryption.rsa_encrypt(self.encryption.aes_iv_temp)
+        ).decode()
         # post
-        json_post = {'Uuid': uuid, 'identifiantNav': None}
-        self.encrypt_requests = not self.attributes.get('sCrA', False)
-        self.compress_requests = not self.attributes.get('sCoA', False)
+        json_post = {"Uuid": uuid, "identifiantNav": None}
+        self.encrypt_requests = not self.attributes.get("sCrA", False)
+        self.compress_requests = not self.attributes.get("sCoA", False)
 
         # we need to catch this exception. the iv was not yet set and we need to decrypt it with the correct iv.
-        initial_response = self.post('FonctionParametres', {'donnees': json_post},
-                                     decryption_change={'iv': MD5.new(self.encryption.aes_iv_temp).digest()})
+        initial_response = self.post(
+            "FonctionParametres",
+            {"donnees": json_post},
+            decryption_change={"iv": MD5.new(self.encryption.aes_iv_temp).digest()},
+        )
         return self.attributes, initial_response
 
-    def post(self, function_name: str, data: dict, decryption_change: Optional[dict] = None) -> dict:
+    def post(
+        self, function_name: str, data: dict, decryption_change: Optional[dict] = None
+    ) -> dict:
         """
         Handler for all POST requests by the api to PRONOTE servers. Automatically provides all needed data for the
         verification of posts. Session id and order numbers are preserved.
@@ -92,37 +109,54 @@ class _Communication(object):
         decryption_change
             If the decryption key or iv is changing in the middle of the request, you can set it here
         """
-        if '_Signature_' in data and data['_Signature_'].get('onglet') not in self.authorized_onglets:
-            raise PronoteAPIError('Action not permitted. (onglet is not normally accessible)')
+        if (
+            "_Signature_" in data
+            and data["_Signature_"].get("onglet") not in self.authorized_onglets
+        ):
+            raise PronoteAPIError(
+                "Action not permitted. (onglet is not normally accessible)"
+            )
 
         post_data: Union[dict, str] = data
 
         if self.compress_requests:
             # takes care of compression. it is done with zlib, with compression level set to 6. the headers
             # are stripped, and the output is converted to hex
-            log.debug('[_Communication.post] compressing data')
+            log.debug("[_Communication.post] compressing data")
             post_data = jsn.dumps(data).encode().hex()
             log.debug(post_data)
             post_data = zlib.compress(post_data.encode(), level=6)[2:-4].hex().upper()
         if self.encrypt_requests:
             # encryption is done with the communicated key, the output is converted to hex (the client makes the output
             # all CAPS, so we're doing the same)
-            log.debug('[_Communication.post] encrypt data')
+            log.debug("[_Communication.post] encrypt data")
             if type(post_data) == dict:
                 # get the data in json form, then proceed to encrypt
-                post_data = self.encryption.aes_encrypt(jsn.dumps(post_data).encode()).hex().upper()
+                post_data = (
+                    self.encryption.aes_encrypt(jsn.dumps(post_data).encode())
+                    .hex()
+                    .upper()
+                )
             elif type(post_data) == str:
                 # we can assume the post_data is from compression, we need to get back the raw bytes
-                post_data = self.encryption.aes_encrypt(bytes.fromhex(post_data)).hex().upper()
+                post_data = (
+                    self.encryption.aes_encrypt(bytes.fromhex(post_data)).hex().upper()
+                )
 
         # creating the full json dict
         r_number = self.encryption.aes_encrypt(str(self.request_number).encode()).hex()
-        json = {'session': int(self.attributes['h']), 'numeroOrdre': r_number, 'nom': function_name,
-                'donneesSec': post_data}
+        json = {
+            "session": int(self.attributes["h"]),
+            "numeroOrdre": r_number,
+            "nom": function_name,
+            "donneesSec": post_data,
+        }
 
         p_site = f'{self.root_site}/appelfonction/{self.attributes["a"]}/{self.attributes["h"]}/{r_number}'
 
-        response: Response = self.session.request('POST', p_site, json=json, cookies=self.cookies)
+        response: Response = self.session.request(
+            "POST", p_site, json=json, cookies=self.cookies
+        )
 
         self.request_number += 2
         self.last_ping = int(time())
@@ -130,45 +164,54 @@ class _Communication(object):
 
         # error protection
         if not response.ok:
-            raise requests.HTTPError(f'Status code: {response.status_code}')
-        if 'Erreur' in response.json():
+            raise requests.HTTPError(f"Status code: {response.status_code}")
+        if "Erreur" in response.json():
             r_json = response.json()
-            if r_json['Erreur']['G'] == 22:
+            if r_json["Erreur"]["G"] == 22:
                 raise ExpiredObject(error_messages.get(22))
             raise PronoteAPIError(
-                error_messages.get(r_json['Erreur']['G'], f'Unknown error from pronote: {r_json["Erreur"]["G"]} '
-                                                          f'| {r_json["Erreur"]["Titre"]}'),
-                pronote_error_code=r_json['Erreur']['G'],
-                pronote_error_msg=r_json['Erreur']['Titre'])
+                error_messages.get(
+                    r_json["Erreur"]["G"],
+                    f'Unknown error from pronote: {r_json["Erreur"]["G"]} '
+                    f'| {r_json["Erreur"]["Titre"]}',
+                ),
+                pronote_error_code=r_json["Erreur"]["G"],
+                pronote_error_msg=r_json["Erreur"]["Titre"],
+            )
 
         # TODO: check returned request_number
 
         # checking for decryption change
         if decryption_change is not None:
-            log.debug('[_Communication.post] decryption change')
-            if 'iv' in decryption_change:
-                self.encryption.aes_iv = decryption_change['iv']
-            if 'key' in decryption_change:
-                self.encryption.aes_key = decryption_change['key']
+            log.debug("[_Communication.post] decryption change")
+            if "iv" in decryption_change:
+                self.encryption.aes_iv = decryption_change["iv"]
+            if "key" in decryption_change:
+                self.encryption.aes_key = decryption_change["key"]
 
         response_data = response.json()
 
         if self.encrypt_requests:
             # decrypt the received message, the output will either be a hex string, or the json dictionary
-            log.debug('[_Communication.post] decrypting')
-            decrypted: bytes = self.encryption.aes_decrypt(bytes.fromhex(response_data['donneesSec']))
+            log.debug("[_Communication.post] decrypting")
+            decrypted: bytes = self.encryption.aes_decrypt(
+                bytes.fromhex(response_data["donneesSec"])
+            )
             if not self.compress_requests:
-                response_data['donneesSec'] = jsn.loads(decrypted.decode())
+                response_data["donneesSec"] = jsn.loads(decrypted.decode())
             else:
-                response_data['donneesSec'] = decrypted
+                response_data["donneesSec"] = decrypted
         if self.compress_requests:
-            log.debug('[_Communication.post] decompressing')
-            d: Union[bytes, str] = response_data['donneesSec']
+            log.debug("[_Communication.post] decompressing")
+            d: Union[bytes, str] = response_data["donneesSec"]
             try:
-                response_data['donneesSec'] = jsn.loads(
-                    zlib.decompress(bytes.fromhex(d) if type(d) == str else d, wbits=-15).decode())  # type: ignore
+                response_data["donneesSec"] = jsn.loads(
+                    zlib.decompress(
+                        bytes.fromhex(d) if type(d) == str else d, wbits=-15  # type: ignore
+                    ).decode()
+                )
             except jsn.JSONDecodeError:
-                raise PronoteAPIError('JSONDecodeError while requesting from pronote.')
+                raise PronoteAPIError("JSONDecodeError while requesting from pronote.")
 
         return response_data
 
@@ -186,7 +229,9 @@ class _Communication(object):
         self.encryption.aes_key = auth_key
         if not self.cookies:
             self.cookies = self.last_response.cookies
-        work = self.encryption.aes_decrypt(bytes.fromhex(data['donneesSec']['donnees']['cle']))
+        work = self.encryption.aes_decrypt(
+            bytes.fromhex(data["donneesSec"]["donnees"]["cle"])
+        )
         key = MD5.new(_enBytes(work.decode()))
         self.encryption.aes_key = key.digest()
 
@@ -199,35 +244,36 @@ class _Communication(object):
         dict
             HTML attributes
         """
-        parsed = BeautifulSoup(html, 'html.parser')
+        parsed = BeautifulSoup(html, "html.parser")
 
-        onload = parsed.find(id='id_body')
+        onload = parsed.find(id="id_body")
         if onload:
-            onload_c = onload['onload'][14:-37]  # type: ignore
-        elif b'IP' in html:
-            raise PronoteAPIError('Your IP address is suspended.')
+            onload_c = onload["onload"][14:-37]  # type: ignore
+        elif b"IP" in html:
+            raise PronoteAPIError("Your IP address is suspended.")
         else:
             raise PronoteAPIError(
-                'Page html is different than expected. Be sure that pronote_url is the direct url to your pronote page.')
+                "Page html is different than expected. Be sure that pronote_url is the direct url to your pronote page."
+            )
         attributes = {}
-        for attr in onload_c.split(','):  # type: ignore
-            key, value = attr.split(':')
-            attributes[key] = value.replace("'", '')
+        for attr in onload_c.split(","):  # type: ignore
+            key, value = attr.split(":")
+            attributes[key] = value.replace("'", "")
         return attributes
 
     @staticmethod
     def get_root_address(addr: str) -> tuple[str, str]:
-        return '/'.join(addr.split('/')[:-1]), '/'.join(addr.split('/')[-1:])
+        return "/".join(addr.split("/")[:-1]), "/".join(addr.split("/")[-1:])
 
 
 def _enleverAlea(text: str) -> str:
     """Gets rid of the stupid thing that they did, idk what it really is for, but i guess it adds security"""
     sansalea = [b for i, b in enumerate(text) if i % 2 == 0]
-    return ''.join(sansalea)
+    return "".join(sansalea)
 
 
 def _enBytes(string: str) -> bytes:
-    list_string = string.split(',')
+    list_string = string.split(",")
     return bytes(int(i) for i in list_string)
 
 
@@ -264,13 +310,17 @@ class _Encryption(object):
         try:
             return Padding.unpad(cipher.decrypt(data), 16)
         except ValueError:
-            raise CryptoError('Decryption failed while trying to un pad. (probably bad decryption key/iv)')
+            raise CryptoError(
+                "Decryption failed while trying to un pad. (probably bad decryption key/iv)"
+            )
 
     def aes_set_iv(self, iv: bytes = None) -> None:
         self.aes_iv = iv or MD5.new(self.aes_iv_temp).digest()
 
     def rsa_encrypt(self, data: bytes) -> bytes:
-        key = RSA.construct((int(self.rsa_keys['MR'], 16), int(self.rsa_keys['ER'], 16)))
+        key = RSA.construct(
+            (int(self.rsa_keys["MR"], 16), int(self.rsa_keys["ER"], 16))
+        )
         # noinspection PyTypeChecker
         pkcs = PKCS1_v1_5.new(key)
         return pkcs.encrypt(data)
@@ -285,7 +335,7 @@ class _KeepAlive(threading.Thread):
     def alive(self) -> None:
         while self.keep_alive:
             if time() - self._client.communication.last_ping >= 300:
-                self._client.post('Presence', 7)
+                self._client.post("Presence", 7)
             sleep(1)
 
     def __enter__(self) -> None:
@@ -294,4 +344,3 @@ class _KeepAlive(threading.Thread):
     def __exit__(self, exc_type, exc_val, exc_tb) -> None:  # type: ignore
         self.keep_alive = False
         self.join()
-        
