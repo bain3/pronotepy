@@ -62,16 +62,12 @@ def ac_rennes(username: str, password: str) -> requests.cookies.RequestsCookieJa
     soup = BeautifulSoup(response.text, "xml")
 
     if soup.find("erreurFonctionnelle"):
-        raise (
-            PronoteAPIError(
-                "Toutatice ENT (ac_rennes) : ", soup.find("erreurFonctionnelle").text
-            )
+        raise PronoteAPIError(
+            "Toutatice ENT (ac_rennes) : ", soup.find("erreurFonctionnelle").text
         )
     elif soup.find("erreurTechnique"):
-        raise (
-            PronoteAPIError(
-                "Toutatice ENT (ac_rennes) : ", soup.find("erreurTechnique").text
-            )
+        raise PronoteAPIError(
+            "Toutatice ENT (ac_rennes) : ", soup.find("erreurTechnique").text
         )
     else:
         params = {
@@ -101,22 +97,22 @@ def ac_reunion(username: str, password: str) -> requests.cookies.RequestsCookieJ
         returns the ent session cookies
     """
     # ENT / PRONOTE required URLs
-    ent_login = 'https://portail.college-jeandesme.re:8443/login?service=https:%2F%2Fportail.college-jeandesme.re%2Fpronote%2Feleve.html'
+    ent_login = "https://portail.college-jeandesme.re:8443/login?service=https:%2F%2Fportail.college-jeandesme.re%2Fpronote%2Feleve.html"
 
     # ENT Connection
     session = requests.Session()
     response = session.get(ent_login, headers=HEADERS)
 
-    log.debug(f'[ENT Reunion] Logging in with {username}')
+    log.debug(f"[ENT Reunion] Logging in with {username}")
 
     # Login payload
-    soup = BeautifulSoup(response.text, 'html.parser')
+    soup = BeautifulSoup(response.text, "html.parser")
     payload = {
-        'service': 'https://portail.college-jeandesme.re/pronote/eleve.html',
-        'lt': soup.find('input', {'type': 'hidden', 'name': 'lt'}).get('value'),
-        'previous_user': f'{username}@default',
-        'username': username,
-        'password': password,
+        "service": "https://portail.college-jeandesme.re/pronote/eleve.html",
+        "lt": soup.find("input", {"type": "hidden", "name": "lt"}).get("value"),
+        "previous_user": f"{username}@default",
+        "username": username,
+        "password": password,
     }
     # Send user:pass to the ENT
     response = session.post(ent_login, headers=HEADERS, data=payload)
