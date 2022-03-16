@@ -12,3 +12,4 @@ jobs:
           github_token: ${{ secrets.github_token }}
           target: pronotepy
           mypy_flags: "--disallow-untyped-defs --disallow-incomplete-defs"
+          reporter: github-pr-check
