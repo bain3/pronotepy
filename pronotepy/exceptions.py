@@ -66,6 +66,12 @@ class DateParsingError(PronoteAPIError):
         self.date_string = date_string
 
 
+class ENTLoginError(PronoteAPIError):
+    """Error while logging in with an ENT"""
+
+    pass
+
+
 class UnsupportedOperation(PronoteAPIError):
     """The PRONOTE server does not have the functionality"""
 

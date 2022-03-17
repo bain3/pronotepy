@@ -846,7 +846,7 @@ class Homework(Object):
 
     @property
     def files(self) -> List[File]:
-        """Get all the files attached to the homework"""
+        """Get all the files and links attached to the homework"""
         return [File(self._client, jsn) for jsn in self._files]  # type: ignore
 
 
