@@ -803,6 +803,8 @@ class Homework(Object):
         if the homework is marked done
     date : datetime.date
         deadline
+    files : List[File]
+        files and links attached to the homework
     """
 
     __slots__ = [
