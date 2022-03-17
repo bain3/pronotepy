@@ -9,10 +9,10 @@ from .generic_func import (  # type: ignore
     _open_ent_ng,
     _wayf,
     _oze_ent,
-    _simple_auth
+    _simple_auth,
 )
 
-'''CAS'''
+"""CAS"""
 
 ac_clermont_ferrand = partial(
     _cas,
@@ -63,7 +63,7 @@ occitanie_montpellier = partial(
 
 val_doise = partial(_cas, url="https://cas.moncollege.valdoise.fr/login")
 
-'''CAS with EduConnect'''
+"""CAS with EduConnect"""
 
 ac_orleans_tours = partial(
     _cas_edu, url="https://ent.netocentre.fr/cas/login?&idpId=parentEleveEN-IdP"
@@ -97,7 +97,7 @@ occitanie_montpellier_educonnect = partial(
     url="https://cas.mon-ent-occitanie.fr/login?selection=MONT-EDU_parent_eleve",
 )
 
-'''Open ENT NG'''
+"""Open ENT NG"""
 
 ent77 = partial(_open_ent_ng, url="https://ent77.seine-et-marne.fr/auth/login")
 
@@ -118,7 +118,7 @@ paris_classe_numerique = partial(
     _open_ent_ng, url="https://ent.parisclassenumerique.fr/auth/login"
 )
 
-'''Open ENT NG with EduConnect'''
+"""Open ENT NG with EduConnect"""
 
 ent_hdf = partial(_open_ent_ng_edu, domain="https://enthdf.fr")
 
@@ -128,7 +128,7 @@ l_normandie = partial(_open_ent_ng_edu, domain="https://ent.l-educdenormandie.fr
 
 lyceeconnecte_aquitaine = partial(_open_ent_ng_edu, domain="https://lyceeconnecte.fr/")
 
-'''WAYF'''
+"""WAYF"""
 
 ent_elyco = partial(_wayf, domain="https://cas3.e-lyco.fr")
 
@@ -139,13 +139,13 @@ ent2d_bordeaux = partial(
     returnX="https://ent2d.ac-bordeaux.fr/Shibboleth.sso/Login?SAMLDS=1&target=https%3A%2F%2Fent2d.ac-bordeaux.fr%2Fargos%2Fpr%2Findex%2Findex",
 )
 
-'''OZE ENT'''
+"""OZE ENT"""
 
 enc_hauts_de_seine = partial(_oze_ent, url="https://enc.hauts-de-seine.fr/")
 
 ozecollege_yvelines = partial(_oze_ent, url="https://ozecollege.yvelines.fr/")
 
-'''Simple Auth'''
+"""Simple Auth"""
 
 atrium_sud = partial(
     _simple_auth,
