@@ -17,7 +17,7 @@ HEADERS = {
 
 
 @typing.no_type_check
-def educonnect(
+def _educonnect(
     session: requests.Session, username: str, password: str, url: str
 ) -> requests.Response:
     """
@@ -60,7 +60,7 @@ def educonnect(
     return response
 
 
-def cas_edu(
+def _cas_edu(
     username: str, password: str, url: str = ""
 ) -> requests.cookies.RequestsCookieJar:
     """
@@ -102,7 +102,7 @@ def cas_edu(
     return session.cookies
 
 
-def cas(
+def _cas(
     username: str, password: str, url: str = ""
 ) -> requests.cookies.RequestsCookieJar:
     """
@@ -144,7 +144,7 @@ def cas(
     return session.cookies
 
 
-def open_ent_ng_edu(
+def _open_ent_ng_edu(
     username: str, password: str, domain: str = ""
 ) -> requests.cookies.RequestsCookieJar:
     """
@@ -191,7 +191,7 @@ def open_ent_ng_edu(
     return session.cookies
 
 
-def open_ent_ng(
+def _open_ent_ng(
     username: str, password: str, url: str = ""
 ) -> requests.cookies.RequestsCookieJar:
     """
@@ -224,7 +224,7 @@ def open_ent_ng(
     return session.cookies
 
 
-def wayf(
+def _wayf(
     username: str,
     password: str,
     domain: str = "",
@@ -280,7 +280,7 @@ def wayf(
     return session.cookies
 
 
-def oze_ent(
+def _oze_ent(
     username: str, password: str, url: str = ""
 ) -> requests.cookies.RequestsCookieJar:
     """
@@ -327,7 +327,7 @@ def oze_ent(
     return session.cookies
 
 
-def simple_auth(
+def _simple_auth(
     username: str, password: str, url: str = "", form_attr: dict = {}
 ) -> requests.cookies.RequestsCookieJar:
     """
