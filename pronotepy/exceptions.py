@@ -67,8 +67,8 @@ class DateParsingError(PronoteAPIError):
 
 
 class ENTLoginError(PronoteAPIError):
-    """Error whil login with ENT"""
-    
+    """Error while logging in with an ENT"""
+
     pass
 
 
