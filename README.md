@@ -71,7 +71,7 @@ import datetime
 # you to the real one.
 # Ex.: https://your-school.com/pronote/students <-- BAD
 #      https://0000000a.index-education.net/pronote/eleve.html <-- GOOD
-
+#      https://0000000a.index-education.net/pronote/eleve.html?login=true <-- ONLY IF YOU HAVE AN ENT AND YOU KNOW YOUR IDS, ELSE REFER TO ENT PART OF README
 client = pronotepy.Client('https://demo.index-education.net/pronote/eleve.html',
                           username='demonstration',
                           password='pronotevs')
