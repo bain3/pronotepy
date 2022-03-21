@@ -1,7 +1,7 @@
 import datetime
 import logging
 from time import time
-from typing import List, Callable, Optional, Union
+from typing import List, Callable, Optional, Union, TypeVar, Type
 
 from Crypto.Hash import SHA256
 from uuid import uuid4
@@ -17,6 +17,8 @@ from .pronoteAPI import (
     _prepare_onglets,
     log,
 )
+
+T = TypeVar("T", bound="_ClientBase")
 
 
 class _ClientBase:
@@ -102,7 +104,7 @@ class _ClientBase:
         self._expired = False
 
     @classmethod
-    def qrcode_login(cls, qr_code: dict, pin: str):
+    def qrcode_login(cls: Type[T], qr_code: dict, pin: str) -> T:
         """
         Login with QR code
 
@@ -127,7 +129,7 @@ class _ClientBase:
             raise
 
         # add ?login=true at the end of the url
-        url = re.sub(r"(\?.*)|( *)$", '?login=true', qr_code['url'], 0)
+        url = re.sub(r"(\?.*)|( *)$", "?login=true", qr_code["url"], 0)
 
         return cls(url, login, jeton, qr_code=True)
 
@@ -217,8 +219,12 @@ class _ClientBase:
             self.encryption.aes_key = e.aes_key
             log.info(f"successfully logged in as {self.username}")
 
-            if self.mobile and auth_response["donneesSec"]["donnees"].get('jetonConnexionAppliMobile'):
-                self.password = auth_response["donneesSec"]["donnees"]["jetonConnexionAppliMobile"]
+            if self.mobile and auth_response["donneesSec"]["donnees"].get(
+                "jetonConnexionAppliMobile"
+            ):
+                self.password = auth_response["donneesSec"]["donnees"][
+                    "jetonConnexionAppliMobile"
+                ]
 
             # getting listeOnglets separately because of pronote API change
             self.parametres_utilisateur = self.post("ParametresUtilisateur")

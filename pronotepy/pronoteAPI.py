@@ -317,7 +317,7 @@ class _Encryption(object):
     def aes_set_iv(self, iv: bytes = None) -> None:
         self.aes_iv = iv or MD5.new(self.aes_iv_temp).digest()
 
-    def aes_set_key(self, key: bytes = None):
+    def aes_set_key(self, key: bytes = None) -> None:
         if key:
             self.aes_key = MD5.new(key).digest()
 
