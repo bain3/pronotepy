@@ -3,7 +3,9 @@ import logging
 from time import time
 from typing import List, Callable, Optional, Union
 
-from Crypto.Hash import MD5, SHA256
+from Crypto.Hash import SHA256
+from uuid import uuid4
+import re
 
 from . import dataClasses
 from .exceptions import *
@@ -51,6 +53,7 @@ class _ClientBase:
         username: str = "",
         password: str = "",
         ent: Optional[Callable] = None,
+        qr_code: bool = False,
     ) -> None:
         log.info("INIT")
         # start communication session
@@ -64,6 +67,9 @@ class _ClientBase:
             cookies = ent(username, password)
         else:
             cookies = None
+
+        self.uuid = str(uuid4())
+        self.mobile = qr_code
 
         self.username = username
         self.password = password
@@ -95,6 +101,36 @@ class _ClientBase:
         self.logged_in = self._login()
         self._expired = False
 
+    @classmethod
+    def qrcode_login(cls, qr_code: dict, pin: str):
+        """
+        Login with QR code
+
+        qr_code: dict
+            JSON store in the QR code
+        pin: str
+            4-digit confirmation code created during QR code setup
+        """
+        encryption = _Encryption()
+        encryption.aes_set_key(pin.encode())
+
+        short_token = bytes.fromhex(qr_code["login"])
+        long_token = bytes.fromhex(qr_code["jeton"])
+
+        try:
+            login = encryption.aes_decrypt(short_token).decode()
+            jeton = encryption.aes_decrypt(long_token).decode()
+        except CryptoError as ex:
+            ex.args += (
+                "exception happened during login -> probably the confirmation code is not valid",
+            )
+            raise
+
+        # add ?login=true at the end of the url
+        url = re.sub(r"(\?.*)|( *)$", '?login=true', qr_code['url'], 0)
+
+        return cls(url, login, jeton, qr_code=True)
+
     def _login(self) -> bool:
         """
         Logs in the user.
@@ -115,9 +151,9 @@ class _ClientBase:
             "pourENT": True if self.ent else False,
             "enConnexionAuto": False,
             "demandeConnexionAuto": False,
-            "demandeConnexionAppliMobile": False,
-            "demandeConnexionAppliMobileJeton": False,
-            "uuidAppliMobile": "",
+            "demandeConnexionAppliMobile": self.mobile,
+            "demandeConnexionAppliMobileJeton": self.mobile,
+            "uuidAppliMobile": self.uuid if self.mobile else "",
             "loginTokenSAV": "",
         }
         idr = self.post("Identification", data=ident_json)
@@ -132,7 +168,16 @@ class _ClientBase:
         # key gen
         if self.ent:
             motdepasse = SHA256.new(str(self.password).encode()).hexdigest().upper()
-            e.aes_key = MD5.new(motdepasse.encode()).digest()
+            e.aes_set_key(motdepasse.encode())
+        elif self.mobile:
+            u = self.username
+            p = self.password
+            if idr["donneesSec"]["donnees"]["modeCompLog"]:
+                u = u.lower()
+            if idr["donneesSec"]["donnees"]["modeCompMdp"]:
+                p = p.lower()
+            motdepasse = SHA256.new(p.encode()).hexdigest().upper()
+            e.aes_set_key((u + motdepasse).encode())
         else:
             u = self.username
             p = self.password
@@ -142,7 +187,7 @@ class _ClientBase:
                 p = p.lower()
             alea = idr["donneesSec"]["donnees"]["alea"]
             motdepasse = SHA256.new((alea + p).encode()).hexdigest().upper()
-            e.aes_key = MD5.new((u + motdepasse).encode()).digest()
+            e.aes_set_key((u + motdepasse).encode())
 
         # challenge
         try:
@@ -150,9 +195,14 @@ class _ClientBase:
             dec_no_alea = _enleverAlea(dec.decode())
             ch = e.aes_encrypt(dec_no_alea.encode()).hex()
         except CryptoError as ex:
-            ex.args += (
-                "exception happened during login -> probably bad username/password",
-            )
+            if self.mobile:
+                ex.args += (
+                    "exception happened during login -> probably the qr code has expired (qr code is valid during 10 minutes)",
+                )
+            else:
+                ex.args += (
+                    "exception happened during login -> probably bad username/password",
+                )
             raise
 
         # send
@@ -166,6 +216,9 @@ class _ClientBase:
             self.communication.after_auth(auth_response, e.aes_key)
             self.encryption.aes_key = e.aes_key
             log.info(f"successfully logged in as {self.username}")
+
+            if self.mobile and auth_response["donneesSec"]["donnees"].get('jetonConnexionAppliMobile'):
+                self.password = auth_response["donneesSec"]["donnees"]["jetonConnexionAppliMobile"]
 
             # getting listeOnglets separately because of pronote API change
             self.parametres_utilisateur = self.post("ParametresUtilisateur")
@@ -317,8 +370,9 @@ class Client(_ClientBase):
         username: str = "",
         password: str = "",
         ent: Optional[Callable] = None,
+        qr_code: bool = False,
     ) -> None:
-        super().__init__(pronote_url, username, password, ent)
+        super().__init__(pronote_url, username, password, ent, qr_code)
 
     def lessons(
         self,
@@ -586,8 +640,9 @@ class ParentClient(Client):
         username: str = "",
         password: str = "",
         ent: Optional[Callable] = None,
+        qr_code: bool = False,
     ) -> None:
-        super().__init__(pronote_url, username, password, ent)
+        super().__init__(pronote_url, username, password, ent, qr_code)
 
         self.children: List[dataClasses.ClientInfo] = []
         for c in self.parametres_utilisateur["donneesSec"]["donnees"]["ressource"][
@@ -696,8 +751,9 @@ class VieScolaireClient(_ClientBase):
         username: str = "",
         password: str = "",
         ent: Optional[Callable] = None,
+        qr_code: bool = False,
     ) -> None:
-        super().__init__(pronote_url, username, password, ent)
+        super().__init__(pronote_url, username, password, ent, qr_code)
         self.classes = [
             dataClasses.StudentClass(self, json)
             for json in self.parametres_utilisateur["donneesSec"]["donnees"][

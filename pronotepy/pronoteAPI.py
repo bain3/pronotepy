@@ -317,6 +317,10 @@ class _Encryption(object):
     def aes_set_iv(self, iv: bytes = None) -> None:
         self.aes_iv = iv or MD5.new(self.aes_iv_temp).digest()
 
+    def aes_set_key(self, key: bytes = None):
+        if key:
+            self.aes_key = MD5.new(key).digest()
+
     def rsa_encrypt(self, data: bytes) -> bytes:
         key = RSA.construct(
             (int(self.rsa_keys["MR"], 16), int(self.rsa_keys["ER"], 16))
