@@ -100,17 +100,6 @@ client = pronotepy.Client.qrcode_login({"jeton":"<LONG_TOKEN>",
                                         "login":"<SHORT_TOKEN>",
                                         "url":"https://0000000a.index-education.net/pronote/mobile.eleve.html"},
                                         "1234")
-# check if sucessfully logged in
-if client.logged_in:
-  # get the all the periods (may return multiple types like trimesters and semesters but it doesn't really matter
-  # the api will get it anyway)
-  periods = client.periods
-
-  for period in periods:
-      for grade in period.grades:  # iterate over all the grades
-          print(f'{grade.grade}/{grade.out_of}')  # print out the grade in this style: 20/20
-else:
-    print('no login')
 ```
 
 ### ENT
