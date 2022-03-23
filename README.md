@@ -62,7 +62,7 @@ and so it can't test every function.*
 - It is linked right on the top of this readme.
 ```
 
-Here is an example script (example.py):
+Here is an example script (homework shown in example.py):
 ```python
 import pronotepy
 
@@ -77,7 +77,7 @@ client = pronotepy.Client('https://demo.index-education.net/pronote/eleve.html',
                           username='demonstration',
                           password='pronotevs')
 
-if client.logged_in:
+if client.logged_in: # check if client successfully logged in
     # get the all the periods (may return multiple types like trimesters and semesters but it doesn't really matter
     # the api will get it anyway)
     periods = client.periods
