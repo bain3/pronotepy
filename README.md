@@ -41,7 +41,7 @@ Install directly from pypi using pip: `pip install pronotepy` (If you are on win
 
 **Latest**
 
-You can install the latest version by installing directly from the repository zip: 
+You can install the latest version by installing directly from the repository zip:
 
 `pip install https://github.com/bain3/pronotepy/archive/refs/heads/master.zip`
 
@@ -57,8 +57,8 @@ and so it can't test every function.*
 ### Usage
 
 ```diff
-- The usage part of this readme is for the latest version, 
-- if you're installing from pypi, please see the documentation. 
+- The usage part of this readme is for the latest version,
+- if you're installing from pypi, please see the documentation.
 - It is linked right on the top of this readme.
 ```
 
@@ -89,9 +89,22 @@ if client.logged_in: # check if client successfully logged in
 
 For any extra details, please see the documentation linked above.
 
+### QR Code
+
+Pronotepy allows you to connect with the Pronote QR code. Pass in the function the contents of the QR code and the confirmation code
+```python
+import pronotepy
+
+# creating the client from qrcode_login
+client = pronotepy.Client.qrcode_login({"jeton":"<LONG_TOKEN>",
+                                        "login":"<SHORT_TOKEN>",
+                                        "url":"https://0000000a.index-education.net/pronote/mobile.eleve.html"},
+                                        "1234")
+```
+
 ### ENT
 
-Pronotepy has builtin functions for getting cookies from some ENTs (if you want your ENT to be added make a new issue). 
+Pronotepy has builtin functions for getting cookies from some ENTs (if you want your ENT to be added make a new issue).
 You can pass those functions to the client like this:
 ```python
 import pronotepy
