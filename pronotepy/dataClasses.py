@@ -81,6 +81,8 @@ class Util:
         """convert date to a datetime.date object"""
         if re.match(r"\d{2}/\d{2}/\d{4}$", formatted_date):
             return datetime.datetime.strptime(formatted_date, "%d/%m/%Y").date()
+        elif re.match(r"\d{2}/\d{2}/\d{2}$", formatted_date):
+            return datetime.datetime.strptime(formatted_date, "%d/%m/%y").date()
         elif re.match(r"\d{2}/\d{2}/\d{4} \d{2}:\d{2}:\d{2}$", formatted_date):
             return datetime.datetime.strptime(
                 formatted_date, "%d/%m/%Y %H:%M:%S"
@@ -952,48 +954,70 @@ class Message(Object):
         the id of the message (used internally)
     author : str
         author of the message
-    recipients : list
-        Recipitents of the message. ! May be just ['# recipients'] !
     seen : bool
         if the message was seen
     date : datetime.datetime
         the date when the message was sent
     """
 
-    __slots__ = ["id", "author", "recipients", "seen", "date", "_client", "_listePM"]
+    __slots__ = ["id", "author", "seen", "date", "_client", "_listePM"]
 
     def __init__(self, client: _ClientBase, json_dict: dict) -> None:
         super().__init__(json_dict)
         self._client = client
-        self._listePM = json_dict["listePossessionsMessages"]["V"]
 
         self.id: str = self._resolver(str, "N")
         self.author: str = self._resolver(str, "public_gauche")
-        self.recipients: list = self._resolver(list, "listePublic")
-        self.seen: bool = self._resolver(bool, "lu")
+        self.seen: bool = self._resolver(bool, "lu", default=False)
         self.date: datetime.datetime = self._resolver(
-            lambda d: Util.datetime_parse(" ".join(d.split()[1:])), "libelleDate"
+            lambda d: Util.datetime_parse(d), "date", "V"
         )
+
+        if self._resolver(bool, "estHTML", default=False):
+            self.content = self._resolver(Util.html_parse, "contenu", "V")
+        else:
+            self.content = self._resolver(str, "contenu")
 
         del self._resolver
 
-    @property
-    def content(self) -> Optional[str]:
-        """Returns the content of the message"""
-        data = {
-            "message": {"N": self.id},
-            "marquerCommeLu": False,
-            "estNonPossede": False,
-            "listePossessionsMessages": self._listePM,
-        }
-        resp = self._client.post("ListeMessages", 131, data)
-        for m in resp["donneesSec"]["donnees"]["listeMessages"]["V"]:
-            if m["N"] == self.id:
-                if type(m["contenu"]) == dict:
-                    return Util.html_parse(m["contenu"]["V"])
-                else:
-                    return m["contenu"]
-        return None
+
+class Discussion(Object):
+    """
+    Represents a discussion.
+
+    Attributes
+    ----------
+    id : str
+        the id of the discussion (used internally)
+    object: str
+        the object of the discussion
+    creator: str
+        the person who open the discussion
+    messages: List[Message]
+        messages link to the discussion
+    unread: int
+        number of unread messages
+    close: bool
+        True if the discussion is close
+    date : datetime.datetime
+        the date when the discussion was open
+    """
+
+    __slots__ = ["id", "object", "messages", "unread", "close", "date", "_client"]
+
+    def __init__(self, client: _ClientBase, json_dict: dict) -> None:
+        super().__init__(json_dict)
+        self._client = client
+
+        self.id: str = self._resolver(str, "N")
+        self.objet: str = self._resolver(str, "objet")
+        self.creator: str = self._resolver(str, "initiateur")
+        self.messages: list = self._resolver(lambda l: [self._client.message(m["N"]) for m in l], "listePossessionsMessages", "V")
+        self.unread: int = self._resolver(int, "nbNonLus")
+        self.close: bool = self._resolver(bool, "ferme", default=False)
+        self.date: datetime.date = self._resolver(Util.date_parse, "libelleDate")
+
+        del self._resolver
 
 
 class ClientInfo:

@@ -509,23 +509,37 @@ class Client(_ClientBase):
                 out.append(hw)
         return out
 
-    def messages(self) -> List[dataClasses.Message]:
+    def discussions(self) -> List[dataClasses.Discussion]:
         """
         Gets all the discussions in the discussions tab
 
         Returns
         -------
-        List[Messages]
-            Messages
+        List[Discussion]
         """
-        messages = self.post(
+        discussions = self.post(
             "ListeMessagerie", 131, {"avecMessage": True, "avecLu": True}
         )
         return [
-            dataClasses.Message(self, m)
-            for m in messages["donneesSec"]["donnees"]["listeMessagerie"]["V"]
-            if not m.get("estUneDiscussion")
+            dataClasses.Discussion(self, d)
+            for d in discussions["donneesSec"]["donnees"]["listeMessagerie"]["V"]
+            if d.get("estUneDiscussion")
         ]
+
+    def message(self, id: str) -> dataClasses.Message:
+        """
+        Get the message of a specific id
+
+        id: str
+            id of the message
+
+        Returns
+        -------
+        List[Message]
+        """
+        message = self.post("ListeMessages", 131, {"listePossessionsMessages": [{"N": id}]})
+
+        return dataClasses.Message(self, message["donneesSec"]["donnees"]["listeMessages"]["V"][0])
 
     def information_and_surveys(
         self,
