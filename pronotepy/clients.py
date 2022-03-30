@@ -66,6 +66,7 @@ class _ClientBase:
 
         self.ent = ent
         if ent:
+            pronote_url = pronote_url.replace("login=true", "")
             cookies = ent(username, password)
         else:
             cookies = None
@@ -537,9 +538,13 @@ class Client(_ClientBase):
         -------
         List[Message]
         """
-        message = self.post("ListeMessages", 131, {"listePossessionsMessages": [{"N": id}]})
+        message = self.post(
+            "ListeMessages", 131, {"listePossessionsMessages": [{"N": id}]}
+        )
 
-        return dataClasses.Message(self, message["donneesSec"]["donnees"]["listeMessages"]["V"][0])
+        return dataClasses.Message(
+            self, message["donneesSec"]["donnees"]["listeMessages"]["V"][0]
+        )
 
     def information_and_surveys(
         self,
