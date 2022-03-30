@@ -66,7 +66,7 @@ val_doise = partial(_cas, url="https://cas.moncollege.valdoise.fr/login")
 """CAS with EduConnect"""
 
 ac_orleans_tours = partial(
-    _cas_edu, url="https://ent.netocentre.fr/cas/login?&idpId=parentEleveEN-IdP"
+    _cas_edu, url="https://ent.netocentre.fr/cas/login?&idpId=parentEleveEN-IdP", redirect_form=False
 )
 
 cas_agora06_educonnect = partial(
@@ -84,7 +84,7 @@ ent_auvergnerhonealpe = partial(
     _cas_edu, url="https://cas.ent.auvergnerhonealpes.fr/login?selection=EDU"
 )
 
-laclasse_educonnect = partial(_cas_edu, url="https://www.laclasse.com/sso/educonnect")
+laclasse_educonnect = partial(_cas_edu, url="https://www.laclasse.com/sso/educonnect", redirect_form=False)
 
 monbureaunumerique = partial(
     _cas_edu, url="https://cas.monbureaunumerique.fr/login?selection=EDU"
