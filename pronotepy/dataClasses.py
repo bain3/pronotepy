@@ -22,7 +22,7 @@ from urllib.parse import quote
 from Crypto.Util import Padding
 
 if TYPE_CHECKING:
-    from .clients import _ClientBase
+    from .clients import _ClientBase, Client
 from .exceptions import ParsingError, DateParsingError, UnsupportedOperation
 
 log = logging.getLogger(__name__)
@@ -989,8 +989,8 @@ class Discussion(Object):
     ----------
     id : str
         the id of the discussion (used internally)
-    object: str
-        the object of the discussion
+    subject: str
+        the subject of the discussion
     creator: str
         the person who open the discussion
     messages: List[Message]
@@ -1003,14 +1003,15 @@ class Discussion(Object):
         the date when the discussion was open
     """
 
-    __slots__ = ["id", "object", "messages", "unread", "close", "date", "_client"]
+    __slots__ = ["id", "subject", "messages", "unread", "close", "date", "_client"]
 
-    def __init__(self, client: _ClientBase, json_dict: dict) -> None:
+    def __init__(self, client: Client, json_dict: dict) -> None:
         super().__init__(json_dict)
         self._client = client
+        self._possessions: list = self._resolver(lambda l: [m["N"] for m in l], "listePossessionsMessages", "V")
 
-        self.id: str = self._resolver(str, "N")
-        self.objet: str = self._resolver(str, "objet")
+        self.id: str = self._resolver(str, "messageFenetre", "V", "N")
+        self.subject: str = self._resolver(str, "objet")
         self.creator: str = self._resolver(str, "initiateur")
         self.messages: list = self._resolver(lambda l: [self._client.message(m["N"]) for m in l], "listePossessionsMessages", "V")
         self.unread: int = self._resolver(int, "nbNonLus")
@@ -1018,6 +1019,33 @@ class Discussion(Object):
         self.date: datetime.date = self._resolver(Util.date_parse, "libelleDate")
 
         del self._resolver
+
+    def mark_as(self, read: bool) -> None:
+        """
+        Mark as read/unread the discussion
+
+        Parameters
+        ----------
+        read : bool
+            read/unread
+        """
+        self._client.post("SaisieMessage", 131, {"commande": "pourLu", "lu": read, "listePossessionsMessages": self._possessions})
+
+    def reply(self, message: str) -> None:
+        """
+        Reply to a discussion
+
+        Parameters
+        ----------
+        message : str
+        """
+        self._client.post("SaisieMessage", 131, {"messagePourReponse": {"N": self.id,"G": 0}, "contenu": message, "listeFichiers": []})
+
+    def delete(self) -> None:
+        """
+        Delete the discussion
+        """
+        self._client.post("SaisieMessage", 131, {"commande": "corbeille", "listePossessionsMessages": self._possessions})
 
 
 class ClientInfo:
@@ -1052,7 +1080,7 @@ class ClientInfo:
         """
         list of classes of which the user is a delegue of
         """
-        if self.raw_resource["estDelegue"]:
+        if self.raw_resource.get("estDelegue"):
             return [
                 class_["L"] for class_ in self.raw_resource["listeClassesDelegue"]["V"]
             ]
