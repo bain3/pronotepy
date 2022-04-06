@@ -527,7 +527,7 @@ class Client(_ClientBase):
             "donneesSec"
         ]["donnees"]["listeRessourcesPourCommunication"]["V"]
 
-        return [r for r in recipients if p.get("avecDiscussion")]
+        return [r for r in recipients if r.get("avecDiscussion")]
 
     def new_discussion(self, subjet: str, message: str, recipient: List) -> None:
         data = {"objet": subjet, "contenu": message, "listeDestinataires": recipient}
