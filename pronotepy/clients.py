@@ -510,6 +510,30 @@ class Client(_ClientBase):
                 out.append(hw)
         return out
 
+    def get_recipients(self) -> List[dict]:
+        """
+        Get all possible recipients for new discussion
+
+        Returns
+        -------
+        List[dict]
+        """
+        data = {"onglet": {"N": 0, "G": 3}}
+        recipients = self.post("ListeRessourcesPourCommunication", 131, data)[
+            "donneesSec"]["donnees"]["listeRessourcesPourCommunication"]["V"]
+        data = {"onglet": {"N": 0, "G": 34}}
+        recipients += self.post("ListeRessourcesPourCommunication", 131, data)[
+            "donneesSec"]["donnees"]["listeRessourcesPourCommunication"]["V"]
+
+        return [r for r in recipients if p.get("avecDiscussion")]
+
+    def new_discussion(self, subjet: str, message: str, recipient: List) -> None:
+        data = {
+            "objet": subjet,
+            "contenu": message,
+            "listeDestinataires": recipient}
+        self.post("SaisieMessage", 131, data)
+
     def discussions(self) -> List[dataClasses.Discussion]:
         """
         Gets all the discussions in the discussions tab
