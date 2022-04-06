@@ -102,7 +102,9 @@ def _cas_edu(
             "SAMLRequest": soup.find("input", {"name": "SAMLRequest"})["value"],
         }
 
-        response = session.post(soup.find("form")["action"], data=payload, headers=HEADERS)
+        response = session.post(
+            soup.find("form")["action"], data=payload, headers=HEADERS
+        )
 
     _educonnect(session, username, password, response.url)
 

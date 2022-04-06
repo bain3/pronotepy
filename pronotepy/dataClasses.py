@@ -1008,12 +1008,18 @@ class Discussion(Object):
     def __init__(self, client: Client, json_dict: dict) -> None:
         super().__init__(json_dict)
         self._client = client
-        self._possessions: list = self._resolver(lambda l: [m["N"] for m in l], "listePossessionsMessages", "V")
+        self._possessions: list = self._resolver(
+            lambda l: [m["N"] for m in l], "listePossessionsMessages", "V"
+        )
 
         self.id: str = self._resolver(str, "messageFenetre", "V", "N")
         self.subject: str = self._resolver(str, "objet")
         self.creator: str = self._resolver(str, "initiateur")
-        self.messages: list = self._resolver(lambda l: [self._client.message(m["N"]) for m in l], "listePossessionsMessages", "V")
+        self.messages: list = self._resolver(
+            lambda l: [self._client.message(m["N"]) for m in l],
+            "listePossessionsMessages",
+            "V",
+        )
         self.unread: int = self._resolver(int, "nbNonLus")
         self.close: bool = self._resolver(bool, "ferme", default=False)
         self.date: datetime.date = self._resolver(Util.date_parse, "libelleDate")
@@ -1029,7 +1035,15 @@ class Discussion(Object):
         read : bool
             read/unread
         """
-        self._client.post("SaisieMessage", 131, {"commande": "pourLu", "lu": read, "listePossessionsMessages": self._possessions})
+        self._client.post(
+            "SaisieMessage",
+            131,
+            {
+                "commande": "pourLu",
+                "lu": read,
+                "listePossessionsMessages": self._possessions,
+            },
+        )
 
     def reply(self, message: str) -> None:
         """
@@ -1039,13 +1053,25 @@ class Discussion(Object):
         ----------
         message : str
         """
-        self._client.post("SaisieMessage", 131, {"messagePourReponse": {"N": self.id,"G": 0}, "contenu": message, "listeFichiers": []})
+        self._client.post(
+            "SaisieMessage",
+            131,
+            {
+                "messagePourReponse": {"N": self.id, "G": 0},
+                "contenu": message,
+                "listeFichiers": [],
+            },
+        )
 
     def delete(self) -> None:
         """
         Delete the discussion
         """
-        self._client.post("SaisieMessage", 131, {"commande": "corbeille", "listePossessionsMessages": self._possessions})
+        self._client.post(
+            "SaisieMessage",
+            131,
+            {"commande": "corbeille", "listePossessionsMessages": self._possessions},
+        )
 
 
 class ClientInfo:
