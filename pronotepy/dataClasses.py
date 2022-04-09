@@ -1082,7 +1082,16 @@ class Discussion(Object):
         the date when the discussion was open
     """
 
-    __slots__ = ["id", "subject", "messages", "unread", "close", "date", "_client", "_possessions"]
+    __slots__ = [
+        "id",
+        "subject",
+        "messages",
+        "unread",
+        "close",
+        "date",
+        "_client",
+        "_possessions",
+    ]
 
     def __init__(self, client: Client, json_dict: dict) -> None:
         super().__init__(json_dict)
