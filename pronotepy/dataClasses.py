@@ -944,6 +944,64 @@ class Information(Object):
         self.read = status
 
 
+class Recipient(Object):
+    """
+    Represents a recipient to create a discussion
+
+    Attributes
+    ----------
+    id : str
+        the id of the recipient (used internally)
+    name : str
+        name of the recipient
+    type : str
+        teacher or staff
+    email: Optional[str]
+        email of the recipient
+    functions : List[str]
+        all function or subject of the recipient
+    with_discussion: bool
+        can be contacted by message
+
+    """
+
+    __slots__ = [
+        "id",
+        "name",
+        "type",
+        "functions",
+        "with_discussion",
+        "_client",
+        "_type",
+    ]
+
+    def __init__(self, client: _ClientBase, json_dict: dict) -> None:
+        super().__init__(json_dict)
+        self._client = client
+        self._type: int = self._resolver(int, "G")
+
+        self.id: str = self._resolver(str, "N")
+        self.name: str = self._resolver(str, "L")
+        self.type: str = "teacher" if self._type == 3 else "staff"
+        self.email: Optional[str] = self._resolver(str, "email", strict=False)
+        self.functions: List[str] = []
+
+        if self.type == "teacher":
+            self.functions = [
+                r.get("L") for r in self._resolver(list, "listeRessources", "V")
+            ]
+        else:
+            self.functions = self._resolver(
+                lambda f: [f], "fonction", "V", "L", default=[]
+            )
+
+        self.with_discussion: bool = self._resolver(
+            bool, "avecDiscussion", default=False
+        )
+
+        del self._resolver
+
+
 class Message(Object):
     """
     Represents a message in a discussion.
@@ -967,11 +1025,10 @@ class Message(Object):
         self._client = client
 
         self.id: str = self._resolver(str, "N")
+        self.content: str = ""
         self.author: str = self._resolver(str, "public_gauche")
         self.seen: bool = self._resolver(bool, "lu", default=False)
-        self.date: datetime.datetime = self._resolver(
-            lambda d: Util.datetime_parse(d), "date", "V"
-        )
+        self.date: datetime.datetime = self._resolver(Util.datetime_parse, "date", "V")
 
         if self._resolver(bool, "estHTML", default=False):
             self.content = self._resolver(Util.html_parse, "contenu", "V")
@@ -979,6 +1036,26 @@ class Message(Object):
             self.content = self._resolver(str, "contenu")
 
         del self._resolver
+
+    @classmethod
+    def get(cls, client: Client, id: str) -> Message:
+        """
+        Get the message of a specific id
+
+        id: str
+            id of the message
+
+        Returns
+        -------
+        Message
+        """
+        message = client.post(
+            "ListeMessages", 131, {"listePossessionsMessages": [{"N": id}]}
+        )
+
+        return Message(
+            client, message["donneesSec"]["donnees"]["listeMessages"]["V"][0]
+        )
 
 
 class Discussion(Object):
@@ -1015,8 +1092,8 @@ class Discussion(Object):
         self.id: str = self._resolver(str, "messageFenetre", "V", "N")
         self.subject: str = self._resolver(str, "objet")
         self.creator: str = self._resolver(str, "initiateur")
-        self.messages: list = self._resolver(
-            lambda l: [self._client.message(m["N"]) for m in l],
+        self.messages: List[Message] = self._resolver(
+            lambda l: [Message.get(self._client, m["N"]) for m in l],
             "listePossessionsMessages",
             "V",
         )

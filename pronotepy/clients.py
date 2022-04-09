@@ -510,28 +510,41 @@ class Client(_ClientBase):
                 out.append(hw)
         return out
 
-    def get_recipients(self) -> List[dict]:
+    def get_recipients(self) -> List[dataClasses.Recipient]:
         """
-        Get all possible recipients for new discussion
+        Get recipients for new discussion
 
         Returns
         -------
-        List[dict]
+        List[dataClasses.Recipient]
         """
+        # add teacher
         data = {"onglet": {"N": 0, "G": 3}}
         recipients = self.post("ListeRessourcesPourCommunication", 131, data)[
             "donneesSec"
         ]["donnees"]["listeRessourcesPourCommunication"]["V"]
+        # add staff
         data = {"onglet": {"N": 0, "G": 34}}
         recipients += self.post("ListeRessourcesPourCommunication", 131, data)[
             "donneesSec"
         ]["donnees"]["listeRessourcesPourCommunication"]["V"]
 
-        return [r for r in recipients if r.get("avecDiscussion")]
+        return [dataClasses.Recipient(self, r) for r in recipients]
 
-    def new_discussion(self, subjet: str, message: str, recipient: List) -> None:
-        data = {"objet": subjet, "contenu": message, "listeDestinataires": recipient}
-        self.post("SaisieMessage", 131, data)
+    def new_discussion(
+        self, subjet: str, message: str, recipients: List[dataClasses.Recipient]
+    ) -> None:
+        """
+        Create a new discussion
+        """
+        recipients_json = [{"N": r.id, "G": r._type, "L": r.name} for r in recipients]
+        data = {
+            "objet": subjet,
+            "contenu": message,
+            "listeDestinataires": recipients_json,
+        }
+
+        print(self.post("SaisieMessage", 131, data))
 
     def discussions(self) -> List[dataClasses.Discussion]:
         """
@@ -549,25 +562,6 @@ class Client(_ClientBase):
             for d in discussions["donneesSec"]["donnees"]["listeMessagerie"]["V"]
             if d.get("estUneDiscussion")
         ]
-
-    def message(self, id: str) -> dataClasses.Message:
-        """
-        Get the message of a specific id
-
-        id: str
-            id of the message
-
-        Returns
-        -------
-        List[Message]
-        """
-        message = self.post(
-            "ListeMessages", 131, {"listePossessionsMessages": [{"N": id}]}
-        )
-
-        return dataClasses.Message(
-            self, message["donneesSec"]["donnees"]["listeMessages"]["V"][0]
-        )
 
     def information_and_surveys(
         self,
