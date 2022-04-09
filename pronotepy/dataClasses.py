@@ -22,7 +22,7 @@ from urllib.parse import quote
 from Crypto.Util import Padding
 
 if TYPE_CHECKING:
-    from .clients import _ClientBase
+    from .clients import _ClientBase, Client
 from .exceptions import ParsingError, DateParsingError, UnsupportedOperation
 
 log = logging.getLogger(__name__)
@@ -81,6 +81,8 @@ class Util:
         """convert date to a datetime.date object"""
         if re.match(r"\d{2}/\d{2}/\d{4}$", formatted_date):
             return datetime.datetime.strptime(formatted_date, "%d/%m/%Y").date()
+        elif re.match(r"\d{2}/\d{2}/\d{2}$", formatted_date):
+            return datetime.datetime.strptime(formatted_date, "%d/%m/%y").date()
         elif re.match(r"\d{2}/\d{2}/\d{4} \d{2}:\d{2}:\d{2}$", formatted_date):
             return datetime.datetime.strptime(
                 formatted_date, "%d/%m/%Y %H:%M:%S"
@@ -942,6 +944,64 @@ class Information(Object):
         self.read = status
 
 
+class Recipient(Object):
+    """
+    Represents a recipient to create a discussion
+
+    Attributes
+    ----------
+    id : str
+        the id of the recipient (used internally)
+    name : str
+        name of the recipient
+    type : str
+        teacher or staff
+    email: Optional[str]
+        email of the recipient
+    functions : List[str]
+        all function or subject of the recipient
+    with_discussion: bool
+        can be contacted by message
+
+    """
+
+    __slots__ = [
+        "id",
+        "name",
+        "type",
+        "functions",
+        "with_discussion",
+        "_client",
+        "_type",
+    ]
+
+    def __init__(self, client: _ClientBase, json_dict: dict) -> None:
+        super().__init__(json_dict)
+        self._client = client
+        self._type: int = self._resolver(int, "G")
+
+        self.id: str = self._resolver(str, "N")
+        self.name: str = self._resolver(str, "L")
+        self.type: str = "teacher" if self._type == 3 else "staff"
+        self.email: Optional[str] = self._resolver(str, "email", strict=False)
+        self.functions: List[str] = []
+
+        if self.type == "teacher":
+            self.functions = self._resolver(
+                lambda x: [r.get("L") for r in x], "listeRessources", "V"
+            )
+        else:
+            self.functions = self._resolver(
+                lambda f: [f], "fonction", "V", "L", default=[]
+            )
+
+        self.with_discussion: bool = self._resolver(
+            bool, "avecDiscussion", default=False
+        )
+
+        del self._resolver
+
+
 class Message(Object):
     """
     Represents a message in a discussion.
@@ -952,48 +1012,154 @@ class Message(Object):
         the id of the message (used internally)
     author : str
         author of the message
-    recipients : list
-        Recipitents of the message. ! May be just ['# recipients'] !
     seen : bool
         if the message was seen
     date : datetime.datetime
         the date when the message was sent
+    content: str
+        content of the messages
     """
 
-    __slots__ = ["id", "author", "recipients", "seen", "date", "_client", "_listePM"]
+    __slots__ = ["id", "author", "seen", "date", "content", "_client", "_listePM"]
 
     def __init__(self, client: _ClientBase, json_dict: dict) -> None:
         super().__init__(json_dict)
         self._client = client
-        self._listePM = json_dict["listePossessionsMessages"]["V"]
 
         self.id: str = self._resolver(str, "N")
+        self.content: str = ""
         self.author: str = self._resolver(str, "public_gauche")
-        self.recipients: list = self._resolver(list, "listePublic")
-        self.seen: bool = self._resolver(bool, "lu")
-        self.date: datetime.datetime = self._resolver(
-            lambda d: Util.datetime_parse(" ".join(d.split()[1:])), "libelleDate"
-        )
+        self.seen: bool = self._resolver(bool, "lu", default=False)
+        self.date: datetime.datetime = self._resolver(Util.datetime_parse, "date", "V")
+
+        if self._resolver(bool, "estHTML", default=False):
+            self.content = self._resolver(Util.html_parse, "contenu", "V")
+        else:
+            self.content = self._resolver(str, "contenu")
 
         del self._resolver
 
-    @property
-    def content(self) -> Optional[str]:
-        """Returns the content of the message"""
-        data = {
-            "message": {"N": self.id},
-            "marquerCommeLu": False,
-            "estNonPossede": False,
-            "listePossessionsMessages": self._listePM,
-        }
-        resp = self._client.post("ListeMessages", 131, data)
-        for m in resp["donneesSec"]["donnees"]["listeMessages"]["V"]:
-            if m["N"] == self.id:
-                if type(m["contenu"]) == dict:
-                    return Util.html_parse(m["contenu"]["V"])
-                else:
-                    return m["contenu"]
-        return None
+    @classmethod
+    def get(cls, client: Client, id: str) -> Message:
+        """
+        Get the message of a specific id
+
+        id: str
+            id of the message
+
+        Returns
+        -------
+        Message
+        """
+        message = client.post(
+            "ListeMessages", 131, {"listePossessionsMessages": [{"N": id}]}
+        )
+
+        return Message(
+            client, message["donneesSec"]["donnees"]["listeMessages"]["V"][0]
+        )
+
+
+class Discussion(Object):
+    """
+    Represents a discussion.
+
+    Attributes
+    ----------
+    id : str
+        the id of the discussion (used internally)
+    subject: str
+        the subject of the discussion
+    creator: str
+        the person who open the discussion
+    messages: List[Message]
+        messages link to the discussion
+    unread: int
+        number of unread messages
+    close: bool
+        True if the discussion is close
+    date : datetime.datetime
+        the date when the discussion was open
+    """
+
+    __slots__ = [
+        "id",
+        "subject",
+        "messages",
+        "unread",
+        "close",
+        "date",
+        "_client",
+        "_possessions",
+    ]
+
+    def __init__(self, client: Client, json_dict: dict) -> None:
+        super().__init__(json_dict)
+        self._client = client
+        self._possessions: list = self._resolver(
+            lambda l: [m["N"] for m in l], "listePossessionsMessages", "V"
+        )
+
+        self.id: str = self._resolver(str, "messageFenetre", "V", "N")
+        self.subject: str = self._resolver(str, "objet")
+        self.creator: str = self._resolver(str, "initiateur")
+        self.messages: List[Message] = self._resolver(
+            lambda l: [Message.get(self._client, m["N"]) for m in l],
+            "listePossessionsMessages",
+            "V",
+        )
+        self.unread: int = self._resolver(int, "nbNonLus")
+        self.close: bool = self._resolver(bool, "ferme", default=False)
+        self.date: datetime.date = self._resolver(Util.date_parse, "libelleDate")
+
+        del self._resolver
+
+    def mark_as(self, read: bool) -> None:
+        """
+        Mark as read/unread the discussion
+
+        Parameters
+        ----------
+        read : bool
+            read/unread
+        """
+        self._client.post(
+            "SaisieMessage",
+            131,
+            {
+                "commande": "pourLu",
+                "lu": read,
+                "listePossessionsMessages": self._possessions,
+            },
+        )
+
+    def reply(self, message: str) -> None:
+        """
+        Reply to a discussion
+
+        Parameters
+        ----------
+        message : str
+        """
+        self._client.post(
+            "SaisieMessage",
+            131,
+            {
+                "messagePourReponse": {"N": self.id, "G": 0},
+                "contenu": message,
+                "listeFichiers": [],
+            },
+        )
+
+    def delete(self) -> None:
+        """
+        Delete the discussion
+        """
+        self._client.post(
+            "SaisieMessage",
+            131,
+            {"commande": "corbeille", "listePossessionsMessages": self._possessions},
+        )
 
 
 class ClientInfo:
@@ -1028,7 +1194,7 @@ class ClientInfo:
         """
         list of classes of which the user is a delegue of
         """
-        if self.raw_resource["estDelegue"]:
+        if self.raw_resource.get("estDelegue"):
             return [
                 class_["L"] for class_ in self.raw_resource["listeClassesDelegue"]["V"]
             ]

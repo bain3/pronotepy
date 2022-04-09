@@ -18,7 +18,7 @@ HEADERS = {
 
 @typing.no_type_check
 def _educonnect(
-    session: requests.Session, username: str, password: str, url: str
+    session: requests.Session, username: str, password: str, url: str, exceptions=True
 ) -> requests.Response:
     """
     Generic function for EduConnect
@@ -47,21 +47,26 @@ def _educonnect(
     # 2nd SAML Authentication
     soup = BeautifulSoup(response.text, "html.parser")
     input_SAMLResponse = soup.find("input", {"name": "SAMLResponse"})
-    if not input_SAMLResponse:
-        return
-
-    payload = {"SAMLResponse": input_SAMLResponse["value"]}
-
     input_relayState = soup.find("input", {"name": "RelayState"})
-    if input_relayState:
-        payload["RelayState"] = input_relayState["value"]
+    if not input_SAMLResponse or not input_relayState:
+        if exceptions:
+            raise ENTLoginError(
+                "Fail to connect with EduConnect probably wrong login information"
+            )
+        else:
+            return
+
+    payload = {
+        "SAMLResponse": input_SAMLResponse["value"],
+        "RelayState": input_relayState["value"],
+    }
 
     response = session.post(soup.find("form")["action"], headers=HEADERS, data=payload)
     return response
 
 
 def _cas_edu(
-    username: str, password: str, url: str = ""
+    username: str, password: str, url: str = "", redirect_form=True
 ) -> requests.cookies.RequestsCookieJar:
     """
     Generic function for CAS with Educonnect
@@ -89,15 +94,19 @@ def _cas_edu(
     session = requests.Session()
 
     response = session.get(url, headers=HEADERS)
-    soup = BeautifulSoup(response.text, "html.parser")
-    payload = {
-        "RelayState": soup.find("input", {"name": "RelayState"})["value"],
-        "SAMLRequest": soup.find("input", {"name": "SAMLRequest"})["value"],
-    }
 
-    response = session.post(soup.find("form")["action"], data=payload, headers=HEADERS)
+    if redirect_form:
+        soup = BeautifulSoup(response.text, "html.parser")
+        payload = {
+            "RelayState": soup.find("input", {"name": "RelayState"})["value"],
+            "SAMLRequest": soup.find("input", {"name": "SAMLRequest"})["value"],
+        }
 
-    educonnect(response.url, session, username, password)
+        response = session.post(
+            soup.find("form")["action"], data=payload, headers=HEADERS
+        )
+
+    _educonnect(session, username, password, response.url)
 
     return session.cookies
 
@@ -144,6 +153,39 @@ def _cas(
     return session.cookies
 
 
+def _open_ent_ng(
+    username: str, password: str, url: str = ""
+) -> requests.cookies.RequestsCookieJar:
+    """
+    ENT which has an authentication like https://ent.iledefrance.fr/auth/login
+
+    Parameters
+    ----------
+    username : str
+        username
+    password : str
+        password
+    url : str
+        url of the ENT
+
+    Returns
+    -------
+    cookies : cookies
+        returns the ent session cookies
+    """
+    if not url:
+        raise ENTLoginError("Missing url attribute")
+
+    log.debug(f"[ENT {url}] Logging in with {username}")
+
+    # ENT Connection
+    session = requests.Session()
+
+    payload = {"email": username, "password": password}
+    response = session.post(url, headers=HEADERS, data=payload)
+    return session.cookies
+
+
 def _open_ent_ng_edu(
     username: str, password: str, domain: str = ""
 ) -> requests.cookies.RequestsCookieJar:
@@ -179,7 +221,7 @@ def _open_ent_ng_edu(
     params = {"providerId": f"{domain}/auth/saml/metadata/idp.xml"}
 
     response = session.get(ent_login_page, params=params, headers=HEADERS)
-    response = educonnect(response.url, session, username, password)
+    response = _educonnect(session, username, password, response.url, exceptions=False)
 
     if not response:
         return open_ent_ng(response.url, username, password)
@@ -188,39 +230,6 @@ def _open_ent_ng_edu(
         if soup.find("title").get_text() == "Authentification":
             return open_ent_ng(response.url, username, password)
 
-    return session.cookies
-
-
-def _open_ent_ng(
-    username: str, password: str, url: str = ""
-) -> requests.cookies.RequestsCookieJar:
-    """
-    ENT which has an authentication like https://ent.iledefrance.fr/auth/login
-
-    Parameters
-    ----------
-    username : str
-        username
-    password : str
-        password
-    url : str
-        url of the ENT
-
-    Returns
-    -------
-    cookies : cookies
-        returns the ent session cookies
-    """
-    if not url:
-        raise ENTLoginError("Missing url attribute")
-
-    log.debug(f"[ENT {url}] Logging in with {username}")
-
-    # ENT Connection
-    session = requests.Session()
-
-    payload = {"email": username, "password": password}
-    response = session.post(url, headers=HEADERS, data=payload)
     return session.cookies
 
 
@@ -271,11 +280,11 @@ def _wayf(
         "returnX": returnX,
         "returnIDParam": "entityID",
         "action": "selection",
-        "origin": "https://_educonnect.education.gouv.fr/idp",
+        "origin": "https://educonnect.education.gouv.fr/idp",
     }
 
     response = session.get(ent_login_page, params=params, headers=HEADERS)
-    _educonnect(response.url, session, username, password)
+    _educonnect(session, username, password, response.url)
 
     return session.cookies
 

@@ -66,6 +66,7 @@ class _ClientBase:
 
         self.ent = ent
         if ent:
+            pronote_url = pronote_url.replace("login=true", "")
             cookies = ent(username, password)
         else:
             cookies = None
@@ -509,22 +510,57 @@ class Client(_ClientBase):
                 out.append(hw)
         return out
 
-    def messages(self) -> List[dataClasses.Message]:
+    def get_recipients(self) -> List[dataClasses.Recipient]:
+        """
+        Get recipients for new discussion
+
+        Returns
+        -------
+        List[dataClasses.Recipient]
+        """
+        # add teacher
+        data = {"onglet": {"N": 0, "G": 3}}
+        recipients = self.post("ListeRessourcesPourCommunication", 131, data)[
+            "donneesSec"
+        ]["donnees"]["listeRessourcesPourCommunication"]["V"]
+        # add staff
+        data = {"onglet": {"N": 0, "G": 34}}
+        recipients += self.post("ListeRessourcesPourCommunication", 131, data)[
+            "donneesSec"
+        ]["donnees"]["listeRessourcesPourCommunication"]["V"]
+
+        return [dataClasses.Recipient(self, r) for r in recipients]
+
+    def new_discussion(
+        self, subjet: str, message: str, recipients: List[dataClasses.Recipient]
+    ) -> None:
+        """
+        Create a new discussion
+        """
+        recipients_json = [{"N": r.id, "G": r._type, "L": r.name} for r in recipients]
+        data = {
+            "objet": subjet,
+            "contenu": message,
+            "listeDestinataires": recipients_json,
+        }
+
+        self.post("SaisieMessage", 131, data)
+
+    def discussions(self) -> List[dataClasses.Discussion]:
         """
         Gets all the discussions in the discussions tab
 
         Returns
         -------
-        List[Messages]
-            Messages
+        List[Discussion]
         """
-        messages = self.post(
+        discussions = self.post(
             "ListeMessagerie", 131, {"avecMessage": True, "avecLu": True}
         )
         return [
-            dataClasses.Message(self, m)
-            for m in messages["donneesSec"]["donnees"]["listeMessagerie"]["V"]
-            if not m.get("estUneDiscussion")
+            dataClasses.Discussion(self, d)
+            for d in discussions["donneesSec"]["donnees"]["listeMessagerie"]["V"]
+            if d.get("estUneDiscussion")
         ]
 
     def information_and_surveys(
