@@ -544,7 +544,7 @@ class Client(_ClientBase):
             "listeDestinataires": recipients_json,
         }
 
-        print(self.post("SaisieMessage", 131, data))
+        self.post("SaisieMessage", 131, data)
 
     def discussions(self) -> List[dataClasses.Discussion]:
         """

@@ -987,9 +987,9 @@ class Recipient(Object):
         self.functions: List[str] = []
 
         if self.type == "teacher":
-            self.functions = [
-                r.get("L") for r in self._resolver(list, "listeRessources", "V")
-            ]
+            self.functions = self._resolver(
+                lambda x: [r.get("L") for r in x], "listeRessources", "V"
+            )
         else:
             self.functions = self._resolver(
                 lambda f: [f], "fonction", "V", "L", default=[]
@@ -1016,9 +1016,11 @@ class Message(Object):
         if the message was seen
     date : datetime.datetime
         the date when the message was sent
+    content: str
+        content of the messages
     """
 
-    __slots__ = ["id", "author", "seen", "date", "_client", "_listePM"]
+    __slots__ = ["id", "author", "seen", "date", "content", "_client", "_listePM"]
 
     def __init__(self, client: _ClientBase, json_dict: dict) -> None:
         super().__init__(json_dict)

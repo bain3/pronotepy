@@ -7,7 +7,11 @@ client = pronotepy.Client(
     "https://demo.index-education.net/pronote/eleve.html", "demonstration", "pronotevs"
 )
 
-parent_client = pronotepy.ParentClient("https://demo.index-education.net/pronote/parent.html", username="demonstration", password="pronotevs")
+parent_client = pronotepy.ParentClient(
+    "https://demo.index-education.net/pronote/parent.html",
+    username="demonstration",
+    password="pronotevs",
+)
 
 
 class TestClient(unittest.TestCase):
