@@ -7,9 +7,12 @@ client = pronotepy.Client(
     "https://demo.index-education.net/pronote/eleve.html", "demonstration", "pronotevs"
 )
 
+parent_client = pronotepy.ParentClient("https://demo.index-education.net/pronote/parent.html", username="demonstration", password="pronotevs")
+
 
 class TestClient(unittest.TestCase):
     global client
+    global parent_client
 
     def test__get_week(self) -> None:
         self.assertEqual(
@@ -42,6 +45,18 @@ class TestClient(unittest.TestCase):
         for hw in homework:
             self.assertLessEqual(start, hw.date)
             self.assertLessEqual(hw.date, end)
+
+    def test_recipients(self) -> None:
+        recipients = client.get_recipients()
+
+        # We assume demo website will always have discussions
+        self.assertGreater(len(recipients), 0)
+
+    def test_discussion(self) -> None:
+        discussions = parent_client.discussions()
+
+        # We assume demo website will always have discussions
+        self.assertGreater(len(discussions), 0)
 
     def test_menus(self) -> None:
         start = client.start_day
@@ -144,6 +159,22 @@ class TestLessonContent(unittest.TestCase):
 
     def test_files(self) -> None:
         self.assertIsNotNone(self.lessonContent.files)
+
+
+class TestDiscussion(unittest.TestCase):
+    discussion: pronotepy.Discussion
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        global parent_client
+        cls.discussion = parent_client.discussions()[0]
+
+    def test_messages(self) -> None:
+        self.assertNotEqual(
+            len(self.discussion.messages),
+            0,
+            "Discussion has no message",
+        )
 
 
 class TestMenu(unittest.TestCase):
