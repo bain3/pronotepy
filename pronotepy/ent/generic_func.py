@@ -51,7 +51,7 @@ def _educonnect(
     if not input_SAMLResponse or not input_relayState:
         if exceptions:
             raise ENTLoginError(
-                "Fail to connect with EduConnect probably wrong login information"
+                "Fail to connect with EduConnect : probably wrong login information"
             )
         else:
             return
@@ -148,7 +148,12 @@ def _cas(
     payload["username"] = username
     payload["password"] = password
 
-    session.post(response.url, data=payload, headers=HEADERS)
+    r = session.post(response.url, data=payload, headers=HEADERS)
+
+    if "login" in r.url:
+        raise ENTLoginError(
+            f"Fail to connect with CAS {url} : probably wrong login information"
+        )
 
     return session.cookies
 
@@ -182,7 +187,13 @@ def _open_ent_ng(
     session = requests.Session()
 
     payload = {"email": username, "password": password}
-    response = session.post(url, headers=HEADERS, data=payload)
+    r = session.post(url, headers=HEADERS, data=payload)
+
+    if "login" in r.url:
+        raise ENTLoginError(
+            f"Fail to connect with Open NG {url} : probably wrong login information"
+        )
+
     return session.cookies
 
 
@@ -223,12 +234,9 @@ def _open_ent_ng_edu(
     response = session.get(ent_login_page, params=params, headers=HEADERS)
     response = _educonnect(session, username, password, response.url, exceptions=False)
 
-    if not response:
+    if not response or "login" in response.url:
+        log.debug(f"Fail to connect with EduConnect, trying with Open NG")
         return open_ent_ng(response.url, username, password)
-    else:
-        soup = BeautifulSoup(response.text, "html.parser")
-        if soup.find("title").get_text() == "Authentification":
-            return open_ent_ng(response.url, username, password)
 
     return session.cookies
 
@@ -331,7 +339,12 @@ def _oze_ent(
     payload["username"] = username
     payload["password"] = password
 
-    session.post(response.url, data=payload, headers=HEADERS)
+    r = session.post(response.url, data=payload, headers=HEADERS)
+
+    if "auth_form" in r.text:
+        raise ENTLoginError(
+            f"Fail to connect with Oze ENT {url} : probably wrong login information"
+        )
 
     return session.cookies
 
@@ -375,6 +388,11 @@ def _simple_auth(
     payload["username"] = username
     payload["password"] = password
 
-    session.post(response.url, data=payload, headers=HEADERS)
+    r = session.post(response.url, data=payload, headers=HEADERS)
+
+    if form_attr in r.text:
+        raise ENTLoginError(
+            f"Fail to connect with {url} : probably wrong login information"
+        )
 
     return session.cookies

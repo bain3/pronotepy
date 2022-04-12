@@ -62,11 +62,11 @@ def ac_rennes(username: str, password: str) -> requests.cookies.RequestsCookieJa
     soup = BeautifulSoup(response.text, "xml")
 
     if soup.find("erreurFonctionnelle"):
-        raise PronoteAPIError(
+        raise ENTLoginError(
             "Toutatice ENT (ac_rennes) : ", soup.find("erreurFonctionnelle").text
         )
     elif soup.find("erreurTechnique"):
-        raise PronoteAPIError(
+        raise ENTLoginError(
             "Toutatice ENT (ac_rennes) : ", soup.find("erreurTechnique").text
         )
     else:
@@ -97,7 +97,7 @@ def ac_reunion(username: str, password: str) -> requests.cookies.RequestsCookieJ
         returns the ent session cookies
     """
     # ENT / PRONOTE required URLs
-    ent_login = "https://portail.college-jeandesme.re:8443/login?service=https:%2F%2Fportail.college-jeandesme.re%2Fpronote%2Feleve.html"
+    ent_login = "https://portail.college-jeandesme.re:8443/login"
 
     # ENT Connection
     session = requests.Session()
@@ -116,6 +116,11 @@ def ac_reunion(username: str, password: str) -> requests.cookies.RequestsCookieJ
     }
     # Send user:pass to the ENT
     response = session.post(ent_login, headers=HEADERS, data=payload)
+
+    if "failed" in response.url:
+        raise ENTLoginError(
+            f"Fail to connect with AC Reunion : probably wrong login information"
+        )
 
     response = session.get(response.url, headers=HEADERS)
 
