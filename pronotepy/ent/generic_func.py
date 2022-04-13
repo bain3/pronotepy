@@ -234,9 +234,13 @@ def _open_ent_ng_edu(
     response = session.get(ent_login_page, params=params, headers=HEADERS)
     response = _educonnect(session, username, password, response.url, exceptions=False)
 
-    if not response or "login" in response.url:
+    if not response:
         log.debug(f"Fail to connect with EduConnect, trying with Open NG")
-        return open_ent_ng(response.url, username, password)
+        return _open_ent_ng(username, password, f"{domain}/auth/login")
+
+    elif "login" in response.url:
+        log.debug(f"Fail to connect with EduConnect, trying with Open NG")
+        return _open_ent_ng(username, password, response.url)
 
     return session.cookies
 
@@ -389,8 +393,9 @@ def _simple_auth(
     payload["password"] = password
 
     r = session.post(response.url, data=payload, headers=HEADERS)
+    soup = BeautifulSoup(r.text, "html.parser")
 
-    if form_attr in r.text:
+    if soup.find("form", form_attr):
         raise ENTLoginError(
             f"Fail to connect with {url} : probably wrong login information"
         )

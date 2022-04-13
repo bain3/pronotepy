@@ -7,6 +7,7 @@ from bs4 import BeautifulSoup
 from urllib.parse import urlparse, parse_qs
 
 from ..exceptions import *
+from .generic_func import _educonnect
 
 log = getLogger(__name__)
 log.setLevel(DEBUG)
@@ -50,7 +51,7 @@ def ac_rennes(username: str, password: str) -> requests.cookies.RequestsCookieJa
     log.debug(f"[ENT Toutatice] Logging in with {username}")
     response = session.post(toutatice_login, data=payload, headers=HEADERS)
 
-    _educonnect(response.url, session, username, password)
+    _educonnect(session, username, password, response.url)
 
     params = {
         "conversation": parse_qs(urlparse(response.url).query)["execution"][0],
@@ -101,7 +102,7 @@ def ac_reunion(username: str, password: str) -> requests.cookies.RequestsCookieJ
 
     # ENT Connection
     session = requests.Session()
-    response = session.get(ent_login, headers=HEADERS)
+    response = session.get(ent_login, headers=HEADERS, verify=False)
 
     log.debug(f"[ENT Reunion] Logging in with {username}")
 
@@ -115,15 +116,15 @@ def ac_reunion(username: str, password: str) -> requests.cookies.RequestsCookieJ
         "password": password,
     }
     # Send user:pass to the ENT
-    response = session.post(ent_login, headers=HEADERS, data=payload)
+    response = session.post(ent_login, headers=HEADERS, data=payload, verify=False)
 
     if "failed" in response.url:
         raise ENTLoginError(
             f"Fail to connect with AC Reunion : probably wrong login information"
         )
 
-    response = session.get(response.url, headers=HEADERS)
+    response = session.get(response.url, headers=HEADERS, verify=False)
 
-    response = session.get(response.url, headers=HEADERS)
+    response = session.get(response.url, headers=HEADERS, verify=False)
 
     return session.cookies
