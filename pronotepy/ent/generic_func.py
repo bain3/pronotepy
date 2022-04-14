@@ -1,4 +1,3 @@
-# type: ignore[*]
 from logging import getLogger, DEBUG
 import typing
 
@@ -18,7 +17,11 @@ HEADERS = {
 
 @typing.no_type_check
 def _educonnect(
-    session: requests.Session, username: str, password: str, url: str, exceptions=True
+    session: requests.Session,
+    username: str,
+    password: str,
+    url: str,
+    exceptions: bool = True,
 ) -> requests.Response:
     """
     Generic function for EduConnect
@@ -66,7 +69,7 @@ def _educonnect(
 
 
 def _cas_edu(
-    username: str, password: str, url: str = "", redirect_form=True
+    username: str, password: str, url: str = "", redirect_form: bool = True
 ) -> requests.cookies.RequestsCookieJar:
     """
     Generic function for CAS with Educonnect

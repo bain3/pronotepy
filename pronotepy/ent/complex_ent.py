@@ -1,4 +1,3 @@
-# type: ignore
 from logging import getLogger, DEBUG
 import typing
 
