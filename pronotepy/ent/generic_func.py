@@ -22,7 +22,7 @@ def _educonnect(
     password: str,
     url: str,
     exceptions: bool = True,
-) -> requests.Response:
+) -> typing.Optional[requests.Response]:
     """
     Generic function for EduConnect
 
@@ -57,7 +57,7 @@ def _educonnect(
                 "Fail to connect with EduConnect : probably wrong login information"
             )
         else:
-            return
+            return None
 
     payload = {
         "SAMLResponse": input_SAMLResponse["value"],
@@ -68,6 +68,7 @@ def _educonnect(
     return response
 
 
+@typing.no_type_check
 def _cas_edu(
     username: str, password: str, url: str = "", redirect_form: bool = True
 ) -> requests.cookies.RequestsCookieJar:
@@ -114,6 +115,7 @@ def _cas_edu(
     return session.cookies
 
 
+@typing.no_type_check
 def _cas(
     username: str, password: str, url: str = ""
 ) -> requests.cookies.RequestsCookieJar:
@@ -152,8 +154,9 @@ def _cas(
     payload["password"] = password
 
     r = session.post(response.url, data=payload, headers=HEADERS)
+    soup = BeautifulSoup(r.text, "html.parser")
 
-    if "login" in r.url:
+    if soup.find("form", {"class": "cas__login-form"}):
         raise ENTLoginError(
             f"Fail to connect with CAS {url} : probably wrong login information"
         )
@@ -304,6 +307,7 @@ def _wayf(
     return session.cookies
 
 
+@typing.no_type_check
 def _oze_ent(
     username: str, password: str, url: str = ""
 ) -> requests.cookies.RequestsCookieJar:
@@ -356,6 +360,7 @@ def _oze_ent(
     return session.cookies
 
 
+@typing.no_type_check
 def _simple_auth(
     username: str, password: str, url: str = "", form_attr: dict = {}
 ) -> requests.cookies.RequestsCookieJar:

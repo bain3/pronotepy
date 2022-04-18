@@ -16,6 +16,7 @@ HEADERS = {
 }
 
 
+@typing.no_type_check
 def ac_rennes(username: str, password: str) -> requests.cookies.RequestsCookieJar:
     """
     ENT ac Rennes Toutatice.fr
@@ -80,6 +81,7 @@ def ac_rennes(username: str, password: str) -> requests.cookies.RequestsCookieJa
     return session.cookies
 
 
+@typing.no_type_check
 def ac_reunion(username: str, password: str) -> requests.cookies.RequestsCookieJar:
     """
     ENT for AC Reunion
