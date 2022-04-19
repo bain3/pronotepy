@@ -117,7 +117,7 @@ client = pronotepy.Client('https://0000000a.index-education.net/pronote/eleve.ht
                           ent=occitanie_montpellier)
 # check if sucessfully logged in
 if client.logged_in:
-    print(len(client.messages())) # printing number of messages that the user has
+    print(len(client.discussions())) # printing number of messages that the user has
 else:
     print('no login')
 ```
