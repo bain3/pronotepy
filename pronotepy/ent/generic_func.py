@@ -142,26 +142,26 @@ def _cas(
     log.debug(f"[ENT {url}] Logging in with {username}")
 
     # ENT Connection
-    session = requests.Session()
-    response = session.get(url, headers=HEADERS)
+    with requests.Session() as session:
+        response = session.get(url, headers=HEADERS)
 
-    soup = BeautifulSoup(response.text, "html.parser")
-    form = soup.find("form", {"class": "cas__login-form"})
-    payload = {}
-    for input_ in form.findAll("input"):
-        payload[input_["name"]] = input_.get("value")
-    payload["username"] = username
-    payload["password"] = password
+        soup = BeautifulSoup(response.text, "html.parser")
+        form = soup.find("form", {"class": "cas__login-form"})
+        payload = {}
+        for input_ in form.findAll("input"):
+            payload[input_["name"]] = input_.get("value")
+        payload["username"] = username
+        payload["password"] = password
 
-    r = session.post(response.url, data=payload, headers=HEADERS)
-    soup = BeautifulSoup(r.text, "html.parser")
+        r = session.post(response.url, data=payload, headers=HEADERS)
+        soup = BeautifulSoup(r.text, "html.parser")
 
-    if soup.find("form", {"class": "cas__login-form"}):
-        raise ENTLoginError(
-            f"Fail to connect with CAS {url} : probably wrong login information"
-        )
+        if soup.find("form", {"class": "cas__login-form"}):
+            raise ENTLoginError(
+                f"Fail to connect with CAS {url} : probably wrong login information"
+            )
 
-    return session.cookies
+        return session.cookies
 
 
 def _open_ent_ng(
@@ -190,17 +190,16 @@ def _open_ent_ng(
     log.debug(f"[ENT {url}] Logging in with {username}")
 
     # ENT Connection
-    session = requests.Session()
+    with requests.Session() as session:
+        payload = {"email": username, "password": password}
+        r = session.post(url, headers=HEADERS, data=payload)
 
-    payload = {"email": username, "password": password}
-    r = session.post(url, headers=HEADERS, data=payload)
+        if "login" in r.url:
+            raise ENTLoginError(
+                f"Fail to connect with Open NG {url} : probably wrong login information"
+            )
 
-    if "login" in r.url:
-        raise ENTLoginError(
-            f"Fail to connect with Open NG {url} : probably wrong login information"
-        )
-
-    return session.cookies
+        return session.cookies
 
 
 def _open_ent_ng_edu(
@@ -233,22 +232,23 @@ def _open_ent_ng_edu(
         "https://educonnect.education.gouv.fr/idp/profile/SAML2/Unsolicited/SSO"
     )
 
-    session = requests.Session()
+    with requests.Session() as session:
+        params = {"providerId": f"{domain}/auth/saml/metadata/idp.xml"}
 
-    params = {"providerId": f"{domain}/auth/saml/metadata/idp.xml"}
+        response = session.get(ent_login_page, params=params, headers=HEADERS)
+        response = _educonnect(
+            session, username, password, response.url, exceptions=False
+        )
 
-    response = session.get(ent_login_page, params=params, headers=HEADERS)
-    response = _educonnect(session, username, password, response.url, exceptions=False)
+        if not response:
+            log.debug(f"Fail to connect with EduConnect, trying with Open NG")
+            return _open_ent_ng(username, password, f"{domain}/auth/login")
 
-    if not response:
-        log.debug(f"Fail to connect with EduConnect, trying with Open NG")
-        return _open_ent_ng(username, password, f"{domain}/auth/login")
+        elif "login" in response.url:
+            log.debug(f"Fail to connect with EduConnect, trying with Open NG")
+            return _open_ent_ng(username, password, response.url)
 
-    elif "login" in response.url:
-        log.debug(f"Fail to connect with EduConnect, trying with Open NG")
-        return _open_ent_ng(username, password, response.url)
-
-    return session.cookies
+        return session.cookies
 
 
 def _wayf(
@@ -291,20 +291,19 @@ def _wayf(
     ent_login_page = f"{domain}/discovery/WAYF"
 
     # ENT Connection
-    session = requests.Session()
+    with requests.Session() as session:
+        params = {
+            "entityID": entityID,
+            "returnX": returnX,
+            "returnIDParam": "entityID",
+            "action": "selection",
+            "origin": "https://educonnect.education.gouv.fr/idp",
+        }
 
-    params = {
-        "entityID": entityID,
-        "returnX": returnX,
-        "returnIDParam": "entityID",
-        "action": "selection",
-        "origin": "https://educonnect.education.gouv.fr/idp",
-    }
+        response = session.get(ent_login_page, params=params, headers=HEADERS)
+        _educonnect(session, username, password, response.url)
 
-    response = session.get(ent_login_page, params=params, headers=HEADERS)
-    _educonnect(session, username, password, response.url)
-
-    return session.cookies
+        return session.cookies
 
 
 @typing.no_type_check
@@ -334,30 +333,30 @@ def _oze_ent(
     log.debug(f"[ENT {url}] Logging in with {username}")
 
     # ENT Connection
-    session = requests.Session()
-    response = session.get(url, headers=HEADERS)
+    with requests.Session() as session:
+        response = session.get(url, headers=HEADERS)
 
-    domain = urlparse(url).netloc
+        domain = urlparse(url).netloc
 
-    if not domain in username:
-        username = f"{username}@{domain}"
+        if domain not in username:
+            username = f"{username}@{domain}"
 
-    soup = BeautifulSoup(response.text, "html.parser")
-    form = soup.find("form", {"id": "auth_form"})
-    payload = {}
-    for input_ in form.findAll("input"):
-        payload[input_["name"]] = input_.get("value")
-    payload["username"] = username
-    payload["password"] = password
+        soup = BeautifulSoup(response.text, "html.parser")
+        form = soup.find("form", {"id": "auth_form"})
+        payload = {}
+        for input_ in form.findAll("input"):
+            payload[input_["name"]] = input_.get("value")
+        payload["username"] = username
+        payload["password"] = password
 
-    r = session.post(response.url, data=payload, headers=HEADERS)
+        r = session.post(response.url, data=payload, headers=HEADERS)
 
-    if "auth_form" in r.text:
-        raise ENTLoginError(
-            f"Fail to connect with Oze ENT {url} : probably wrong login information"
-        )
+        if "auth_form" in r.text:
+            raise ENTLoginError(
+                f"Fail to connect with Oze ENT {url} : probably wrong login information"
+            )
 
-    return session.cookies
+        return session.cookies
 
 
 @typing.no_type_check
@@ -389,23 +388,23 @@ def _simple_auth(
     log.debug(f"[ENT {url}] Logging in with {username}")
 
     # ENT Connection
-    session = requests.Session()
-    response = session.get(url, headers=HEADERS)
+    with requests.Session() as session:
+        response = session.get(url, headers=HEADERS)
 
-    soup = BeautifulSoup(response.text, "html.parser")
-    form = soup.find("form", form_attr)
-    payload = {}
-    for input_ in form.findAll("input"):
-        payload[input_["name"]] = input_.get("value")
-    payload["username"] = username
-    payload["password"] = password
+        soup = BeautifulSoup(response.text, "html.parser")
+        form = soup.find("form", form_attr)
+        payload = {}
+        for input_ in form.findAll("input"):
+            payload[input_["name"]] = input_.get("value")
+        payload["username"] = username
+        payload["password"] = password
 
-    r = session.post(response.url, data=payload, headers=HEADERS)
-    soup = BeautifulSoup(r.text, "html.parser")
+        r = session.post(response.url, data=payload, headers=HEADERS)
+        soup = BeautifulSoup(r.text, "html.parser")
 
-    if soup.find("form", form_attr):
-        raise ENTLoginError(
-            f"Fail to connect with {url} : probably wrong login information"
-        )
+        if soup.find("form", form_attr):
+            raise ENTLoginError(
+                f"Fail to connect with {url} : probably wrong login information"
+            )
 
-    return session.cookies
+        return session.cookies
