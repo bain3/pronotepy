@@ -79,6 +79,8 @@ class Util:
     @staticmethod
     def date_parse(formatted_date: str) -> datetime.date:
         """convert date to a datetime.date object"""
+        formatted_date = re.sub(r"([a-zA-Z ]*)", "", formatted_date, 0)
+
         if re.match(r"\d{2}/\d{2}/\d{4}$", formatted_date):
             return datetime.datetime.strptime(formatted_date, "%d/%m/%Y").date()
         elif re.match(r"\d{2}/\d{2}/\d{2}$", formatted_date):
@@ -89,6 +91,9 @@ class Util:
             ).date()
         elif re.match(r"\d{2}/\d{2}/\d{2} \d{2}h\d{2}$", formatted_date):
             return datetime.datetime.strptime(formatted_date, "%d/%m/%y %Hh%M").date()
+        elif re.match(r"\d{2}/\d{2}", formatted_date):
+            formatted_date += f"/{datetime.date.today().year}"
+            return datetime.datetime.strptime(formatted_date, "%d/%m/%Y").date()
         else:
             raise DateParsingError("Could not parse date", formatted_date)
 
@@ -1102,13 +1107,15 @@ class Discussion(Object):
 
         self.id: str = self._resolver(str, "messageFenetre", "V", "N")
         self.subject: str = self._resolver(str, "objet")
-        self.creator: str = self._resolver(str, "initiateur")
+        self.creator: str = self._resolver(
+            str, "initiateur", strict=False
+        ) or self._resolver(str, "public")
         self.messages: List[Message] = self._resolver(
             lambda l: [Message.get(self._client, m["N"]) for m in l],
             "listePossessionsMessages",
             "V",
         )
-        self.unread: int = self._resolver(int, "nbNonLus")
+        self.unread: int = self._resolver(int, "nbNonLus", default=0)
         self.close: bool = self._resolver(bool, "ferme", default=False)
         self.date: datetime.date = self._resolver(Util.date_parse, "libelleDate")
 
