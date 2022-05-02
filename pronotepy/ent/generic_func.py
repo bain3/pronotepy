@@ -95,24 +95,23 @@ def _cas_edu(
     log.debug(f"[ENT {url}] Logging in with {username}")
 
     # ENT Connection
-    session = requests.Session()
+    with requests.Session() as session:
+        response = session.get(url, headers=HEADERS)
 
-    response = session.get(url, headers=HEADERS)
+        if redirect_form:
+            soup = BeautifulSoup(response.text, "html.parser")
+            payload = {
+                "RelayState": soup.find("input", {"name": "RelayState"})["value"],
+                "SAMLRequest": soup.find("input", {"name": "SAMLRequest"})["value"],
+            }
 
-    if redirect_form:
-        soup = BeautifulSoup(response.text, "html.parser")
-        payload = {
-            "RelayState": soup.find("input", {"name": "RelayState"})["value"],
-            "SAMLRequest": soup.find("input", {"name": "SAMLRequest"})["value"],
-        }
+            response = session.post(
+                soup.find("form")["action"], data=payload, headers=HEADERS
+            )
 
-        response = session.post(
-            soup.find("form")["action"], data=payload, headers=HEADERS
-        )
+        _educonnect(session, username, password, response.url)
 
-    _educonnect(session, username, password, response.url)
-
-    return session.cookies
+        return session.cookies
 
 
 @typing.no_type_check
