@@ -134,7 +134,7 @@ lyceeconnecte_aquitaine = partial(_open_ent_ng_edu, domain="https://lyceeconnect
 
 """WAYF"""
 
-ent_elyco = partial(_wayf, domain="https://cas3.e-lyco.fr")
+ent_elyco = partial(_wayf, domain="https://cas3.e-lyco.fr", redirect_form=False)
 
 ent2d_bordeaux = partial(
     _wayf,
