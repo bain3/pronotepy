@@ -517,7 +517,7 @@ class File(Object):
         self.id: str = self._resolver(str, "N")
 
         padd = Padding.pad(
-            json.dumps({"N": self.id, "G": 1}).replace(" ", "").encode(), 16
+            json.dumps({"N": self.id, "Actif": True}).replace(" ", "").encode(), 16
         )
         magic_stuff = client.communication.encryption.aes_encrypt(padd).hex()
 
