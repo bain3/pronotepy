@@ -1197,6 +1197,16 @@ class ClientInfo:
         return self.raw_resource["L"]
 
     @property
+    def profile_picture(self) -> Optional[File]:
+        """
+        Profile picture of the client
+        """
+        if self.raw_resource.get("avecPhoto"):
+            return File(self._client, {'L': 'photo.jpg', 'N': self.raw_resource['N'], 'G': 1})
+        else:
+            return None
+
+    @property
     def delegue(self) -> List[str]:
         """
         list of classes of which the user is a delegue of
