@@ -296,7 +296,6 @@ class Period(Object):
         """Get grades from the period."""
         json_data = {"Periode": {"N": self.id, "L": self.name}}
         response = self._client.post("DernieresNotes", 198, json_data)
-        log.debug(response)
         grades = response["donneesSec"]["donnees"]["listeDevoirs"]["V"]
         return [Grade(g) for g in grades]
 

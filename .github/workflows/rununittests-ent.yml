@@ -1,0 +1,27 @@
+name: Run Unit Tests ENT
+
+on:
+  push:
+    paths:
+    - 'pronotepy/ent/**.py'
+    branches:
+      - master
+  pull_request:
+    paths:
+    - 'pronotepy/ent/**.py'
+    branches:
+      - master
+
+jobs:
+  run_unit_tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v1
+        with:
+          python-version: '3.7'
+      - name: Install package
+        run: python -m pip install .
+      - name: Run tests
+        run: python -m pronotepy.ent.test_ent
