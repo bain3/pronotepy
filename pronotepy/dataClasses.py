@@ -296,7 +296,6 @@ class Period(Object):
         """Get grades from the period."""
         json_data = {"Periode": {"N": self.id, "L": self.name}}
         response = self._client.post("DernieresNotes", 198, json_data)
-        log.debug(response)
         grades = response["donneesSec"]["donnees"]["listeDevoirs"]["V"]
         return [Grade(g) for g in grades]
 
@@ -492,18 +491,18 @@ class Grade(Object):
         del self._resolver
 
 
-class File(Object):
+class Attachment(Object):
     """
-    Represents a file uploaded to pronote.
+    Represents a attachment to homework for example
 
     Attributes
     ----------
     name : str
-        Name of the file.
+        Name of the file or url of the link.
     id : str
         id of the file (used internally and for url)
     url : str
-        url of the file
+        url of the file/link
     """
 
     __slots__ = ["name", "id", "_client", "url", "_data"]
@@ -515,17 +514,21 @@ class File(Object):
 
         self.name: str = self._resolver(str, "L")
         self.id: str = self._resolver(str, "N")
+        self.type: int = self._resolver(int, "G")  # 0 link, 1 file
 
-        padd = Padding.pad(
-            json.dumps({"N": self.id, "G": 1}).replace(" ", "").encode(), 16
-        )
-        magic_stuff = client.communication.encryption.aes_encrypt(padd).hex()
+        if self.type == 0:
+            self.url = self.name
+        else:
+            padd = Padding.pad(
+                json.dumps({"N": self.id, "Actif": True}).replace(" ", "").encode(), 16
+            )
+            magic_stuff = client.communication.encryption.aes_encrypt(padd).hex()
 
-        self.url = (
-            f"{client.communication.root_site}/FichiersExternes/{magic_stuff}/"
-            + quote(self.name, safe="~()*!.'")
-            + f"?Session={client.attributes['h']}"
-        )
+            self.url = (
+                f"{client.communication.root_site}/FichiersExternes/{magic_stuff}/"
+                + quote(self.name, safe="~()*!.'")
+                + f"?Session={client.attributes['h']}"
+            )
 
         self._data = None
 
@@ -540,16 +543,17 @@ class File(Object):
         file_name : str
             file name
         """
-        response = self._client.communication.session.get(self.url)
-        if not file_name:
-            file_name = self.name
-        if response.status_code != 200:
-            raise FileNotFoundError(
-                "The file was not found on pronote. The url may be badly formed."
-            )
-        with open(file_name, "wb") as handle:
-            for block in response.iter_content(1024):
-                handle.write(block)
+        if self.type == 1:
+            response = self._client.communication.session.get(self.url)
+            if not file_name:
+                file_name = self.name
+            if response.status_code != 200:
+                raise FileNotFoundError(
+                    "The file was not found on pronote. The url may be badly formed."
+                )
+            with open(file_name, "wb") as handle:
+                for block in response.iter_content(1024):
+                    handle.write(block)
 
     @property
     def data(self) -> bytes:
@@ -595,9 +599,9 @@ class LessonContent(Object):
         del self._resolver
 
     @property
-    def files(self) -> List[File]:
+    def files(self) -> List[Attachment]:
         """Get all the attached files from the lesson"""
-        return [File(self._client, jsn) for jsn in self._files]
+        return [Attachment(self._client, jsn) for jsn in self._files]
 
 
 class Lesson(Object):
@@ -852,9 +856,9 @@ class Homework(Object):
         self.done = status
 
     @property
-    def files(self) -> List[File]:
+    def files(self) -> List[Attachment]:
         """Get all the files and links attached to the homework"""
-        return [File(self._client, jsn) for jsn in self._files]  # type: ignore
+        return [Attachment(self._client, jsn) for jsn in self._files]  # type: ignore
 
 
 class Information(Object):
@@ -1195,6 +1199,18 @@ class ClientInfo:
         Name of the client
         """
         return self.raw_resource["L"]
+
+    @property
+    def profile_picture(self) -> Optional[Attachment]:
+        """
+        Profile picture of the client
+        """
+        if self.raw_resource.get("avecPhoto"):
+            return Attachment(
+                self._client, {"L": "photo.jpg", "N": self.raw_resource["N"], "G": 1}
+            )
+        else:
+            return None
 
     @property
     def delegue(self) -> List[str]:

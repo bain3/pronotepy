@@ -83,6 +83,8 @@ def _cas_edu(
         password
     url: str
         url of the ent login page
+    redirect_form : bool
+        True if the site use JS redirection
 
     Returns
     -------
@@ -250,12 +252,14 @@ def _open_ent_ng_edu(
         return session.cookies
 
 
+@typing.no_type_check
 def _wayf(
     username: str,
     password: str,
     domain: str = "",
     entityID: str = "",
     returnX: str = "",
+    redirect_form: bool = True,
 ) -> requests.cookies.RequestsCookieJar:
     """
     Generic function for WAYF
@@ -272,6 +276,8 @@ def _wayf(
         request param entityID
     returnX : str
         request param returnX
+    redirect_form : bool
+        True if the site use JS redirection
 
     Returns
     -------
@@ -300,6 +306,18 @@ def _wayf(
         }
 
         response = session.get(ent_login_page, params=params, headers=HEADERS)
+
+        if redirect_form:
+            soup = BeautifulSoup(response.text, "html.parser")
+            payload = {
+                "RelayState": soup.find("input", {"name": "RelayState"})["value"],
+                "SAMLRequest": soup.find("input", {"name": "SAMLRequest"})["value"],
+            }
+
+            response = session.post(
+                soup.find("form")["action"], data=payload, headers=HEADERS
+            )
+
         _educonnect(session, username, password, response.url)
 
         return session.cookies
