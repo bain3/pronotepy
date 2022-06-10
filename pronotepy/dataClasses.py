@@ -449,6 +449,12 @@ class Grade(Object):
         the coefficient of the grade
     comment : str
         the comment on the grade description
+    is_bonus : bool
+        is the grade bonus : only points above 10 count
+    is_optionnal : bool
+        is the grade optionnal : the grade only counts if it increases the average
+    is_out_of_20: bool
+        is the grade out of 20. Example 8/10 -> 16/20
     """
 
     __slots__ = [
@@ -464,6 +470,9 @@ class Grade(Object):
         "min",
         "coefficient",
         "comment",
+        "bonus",
+        "is_optionnal",
+        "is_out_of_20",
     ]
 
     def __init__(self, json_dict: dict) -> None:
@@ -473,7 +482,7 @@ class Grade(Object):
         self.grade: str = self._resolver(Util.grade_parse, "note", "V")
         self.out_of: str = self._resolver(Util.grade_parse, "bareme", "V")
         self.default_out_of: str = self._resolver(
-            Util.grade_parse, "baremeParDefault", "V", strict=False
+            Util.grade_parse, "baremeParDefaut", "V", strict=False
         )
         self.date: datetime.date = self._resolver(Util.date_parse, "date", "V")
         self.subject: Subject = self._resolver(Subject, "service", "V")
@@ -487,6 +496,11 @@ class Grade(Object):
         self.min: str = self._resolver(Util.grade_parse, "noteMin", "V")
         self.coefficient: str = self._resolver(str, "coefficient")
         self.comment: str = self._resolver(str, "commentaire")
+        self.is_bonus: bool = self._resolver(bool, "estBonus")
+        self.is_optionnal: bool = (
+            self._resolver(bool, "estFacultatif") and not self.is_bonus
+        )
+        self.is_out_of_20: bool = self._resolver(bool, "estRamenerSur20")
 
         del self._resolver
 
