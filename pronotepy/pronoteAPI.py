@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import json as jsn
+import re
 from logging import getLogger, DEBUG
 import secrets
 import threading
@@ -248,7 +249,12 @@ class _Communication(object):
 
         onload = parsed.find(id="id_body")
         if onload:
-            onload_c = onload["onload"][14:-37]  # type: ignore
+            match = re.search(r"Start ?\({(?P<param>[^}]*)}\)", onload["onload"])  # type: ignore
+            if not match:
+                raise PronoteAPIError(
+                    "Page html is different than expected. Be sure that pronote_url is the direct url to your pronote page."
+                )
+            onload_c = match.group("param")
         elif b"IP" in html:
             raise PronoteAPIError("Your IP address is suspended.")
         else:
@@ -259,6 +265,9 @@ class _Communication(object):
         for attr in onload_c.split(","):  # type: ignore
             key, value = attr.split(":")
             attributes[key] = value.replace("'", "")
+
+        if "MR" not in attributes or "ER" not in attributes:
+            return _Communication._parse_html(html)
         return attributes
 
     @staticmethod
