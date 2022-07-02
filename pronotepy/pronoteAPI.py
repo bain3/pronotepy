@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 import json as jsn
+import re
 from logging import getLogger, DEBUG
 import secrets
 import threading
@@ -63,15 +64,29 @@ class _Communication(object):
             "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:73.0) Gecko/20100101 Firefox/73.0",
         }
 
-        # get rsa keys and session id
-        log.debug(f"Requesing html: {self.root_site}/{self.html_page}")
-        get_response = self.session.request(
-            "GET",
-            f"{self.root_site}/{self.html_page}",
-            headers=headers,
-            cookies=self.cookies,
-        )
-        self.attributes = self._parse_html(get_response.content)
+        # get rsa keys and session id, retry 3 times
+        for _ in range(3):
+            try:
+                log.debug(f"Requesing html: {self.root_site}/{self.html_page}")
+                get_response = self.session.request(
+                    "GET",
+                    f"{self.root_site}/{self.html_page}",
+                    headers=headers,
+                    cookies=self.cookies,
+                )
+                self.attributes = self._parse_html(get_response.content)
+            except ValueError:
+                log.warning(
+                    "[_Communication.initialise] Failed to parse html, retrying..."
+                )
+                continue  # retry
+            else:
+                break
+        else:
+            raise PronoteAPIError(
+                "Unable to connect to pronote, please try again later"
+            )
+
         # uuid
         self.encryption.rsa_keys = {
             "MR": self.attributes["MR"],
@@ -235,8 +250,7 @@ class _Communication(object):
         key = MD5.new(_enBytes(work.decode()))
         self.encryption.aes_key = key.digest()
 
-    @staticmethod
-    def _parse_html(html: bytes) -> dict:
+    def _parse_html(self, html: bytes) -> dict:
         """Parses the html for the RSA keys
 
         Returns
@@ -248,7 +262,12 @@ class _Communication(object):
 
         onload = parsed.find(id="id_body")
         if onload:
-            onload_c = onload["onload"][14:-37]  # type: ignore
+            match = re.search(r"Start ?\({(?P<param>[^}]*)}\)", onload["onload"])  # type: ignore
+            if not match:
+                raise PronoteAPIError(
+                    "Page html is different than expected. Be sure that pronote_url is the direct url to your pronote page."
+                )
+            onload_c = match.group("param")
         elif b"IP" in html:
             raise PronoteAPIError("Your IP address is suspended.")
         else:
@@ -259,6 +278,10 @@ class _Communication(object):
         for attr in onload_c.split(","):  # type: ignore
             key, value = attr.split(":")
             attributes[key] = value.replace("'", "")
+
+        if "MR" not in attributes or "ER" not in attributes:
+            raise ValueError("internal exception to retry -> cannot prase html")
+
         return attributes
 
     @staticmethod
