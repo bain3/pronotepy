@@ -236,8 +236,7 @@ class _Communication(object):
         key = MD5.new(_enBytes(work.decode()))
         self.encryption.aes_key = key.digest()
 
-    @staticmethod
-    def _parse_html(html: bytes) -> dict:
+    def _parse_html(self, html: bytes) -> dict:
         """Parses the html for the RSA keys
 
         Returns
@@ -267,7 +266,26 @@ class _Communication(object):
             attributes[key] = value.replace("'", "")
 
         if "MR" not in attributes or "ER" not in attributes:
-            return _Communication._parse_html(html)
+            # some headers to be real
+            headers = {
+                "connection": "keep-alive",
+                "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:73.0) Gecko/20100101 Firefox/73.0",
+            }
+
+            log.debug(f"Requesing html: {self.root_site}/{self.html_page}")
+            get_response = self.session.request(
+                "GET",
+                f"{self.root_site}/{self.html_page}",
+                headers=headers,
+                cookies=self.cookies,
+            )
+            try:
+                return self._parse_html(get_response.content)
+            except RuntimeError:
+                raise PronoteAPIError(
+                    "Unable to connect to Pronote Please try again later"
+                )
+
         return attributes
 
     @staticmethod
