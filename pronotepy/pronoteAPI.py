@@ -64,15 +64,29 @@ class _Communication(object):
             "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:73.0) Gecko/20100101 Firefox/73.0",
         }
 
-        # get rsa keys and session id
-        log.debug(f"Requesing html: {self.root_site}/{self.html_page}")
-        get_response = self.session.request(
-            "GET",
-            f"{self.root_site}/{self.html_page}",
-            headers=headers,
-            cookies=self.cookies,
-        )
-        self.attributes = self._parse_html(get_response.content)
+        # get rsa keys and session id, retry 3 times
+        for _ in range(3):
+            try:
+                log.debug(f"Requesing html: {self.root_site}/{self.html_page}")
+                get_response = self.session.request(
+                    "GET",
+                    f"{self.root_site}/{self.html_page}",
+                    headers=headers,
+                    cookies=self.cookies,
+                )
+                self.attributes = self._parse_html(get_response.content)
+            except ValueError:
+                log.warning(
+                    "[_Communication.initialise] Failed to parse html, retrying..."
+                )
+                continue  # retry
+            else:
+                break
+        else:
+            raise PronoteAPIError(
+                "Unable to connect to pronote, please try again later"
+            )
+
         # uuid
         self.encryption.rsa_keys = {
             "MR": self.attributes["MR"],
@@ -266,25 +280,7 @@ class _Communication(object):
             attributes[key] = value.replace("'", "")
 
         if "MR" not in attributes or "ER" not in attributes:
-            # some headers to be real
-            headers = {
-                "connection": "keep-alive",
-                "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:73.0) Gecko/20100101 Firefox/73.0",
-            }
-
-            log.debug(f"Requesing html: {self.root_site}/{self.html_page}")
-            get_response = self.session.request(
-                "GET",
-                f"{self.root_site}/{self.html_page}",
-                headers=headers,
-                cookies=self.cookies,
-            )
-            try:
-                return self._parse_html(get_response.content)
-            except RuntimeError:
-                raise PronoteAPIError(
-                    "Unable to connect to Pronote Please try again later"
-                )
+            raise ValueError("internal exception to retry -> cannot prase html")
 
         return attributes
 
