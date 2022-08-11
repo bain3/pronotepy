@@ -13,6 +13,9 @@ client = pronotepy.Client('https://demo.index-education.net/pronote/eleve.html',
 if client.logged_in: # check if client successfully logged in
     # get the all the periods (may return multiple types like trimesters and semesters but it doesn't really matter
     # the api will get it anyway)
+    nom_utilisateur = client.info.name # get users name
+    print(f'Logged in as {nom_utilisateur}')
+    
     periods = client.periods
 
     for period in periods:
