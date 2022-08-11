@@ -589,7 +589,9 @@ class Client(_ClientBase):
         response = self.post("PageActualites", 8, {"estAuteur": False})
         info = [
             dataClasses.Information(self, info)
-            for info in response["donneesSec"]["donnees"]["listeActualites"]["V"]
+            for info in response["donneesSec"]["donnees"]["listeModesAff"][0][
+                "listeActualites"
+            ]["V"]
         ]
 
         if only_unread:
