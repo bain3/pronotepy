@@ -586,7 +586,9 @@ class Client(_ClientBase):
         List[Information]
             Information
         """
-        response = self.post("PageActualites", 8, {"modesAffActus": {"_T": 26, "V": "[0..3]"}})
+        response = self.post(
+            "PageActualites", 8, {"modesAffActus": {"_T": 26, "V": "[0..3]"}}
+        )
         info = []
         for liste in response["donneesSec"]["donnees"]["listeModesAff"]:
             info += [

@@ -940,7 +940,9 @@ class Information(Object):
         self.category: str = self._resolver(str, "categorie", "V", "L")
         self.survey: bool = self._resolver(bool, "estSondage")
         self.template: bool = self._resolver(bool, "estModele", default=False)
-        self.shared_template: bool = self._resolver(bool, "estModelePartage", default=False)
+        self.shared_template: bool = self._resolver(
+            bool, "estModelePartage", default=False
+        )
         self.anonymous_response: bool = self._resolver(bool, "reponseAnonyme")
 
         del self._resolver
