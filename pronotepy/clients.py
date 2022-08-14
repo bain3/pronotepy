@@ -586,13 +586,13 @@ class Client(_ClientBase):
         List[Information]
             Information
         """
-        response = self.post("PageActualites", 8, {"estAuteur": False})
-        info = [
-            dataClasses.Information(self, info)
-            for info in response["donneesSec"]["donnees"]["listeModesAff"][0][
-                "listeActualites"
-            ]["V"]
-        ]
+        response = self.post("PageActualites", 8, {"modesAffActus": {"_T": 26, "V": "[0..3]"}})
+        info = []
+        for liste in response["donneesSec"]["donnees"]["listeModesAff"]:
+            info += [
+                dataClasses.Information(self, info)
+                for info in liste["listeActualites"]["V"]
+            ]
 
         if only_unread:
             info = [i for i in info if not i.read]
