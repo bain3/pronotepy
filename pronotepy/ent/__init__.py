@@ -40,4 +40,4 @@ from .ent import (
     paris_classe_numerique,
     val_doise,
 )
-from .complex_ent import ac_rennes, ac_reunion
+from .complex_ent import ac_rennes
