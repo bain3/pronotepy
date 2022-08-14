@@ -71,6 +71,12 @@ ac_orleans_tours = partial(
     redirect_form=False,
 )
 
+ac_poitiers = partial(
+    _cas_edu,
+    url="https://sp-ts.ac-poitiers.fr/dispatcher/index2.php",
+    redirect_form=False,
+)
+
 cas_agora06_educonnect = partial(
     _cas_edu, url="https://cas.agora06.fr/login?selection=EDU"
 )

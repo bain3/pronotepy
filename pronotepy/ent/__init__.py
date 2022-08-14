@@ -3,6 +3,7 @@ from .ent import (
     ac_grenoble,
     ac_lyon,
     ac_orleans_tours,
+    ac_poitiers,
     ac_reims,
     atrium_sud,
     cas_agora06,
