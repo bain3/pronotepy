@@ -931,10 +931,10 @@ class Information(Object):
         self.creation_date: datetime.datetime = self._resolver(
             Util.datetime_parse, "dateCreation", "V"
         )
-        self.start_date: datetime.datetime = self._resolver(
+        self.start_date: Optional[datetime.datetime] = self._resolver(
             Util.datetime_parse, "dateDebut", "V", strict=False
         )
-        self.end_date: datetime.datetime = self._resolver(
+        self.end_date: Optional[datetime.datetime] = self._resolver(
             Util.datetime_parse, "dateFin", "V", strict=False
         )
         self.category: str = self._resolver(str, "categorie", "V", "L")
