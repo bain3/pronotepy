@@ -5,6 +5,7 @@ from functools import partial
 
 import pronotepy
 from pronotepy import ent
+import logging
 
 
 class TestENT(unittest.TestCase):
@@ -22,4 +23,5 @@ class TestENT(unittest.TestCase):
 
 
 if __name__ == "__main__":
+    logging.debug("Testing")
     unittest.main()

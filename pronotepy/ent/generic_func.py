@@ -102,14 +102,17 @@ def _cas_edu(
 
         if redirect_form:
             soup = BeautifulSoup(response.text, "html.parser")
-            payload = {
-                "RelayState": soup.find("input", {"name": "RelayState"})["value"],
-                "SAMLRequest": soup.find("input", {"name": "SAMLRequest"})["value"],
-            }
+            input_SAMLResponse = soup.find("input", {"name": "SAMLResponse"})
+            input_relayState = soup.find("input", {"name": "RelayState"})
+            if input_SAMLResponse and input_relayState:
+                payload = {
+                    "SAMLResponse": input_SAMLResponse["value"],
+                    "RelayState": input_relayState["value"],
+                }
 
-            response = session.post(
-                soup.find("form")["action"], data=payload, headers=HEADERS
-            )
+                response = session.post(
+                    soup.find("form")["action"], data=payload, headers=HEADERS
+                )
 
         _educonnect(session, username, password, response.url)
 

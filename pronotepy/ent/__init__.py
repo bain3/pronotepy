@@ -3,6 +3,7 @@ from .ent import (
     ac_grenoble,
     ac_lyon,
     ac_orleans_tours,
+    ac_poitiers,
     ac_reims,
     atrium_sud,
     cas_agora06,
@@ -39,4 +40,4 @@ from .ent import (
     paris_classe_numerique,
     val_doise,
 )
-from .complex_ent import ac_rennes, ac_reunion
+from .complex_ent import ac_rennes

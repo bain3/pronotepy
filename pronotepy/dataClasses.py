@@ -931,14 +931,18 @@ class Information(Object):
         self.creation_date: datetime.datetime = self._resolver(
             Util.datetime_parse, "dateCreation", "V"
         )
-        self.start_date: datetime.datetime = self._resolver(
-            Util.datetime_parse, "dateDebut", "V"
+        self.start_date: Optional[datetime.datetime] = self._resolver(
+            Util.datetime_parse, "dateDebut", "V", strict=False
         )
-        self.end_date: datetime.datetime = self._resolver(
-            Util.datetime_parse, "dateFin", "V"
+        self.end_date: Optional[datetime.datetime] = self._resolver(
+            Util.datetime_parse, "dateFin", "V", strict=False
         )
         self.category: str = self._resolver(str, "categorie", "V", "L")
         self.survey: bool = self._resolver(bool, "estSondage")
+        self.template: bool = self._resolver(bool, "estModele", default=False)
+        self.shared_template: bool = self._resolver(
+            bool, "estModelePartage", default=False
+        )
         self.anonymous_response: bool = self._resolver(bool, "reponseAnonyme")
 
         del self._resolver
