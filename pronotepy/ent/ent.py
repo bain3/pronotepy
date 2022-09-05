@@ -132,6 +132,12 @@ ent_hdf = partial(_open_ent_ng_edu, domain="https://enthdf.fr")
 
 ent_somme = ent_hdf
 
+ent_var = partial(
+    _open_ent_ng_edu,
+    domain="https://moncollege-ent.var.fr/",
+    providerId="urn:fi:ent:prod-cd83-edu:1.0",
+)
+
 l_normandie = partial(_open_ent_ng_edu, domain="https://ent.l-educdenormandie.fr")
 
 lyceeconnecte_aquitaine = partial(_open_ent_ng_edu, domain="https://lyceeconnecte.fr/")
