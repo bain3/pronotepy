@@ -59,7 +59,9 @@ occitanie_montpellier = partial(
     _cas, url="https://cas.mon-ent-occitanie.fr/login?selection=CSES-ENT_parent_eleve"
 )
 
-val_doise = partial(_cas, url="https://cas.moncollege.valdoise.fr/login")
+val_doise = partial(
+    _cas, url="https://cas.moncollege.valdoise.fr/login?selection=eleveparent"
+)
 
 """CAS with EduConnect"""
 
