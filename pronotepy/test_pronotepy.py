@@ -129,7 +129,8 @@ class TestInformation(unittest.TestCase):
         information = client.information_and_surveys(date_from=start, date_to=end)
         for info in information:
             self.assertTrue(
-                start <= info.start_date <= end, msg="date outside the research limits"
+                info.start_date is not None and start <= info.start_date <= end,
+                msg="date outside the research limits",
             )
 
 

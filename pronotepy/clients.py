@@ -565,8 +565,8 @@ class Client(_ClientBase):
 
     def information_and_surveys(
         self,
-        date_from: datetime.datetime = None,
-        date_to: datetime.datetime = None,
+        date_from: Optional[datetime.datetime] = None,
+        date_to: Optional[datetime.datetime] = None,
         only_unread: bool = False,
     ) -> List[dataClasses.Information]:
         """
@@ -577,9 +577,9 @@ class Client(_ClientBase):
         only_unread : bool
             Return only unread information
         date_from : datetime.datetime
-            The first date
+            Since datetime (included)
         date_to : datetime.datetime
-            The second date
+            Until datetime (excluded)
 
         Returns
         -------
@@ -600,15 +600,25 @@ class Client(_ClientBase):
             info = [i for i in info if not i.read]
 
         if date_from is not None:
-            info = [i for i in info if i.start_date >= date_from]
+            info = list(
+                filter(
+                    lambda i: i.start_date is not None and date_from <= i.start_date,  # type: ignore
+                    info,
+                )
+            )
 
         if date_to is not None:
-            info = [i for i in info if i.start_date <= date_to]
+            info = list(
+                filter(
+                    lambda i: i.start_date is not None and i.start_date < date_to,  # type: ignore
+                    info,
+                )
+            )
 
         return info
 
     def menus(
-        self, date_from: datetime.date, date_to: datetime.date = None
+        self, date_from: datetime.date, date_to: Optional[datetime.date] = None
     ) -> List[dataClasses.Menu]:
         """
         Get menus between two given points.
