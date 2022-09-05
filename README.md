@@ -1,5 +1,3 @@
-<p>⚠️ Project status: Maintenance mode (accepting PRs, no active dev.). <b>Looking for maintainers!</b></p>
-
 <br />
 <p align="center">
   <a href="https://github.com/bain3/pronotepy">
