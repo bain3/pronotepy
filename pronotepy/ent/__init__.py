@@ -25,6 +25,7 @@ from .ent import (
     ent_hdf,
     ent_mayotte,
     ent_somme,
+    ent_var,
     ile_de_france,
     l_normandie,
     laclasse_educonnect,

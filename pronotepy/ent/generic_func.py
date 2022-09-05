@@ -205,7 +205,7 @@ def _open_ent_ng(
 
 
 def _open_ent_ng_edu(
-    username: str, password: str, domain: str = ""
+    username: str, password: str, domain: str = "", providerId: str = ""
 ) -> requests.cookies.RequestsCookieJar:
     """
     ENT which has an authentication like https://connexion.l-educdenormandie.fr/
@@ -226,6 +226,8 @@ def _open_ent_ng_edu(
     """
     if not domain:
         raise ENTLoginError("Missing domain attribute")
+    if not providerId:
+        providerId = f"{domain}/auth/saml/metadata/idp.xml"
 
     log.debug(f"[ENT {domain}] Logging in with {username}")
 
@@ -235,7 +237,7 @@ def _open_ent_ng_edu(
     )
 
     with requests.Session() as session:
-        params = {"providerId": f"{domain}/auth/saml/metadata/idp.xml"}
+        params = {"providerId": providerId}
 
         response = session.get(ent_login_page, params=params, headers=HEADERS)
         response = _educonnect(
