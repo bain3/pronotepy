@@ -29,8 +29,6 @@ ac_lyon = partial(
     url="https://cas.ent.auvergnerhonealpes.fr/login?selection=LYON-ATS_parent_eleve",
 )
 
-cas_agora06 = partial(_cas, url="https://cas.agora06.fr/login?selection=ATS-NICE")
-
 cas_arsene76 = partial(
     _cas, url="https://cas.arsene76.fr/login?selection=ATS_parent_eleve"
 )
@@ -77,9 +75,7 @@ ac_poitiers = partial(
     redirect_form=False,
 )
 
-cas_agora06_educonnect = partial(
-    _cas_edu, url="https://cas.agora06.fr/login?selection=EDU"
-)
+cas_agora06 = partial(_cas_edu, url="https://cas.agora06.fr/login?selection=EDU")
 
 cas_seinesaintdenis_edu = partial(
     _cas_edu,
