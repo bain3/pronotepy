@@ -7,7 +7,6 @@ from .ent import (
     ac_reims,
     atrium_sud,
     cas_agora06,
-    cas_agora06_educonnect,
     cas_arsene76,
     cas_cybercolleges42,
     cas_ent27,

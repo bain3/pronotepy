@@ -50,8 +50,7 @@ def _educonnect(
     # 2nd SAML Authentication
     soup = BeautifulSoup(response.text, "html.parser")
     input_SAMLResponse = soup.find("input", {"name": "SAMLResponse"})
-    input_relayState = soup.find("input", {"name": "RelayState"})
-    if not input_SAMLResponse or not input_relayState:
+    if not input_SAMLResponse:
         if exceptions:
             raise ENTLoginError(
                 "Fail to connect with EduConnect : probably wrong login information"
@@ -61,7 +60,6 @@ def _educonnect(
 
     payload = {
         "SAMLResponse": input_SAMLResponse["value"],
-        "RelayState": input_relayState["value"],
     }
 
     response = session.post(soup.find("form")["action"], headers=HEADERS, data=payload)
