@@ -77,6 +77,11 @@ ac_poitiers = partial(
     redirect_form=False,
 )
 
+ac_reunion = partial(
+    _cas_edu,
+    url="https://sso.ac-reunion.fr/saml/discovery/?idp_ident=https://educonnect.education.gouv.fr/idp",
+)
+
 cas_agora06 = partial(_cas_edu, url="https://cas.agora06.fr/login?selection=EDU")
 
 cas_seinesaintdenis_edu = partial(
@@ -118,6 +123,7 @@ ent_mayotte = partial(
 )
 
 ile_de_france = partial(_open_ent_ng, url="https://ent.iledefrance.fr/auth/login")
+
 neoconnect_guadeloupe = partial(
     _open_ent_ng, url="https://neoconnect.opendigitaleducation.com/auth/login"
 )

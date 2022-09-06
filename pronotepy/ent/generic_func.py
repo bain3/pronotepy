@@ -104,12 +104,14 @@ def _cas_edu(
         if redirect_form:
             soup = BeautifulSoup(response.text, "html.parser")
             input_SAMLRequest = soup.find("input", {"name": "SAMLRequest"})
-            input_relayState = soup.find("input", {"name": "RelayState"})
-            if input_SAMLRequest and input_relayState:
+            if input_SAMLRequest:
                 payload = {
                     "SAMLRequest": input_SAMLRequest["value"],
-                    "RelayState": input_relayState["value"],
                 }
+
+                input_relayState = soup.find("input", {"name": "RelayState"})
+                if input_relayState:
+                    payload["RelayState"] = input_relayState["value"]
 
                 response = session.post(
                     soup.find("form")["action"], data=payload, headers=HEADERS
