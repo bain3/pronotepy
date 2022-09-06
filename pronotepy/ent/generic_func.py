@@ -62,8 +62,11 @@ def _educonnect(
         "SAMLResponse": input_SAMLResponse["value"],
     }
 
-    response = session.post(soup.find("form")["action"], headers=HEADERS, data=payload)
-    return response
+    input_relayState = soup.find("input", {"name": "RelayState"})
+    if input_relayState:
+        payload["RelayState"] = input_relayState["value"]
+
+    return session.post(soup.find("form")["action"], headers=HEADERS, data=payload)
 
 
 @typing.no_type_check
@@ -100,13 +103,15 @@ def _cas_edu(
 
         if redirect_form:
             soup = BeautifulSoup(response.text, "html.parser")
-            input_SAMLResponse = soup.find("input", {"name": "SAMLResponse"})
-            input_relayState = soup.find("input", {"name": "RelayState"})
-            if input_SAMLResponse and input_relayState:
+            input_SAMLRequest = soup.find("input", {"name": "SAMLRequest"})
+            if input_SAMLRequest:
                 payload = {
-                    "SAMLResponse": input_SAMLResponse["value"],
-                    "RelayState": input_relayState["value"],
+                    "SAMLRequest": input_SAMLRequest["value"],
                 }
+
+                input_relayState = soup.find("input", {"name": "RelayState"})
+                if input_relayState:
+                    payload["RelayState"] = input_relayState["value"]
 
                 response = session.post(
                     soup.find("form")["action"], data=payload, headers=HEADERS

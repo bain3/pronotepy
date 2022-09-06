@@ -5,6 +5,7 @@ from .ent import (
     ac_orleans_tours,
     ac_poitiers,
     ac_reims,
+    ac_reunion,
     atrium_sud,
     cas_agora06,
     cas_arsene76,
