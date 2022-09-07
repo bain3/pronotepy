@@ -25,8 +25,8 @@ ac_grenoble = partial(
 )
 
 ac_lyon = partial(
-    _cas,
-    url="https://cas.ent.auvergnerhonealpes.fr/login?selection=LYON-ATS_parent_eleve",
+    _cas_edu,
+    url="https://cas.ent.auvergnerhonealpes.fr/login?selection=EDU",
 )
 
 cas_arsene76 = partial(
