@@ -23,7 +23,7 @@ from Crypto.Util import Padding
 
 if TYPE_CHECKING:
     from .clients import _ClientBase, Client
-from .exceptions import ParsingError, DateParsingError, UnsupportedOperation
+from .exceptions import DataError, ParsingError, DateParsingError, UnsupportedOperation
 
 log = logging.getLogger(__name__)
 
@@ -113,6 +113,20 @@ class Util:
     def html_parse(html_text: str) -> str:
         """remove tags from html text"""
         return unescape(re.sub(re.compile("<.*?>"), "", html_text))
+
+    @staticmethod
+    def place2time(listeHeures: List, place: int) -> datetime.time:
+        if place > len(listeHeures):
+            # might be wrong... works with demo
+            place = place % (len(listeHeures) - 1)
+        start_time = next(
+            filter(lambda x: x["G"] == place, listeHeures),
+            None,
+        )
+        if start_time is None:
+            raise ValueError(f"Could not find starting time for place {place}")
+        start_time = datetime.datetime.strptime(start_time["L"], "%Hh%M").time()
+        return start_time
 
 
 class Object:
@@ -354,7 +368,7 @@ class Period(Object):
     @property
     def absences(self) -> List[Absence]:
         """
-        Gets all absences in a given period.
+        Gets all absences from a given period.
 
         Returns
         -------
@@ -370,6 +384,26 @@ class Period(Object):
         response = self._client.post("PagePresence", 19, json_data)
         absences = response["donneesSec"]["donnees"]["listeAbsences"]["V"]
         return [Absence(a) for a in absences if a["G"] == 13]
+
+    @property
+    def punishments(self) -> List[Punishment]:
+        """
+        Gets all punishments from a given period.
+
+        Returns
+        -------
+        List[Punishment]
+            All the punishments given during the period
+        """
+        json_data = {
+            "periode": {"N": self.id, "L": self.name, "G": 2},
+            "DateDebut": {"_T": 7, "V": self.start.strftime("%d/%m/%Y %H:%M:%S")},
+            "DateFin": {"_T": 7, "V": self.end.strftime("%d/%m/%Y %H:%M:%S")},
+        }
+
+        response = self._client.post("PagePresence", 19, json_data)
+        absences = response["donneesSec"]["donnees"]["listeAbsences"]["V"]
+        return [Punishment(self._client, a) for a in absences if a["G"] == 41]
 
 
 class Average(Object):
@@ -728,15 +762,10 @@ class Lesson(Object):
         )
 
         # With the end "place" now known we can look up the ending time in func_options
-        end_time = next(
-            filter(
-                lambda x: x["G"] == end_place,
-                client.func_options["donneesSec"]["donnees"]["General"][
-                    "ListeHeuresFin"
-                ]["V"],
-            )
-        )
-        end_time = datetime.datetime.strptime(end_time["L"], "%Hh%M").time()
+        liste_heures = client.func_options["donneesSec"]["donnees"]["General"][
+            "ListeHeuresFin"
+        ]["V"]
+        end_time = Util.place2time(liste_heures, end_place)
         self.end: datetime.datetime = self.start.replace(
             hour=end_time.hour, minute=end_time.minute
         )
@@ -1844,3 +1873,138 @@ class Menu(Object):
         self._client = client
 
         del self._resolver
+
+
+class Punishment(Object):
+    """
+    Represents a punishment.
+
+    Attributes
+    ----------
+    id : str
+    given : datetime.datetime
+        Date and time when the punishment was given
+    exclusion : bool
+        If the punishment is an exclusion
+    during_lesson : bool
+    homework : str
+        Text description of the homework that was given as the punishment
+    homework_documents : List[Attachment]
+        Attached documents for homework
+    circumstances : str
+    circumstance_documents : List[Attachment]
+    nature : str
+        Text description of the nature of the punishment (ex. "Retenue")
+    reasons : List[str]
+        Text descriptions of the reasons for the punishment
+    giver : str
+        Name of the person that gave the punishment
+    schedule : List[Punishment.ScheduledPunishment]
+        List of scheduled date-times with durations
+    schedulable : bool
+    duration : datetime.timedelta
+    """
+
+    __slots__ = [
+        "given",
+        "exclusion",
+        "during_lesson",
+        "homework",
+        "incident",
+        "homework_documents",
+        "circumstances",
+        "circumstance_documents",
+        "nature",
+        "reasons",
+        "giver",
+        "schedule",
+        "schedulable",
+        "duration",
+    ]
+
+    class ScheduledPunishment(Object):
+        """
+        Represents a sheduled punishment.
+
+        Attributes
+        ----------
+        id : str
+        start : datetime.datetime
+        duration : datetime.timedelta
+        """
+
+        __slots__ = ["start", "duration"]
+
+        def __init__(self, client: _ClientBase, json_dict: dict) -> None:
+            super().__init__(json_dict)
+            self.id: str = self._resolver(str, "N")
+
+            # construct a full datetime from "date" and "placeExecution" fields
+            date = self._resolver(Util.date_parse, "date", "V")
+            place = self._resolver(int, "placeExecution")
+            liste_heures = client.func_options["donneesSec"]["donnees"]["General"][
+                "ListeHeures"
+            ]["V"]
+            try:
+                self.start: datetime.datetime = datetime.datetime.combine(
+                    date, Util.place2time(liste_heures, place)
+                )
+            except ValueError as e:
+                raise DataError(str(e))
+
+            self.duration: datetime.timedelta = self._resolver(
+                lambda v: datetime.timedelta(minutes=int(v)), "duree"
+            )
+
+            del self._resolver
+
+    def __init__(self, client: _ClientBase, json_dict: dict) -> None:
+        super().__init__(json_dict)
+        self.id: str = self._resolver(str, "N")
+
+        # construct a full datetime from "dateDemande" and "placeDemande" fields
+        date = self._resolver(Util.date_parse, "dateDemande", "V")
+        time_place = self._resolver(int, "placeDemande")
+        liste_heures = client.func_options["donneesSec"]["donnees"]["General"][
+            "ListeHeures"
+        ]["V"]
+        try:
+            self.given: datetime.datetime = datetime.datetime.combine(
+                date, Util.place2time(liste_heures, time_place)
+            )
+        except ValueError as e:
+            raise DataError(str(e))
+
+        self.exclusion: bool = self._resolver(bool, "estUneExclusion")
+        self.during_lesson: bool = self._resolver(bool, "horsCours")
+
+        self.homework: str = self._resolver(str, "travailAFaire")
+        self.homework_documents: List[Attachment] = self._resolver(
+            lambda x: [Attachment(client, a) for a in x], "documentsTAF", "V"
+        )
+
+        self.circumstances: str = self._resolver(str, "circonstances")
+        self.circumstance_documents: List[Attachment] = self._resolver(
+            lambda x: [Attachment(client, a) for a in x], "documentsCirconstances", "V"
+        )
+
+        # TODO: change to an enum (out of scope for this comment: change this kind of string to enums everywhere)
+        self.nature: str = self._resolver(str, "nature", "V", "L")
+        self.requires_parent: str = self._resolver(
+            str, "nature", "V", "estAvecARParent"
+        )
+
+        self.reasons: List[str] = self._resolver(
+            lambda x: [i["L"] for i in x], "listeMotifs", "V"
+        )
+        self.giver: str = self._resolver(str, "demandeur", "V", "L")
+
+        self.schedule: List[Punishment.ScheduledPunishment] = self._resolver(
+            lambda x: [Punishment.ScheduledPunishment(client, i) for i in x],
+            "programmation",
+            "V",
+        )
+        self.schedulable: bool = self._resolver(bool, "estProgrammable")
+        self.duration: datetime.timedelta = self._resolver(
+            lambda v: datetime.timedelta(minutes=int(v)), "duree"
+        )

@@ -109,8 +109,16 @@ class TestPeriod(unittest.TestCase):
                 self.assertIsNotNone(acquisition)
 
     def test_absences(self) -> None:
-        all_absences = [period.absences for period in client.periods]
+        all_absences = []
+        for period in client.periods:
+            all_absences.extend(period.absences)
         self.assertGreater(len(all_absences), 0)
+
+    def test_punishments(self) -> None:
+        all_punishments = []
+        for period in client.periods:
+            all_punishments.extend(period.punishments)
+        self.assertGreater(len(all_punishments), 0)
 
 
 class TestInformation(unittest.TestCase):
