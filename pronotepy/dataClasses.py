@@ -25,6 +25,34 @@ if TYPE_CHECKING:
     from .clients import _ClientBase, Client
 from .exceptions import DataError, ParsingError, DateParsingError, UnsupportedOperation
 
+
+__all__ = (
+    "Util",
+    "Object",
+    "Subject",
+    "Absence",
+    "Period",
+    "Average",
+    "Grade",
+    "Attachment",
+    "LessonContent",
+    "Lesson",
+    "Homework",
+    "Information",
+    "Recipient",
+    "Message",
+    "Discussion",
+    "ClientInfo",
+    "Acquisition",
+    "Evaluation",
+    "Identity",
+    "Guardian",
+    "Student",
+    "StudentClass",
+    "Menu",
+    "Punishment",
+)
+
 log = logging.getLogger(__name__)
 
 
@@ -273,16 +301,11 @@ class Period(Object):
     """
     Represents a period of the school year. You shouldn't have to create this class manually.
 
-    Attributes
-    ----------
-    id : str
-        the id of the period (used internally)
-    name : str
-        name of the period
-    start : datetime.datetime
-        date on which the period starts
-    end : datetime.datetime
-        date on which the period ends
+    Attributes:
+        id (str): the id of the period (used internally)
+        name (str): name of the period
+        start (datetime.datetime): date on which the period starts
+        end (datetime.datetime): date on which the period ends
     """
 
     __slots__ = ["_client", "id", "name", "start", "end"]
@@ -624,8 +647,6 @@ class LessonContent(Object):
         description of the lesson content
     category : Optional[str]
         category of the lesson content
-    files : tuple
-        files attached on lesson content
     """
 
     __slots__ = ["title", "description", "_files", "_client"]
