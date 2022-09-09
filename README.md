@@ -139,6 +139,10 @@ Please run these tools before you submit your PR. Thanks!
 
 Pronotepy has most of the essential features covered, but if you need anything that is not yet implemented, you can [create an issue](https://github.com/bain3/pronotepy/issues/new) with your request. (or you can contribute by adding it yourself)
 
+## Funding
+
+This repository is on [issuehunt](https://issuehunt.io/r/bain3/pronotepy). You can put bounties on your issues if you'd like to thank the person, who completes it. There is no project account for recieving tips, but you're welcome to tip contributors directly.
+
 ## License
 
 Copyright (c) 2020-2021 bain, Xiloe
