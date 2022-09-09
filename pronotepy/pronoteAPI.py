@@ -8,7 +8,7 @@ import secrets
 import threading
 import zlib
 from time import time, sleep
-from typing import Union, Optional, TYPE_CHECKING, Any, List
+from typing import Union, Optional, TYPE_CHECKING, Any, List, Tuple
 
 import requests
 from Crypto.Cipher import AES, PKCS1_v1_5
