@@ -5,7 +5,7 @@ pronotepy's documentation
 
 
 Introduction
-------------
+^^^^^^^^^^^^
 
 This is a Python API wrapper for the PRONOTE student administration service. 
 Pronotepy supports student, parent, and partially vie-scolaire accounts.
@@ -25,7 +25,7 @@ Dependencies
 
 
 Guide
-~~~~~
+^^^^^
 
 .. toctree::
    :maxdepth: 3
@@ -41,7 +41,7 @@ PronotePy API documentation
    api/index
 
 Indices and tables
-~~~~~~~~~~~~~~~~~~
+^^^^^^^^^^^^^^^^^^
 
 * :ref:`genindex`
 * :ref:`modindex`

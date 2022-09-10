@@ -22,7 +22,7 @@ from urllib.parse import quote
 from Crypto.Util import Padding
 
 if TYPE_CHECKING:
-    from .clients import _ClientBase, Client
+    from .clients import ClientBase, Client
 from .exceptions import DataError, ParsingError, DateParsingError, UnsupportedOperation
 
 
@@ -311,7 +311,7 @@ class Period(Object):
     __slots__ = ["_client", "id", "name", "start", "end"]
     instances: Set[Any] = set()
 
-    def __init__(self, client: _ClientBase, json_dict: dict) -> None:
+    def __init__(self, client: ClientBase, json_dict: dict) -> None:
         super().__init__(json_dict)
 
         self.__class__.instances.add(self)
@@ -578,7 +578,7 @@ class Attachment(Object):
 
     __slots__ = ["name", "id", "_client", "url", "_data"]
 
-    def __init__(self, client: _ClientBase, json_dict: dict) -> None:
+    def __init__(self, client: ClientBase, json_dict: dict) -> None:
         super().__init__(json_dict)
 
         self._client = client
@@ -651,7 +651,7 @@ class LessonContent(Object):
 
     __slots__ = ["title", "description", "_files", "_client"]
 
-    def __init__(self, client: _ClientBase, json_dict: dict) -> None:
+    def __init__(self, client: ClientBase, json_dict: dict) -> None:
         super().__init__(json_dict)
 
         self._client = client
@@ -740,7 +740,7 @@ class Lesson(Object):
         "num",
     ]
 
-    def __init__(self, client: _ClientBase, json_dict: dict) -> None:
+    def __init__(self, client: ClientBase, json_dict: dict) -> None:
         super().__init__(json_dict)
         self._client = client
         self._content: Optional[LessonContent] = None
@@ -891,7 +891,7 @@ class Homework(Object):
         "_files",
     ]
 
-    def __init__(self, client: _ClientBase, json_dict: dict) -> None:
+    def __init__(self, client: ClientBase, json_dict: dict) -> None:
         super().__init__(json_dict)
 
         self._client = client
@@ -968,7 +968,7 @@ class Information(Object):
         "_client",
     ]
 
-    def __init__(self, client: _ClientBase, json_dict: dict) -> None:
+    def __init__(self, client: ClientBase, json_dict: dict) -> None:
         super().__init__(json_dict)
 
         self._client = client
@@ -1052,7 +1052,7 @@ class Recipient(Object):
         "_type",
     ]
 
-    def __init__(self, client: _ClientBase, json_dict: dict) -> None:
+    def __init__(self, client: ClientBase, json_dict: dict) -> None:
         super().__init__(json_dict)
         self._client = client
         self._type: int = self._resolver(int, "G")
@@ -1099,7 +1099,7 @@ class Message(Object):
 
     __slots__ = ["id", "author", "seen", "date", "content", "_client", "_listePM"]
 
-    def __init__(self, client: _ClientBase, json_dict: dict) -> None:
+    def __init__(self, client: ClientBase, json_dict: dict) -> None:
         super().__init__(json_dict)
         self._client = client
 
@@ -1255,7 +1255,7 @@ class ClientInfo:
 
     __slots__ = ["id", "raw_resource", "_client", "__cache"]
 
-    def __init__(self, client: _ClientBase, json_: dict) -> None:
+    def __init__(self, client: ClientBase, json_: dict) -> None:
         self.id: str = json_["N"]
         self.raw_resource: dict = json_
         self._client = client
@@ -1657,7 +1657,7 @@ class Student(Object):
         "_cache",
     ]
 
-    def __init__(self, client: _ClientBase, json_dict: dict) -> None:
+    def __init__(self, client: ClientBase, json_dict: dict) -> None:
         super().__init__(json_dict)
 
         self.full_name: str = self._resolver(str, "L")
@@ -1736,7 +1736,7 @@ class StudentClass(Object):
 
     __slots__ = ["name", "id", "responsible", "grade", "_client"]
 
-    def __init__(self, client: _ClientBase, json_dict: dict) -> None:
+    def __init__(self, client: ClientBase, json_dict: dict) -> None:
         super().__init__(json_dict)
 
         self.name: str = self._resolver(str, "L")
@@ -1813,7 +1813,7 @@ class Menu(Object):
 
             __slots__ = ["name", "id", "color", "_client"]
 
-            def __init__(self, client: _ClientBase, json_dict: dict) -> None:
+            def __init__(self, client: ClientBase, json_dict: dict) -> None:
                 super().__init__(json_dict)
 
                 self.id: str = self._resolver(str, "N")
@@ -1826,7 +1826,7 @@ class Menu(Object):
 
         __slots__ = ["name", "id", "labels", "_client"]
 
-        def __init__(self, client: _ClientBase, json_dict: dict) -> None:
+        def __init__(self, client: ClientBase, json_dict: dict) -> None:
             super().__init__(json_dict)
 
             self.id: str = self._resolver(str, "N")
@@ -1856,7 +1856,7 @@ class Menu(Object):
         "_client",
     ]
 
-    def __init__(self, client: _ClientBase, json_dict: dict) -> None:
+    def __init__(self, client: ClientBase, json_dict: dict) -> None:
         super().__init__(json_dict)
 
         self.id: str = self._resolver(str, "N")
@@ -1956,7 +1956,7 @@ class Punishment(Object):
 
         __slots__ = ["start", "duration"]
 
-        def __init__(self, client: _ClientBase, json_dict: dict) -> None:
+        def __init__(self, client: ClientBase, json_dict: dict) -> None:
             super().__init__(json_dict)
             self.id: str = self._resolver(str, "N")
 
@@ -1979,7 +1979,7 @@ class Punishment(Object):
 
             del self._resolver
 
-    def __init__(self, client: _ClientBase, json_dict: dict) -> None:
+    def __init__(self, client: ClientBase, json_dict: dict) -> None:
         super().__init__(json_dict)
         self.id: str = self._resolver(str, "N")
 

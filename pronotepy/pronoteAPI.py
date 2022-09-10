@@ -22,7 +22,7 @@ from .exceptions import *
 if TYPE_CHECKING:
     from requests import Response
     from requests.cookies import RequestsCookieJar
-    from .clients import _ClientBase
+    from .clients import ClientBase
 
 log = getLogger(__name__)
 log.setLevel(DEBUG)
@@ -37,7 +37,7 @@ error_messages = {
 
 class _Communication(object):
     def __init__(
-        self, site: str, cookies: RequestsCookieJar, client: _ClientBase
+        self, site: str, cookies: RequestsCookieJar, client: ClientBase
     ) -> None:
         """Handles all communication with the PRONOTE servers"""
         self.root_site, self.html_page = self.get_root_address(site)
@@ -354,7 +354,7 @@ class _Encryption(object):
 
 
 class _KeepAlive(threading.Thread):
-    def __init__(self, client: _ClientBase) -> None:
+    def __init__(self, client: ClientBase) -> None:
         super().__init__(target=self.alive)
         self._client = client
         self.keep_alive = True

@@ -18,13 +18,13 @@ from .pronoteAPI import (
     log,
 )
 
-__all__ = ("Client", "ParentClient", "VieScolaireClient")
+__all__ = ("ClientBase", "Client", "ParentClient", "VieScolaireClient")
 
-T = TypeVar("T", bound="_ClientBase")
+T = TypeVar("T", bound="ClientBase")
 
 
-class _ClientBase:
-    """Base for every PRONOTE client. Ensures login.
+class ClientBase:
+    """Base for every PRONOTE client. Provides login.
 
     Args:
         pronote_url (str): URL of the server
@@ -325,7 +325,7 @@ class _ClientBase:
             return self.communication.post(function_name, post_data)
 
 
-class Client(_ClientBase):
+class Client(ClientBase):
     """
     A PRONOTE client.
 
@@ -334,13 +334,6 @@ class Client(_ClientBase):
         username (str)
         password (str)
         ent (Callable): Cookies for ENT connections
-
-    Attributes:
-        start_day (datetime.datetime): The first day of the school year
-        week (int): The current week of the school year
-        logged_in (bool): If the user is successfully logged in
-        pronote_url (str)
-        info (ClientInfo): Provides information about the current client. Name etc...
     """
 
     def __init__(
@@ -617,10 +610,6 @@ class ParentClient(Client):
         ent (Callable): Cookies for ENT connections
 
     Attributes:
-        start_day (datetime.datetime): The first day of the school year
-        week (int): The current week of the school year
-        logged_in (bool): If the user is successfully logged in
-        info (ClientInfo): Provides information about the current client. Name etc...
         children (List[ClientInfo]): List of sub-clients representing all the
             children connected to the main parent account.
     """
@@ -704,7 +693,7 @@ class ParentClient(Client):
             return self.communication.post(function_name, post_data)
 
 
-class VieScolaireClient(_ClientBase):
+class VieScolaireClient(ClientBase):
     """A PRONOTE client for Vie Scolaire accounts.
 
     Args:
@@ -714,10 +703,6 @@ class VieScolaireClient(_ClientBase):
         ent (Callable): Cookies for ENT connections
 
     Attributes:
-        start_day (datetime.datetime): The first day of the school year
-        week (int): The current week of the school year
-        logged_in (bool): If the user is successfully logged in
-        info (ClientInfo): Provides information about the current client. Name etc...
         classes (List[StudentClass]): List of all classes this account has access to.
     """
 
