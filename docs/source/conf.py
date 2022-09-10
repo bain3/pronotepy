@@ -31,15 +31,10 @@ author = "bain, Xiloe"
 extensions = [
     "sphinx.ext.autodoc",
     "sphinx.ext.napoleon",
-    "sphinx_rtd_theme",
+    "sphinx.ext.intersphinx",
 ]
 
 # -- API Doc ------------------------------------------------------------------
-# apidoc_module_dir = '../../pronotepy'
-# apidoc_output_dir = 'api'
-# apidoc_toc_file = "index"
-# apidoc_separate_modules = True
-
 # Master documentation file.
 master_doc = "index"
 
@@ -57,3 +52,5 @@ exclude_patterns = []
 html_static_path = ["_static"]
 
 html_theme = "furo"
+
+intersphinx_mapping = {"python": ("https://docs.python.org/3", None)}
