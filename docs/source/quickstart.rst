@@ -3,23 +3,28 @@ Quickstart
 
 Installation
 ------------
-To make pronotepy's installation as easy as possible it is uploaded to pypi. To install it you can use pip.
+To make pronotepy's installation as easy as possible it is uploaded to pypi. To
+install it you can use pip.
 
 ``pip install -U pronotepy``
 
-If you want to install the latest version, you can install it directly from the master branch:
+If you want to install the latest version, you can install it directly from the
+master branch:
 
 ``pip install -U git+https://github.com/bain3/pronotepy.git``
 
-.. note:: You may have problems while installing the dependency pycryptodome. Unfortunately I haven't found a different cryptographic library, if you have an alternative please contact bain (see contact).
+.. note:: You may have problems while installing the dependency pycryptodome.
+   Unfortunately I haven't found a different cryptographic library, if you have
+   an alternative please contact bain (see contact).
 
 Usage
 -----
 
 Client initialisation
 ^^^^^^^^^^^^^^^^^^^^^
-To create a new client you need to create an instance and pass your pronote address, username and password.
-This will initialise the connection and log the user in. You can check if the client is logged with the logged_in attribute.
+To create a new client you need to create an instance and pass your pronote
+address, username and password. This will initialise the connection and log the
+user in. You can check if the client is logged with the logged_in attribute.
 
 .. code-block:: python
 
@@ -39,7 +44,7 @@ This will initialise the connection and log the user in. You can check if the cl
 
 Homework
 ^^^^^^^^
-To access the users homework use the :meth:`.Client.homework` method.
+To access the user's homework use the :meth:`.Client.homework` method.
 
 .. code-block:: python
 
@@ -49,8 +54,8 @@ To access the users homework use the :meth:`.Client.homework` method.
 
 Grades
 ^^^^^^
-To access the users grades you need to first get a period. This can be done with the :attr:`.Client.periods` or :attr:`.Client.current_period`
-properties.
+To access the user's grades you need to first get a period. This can be done
+with the :attr:`.Client.periods` or :attr:`.Client.current_period` properties.
 
 .. code-block:: python
 
@@ -67,17 +72,21 @@ properties.
 
 Long Term Usage
 ^^^^^^^^^^^^^^^
-From version 1.1 **pronotepy will reinitialise the connection when the old one expires**. This is done so bots that are checking pronote
-will not have to do this manually.
+**From version 1.1 pronotepy will reinitialise the connection when the old one
+expires**. This is done so bots that are checking pronote will not have to do
+this manually.
 
-Unfortunately **PRONOTE changes all of its ids for their objects every session**.
-This makes **old pronotepy objects (** :class:`.Lesson` **for example) expire** too.
+Unfortunately PRONOTE changes all of its ids for their objects every session.
+This makes old pronotepy objects ( :class:`.Lesson` for example) expire too.
 
-The old data like the description or the subject will still be accessible,
-but any **functions that request from pronote will not work** (pronotepy will raise the :class:`.ExpiredObject` exception).
-To make sure that you don't get any errors you can check the session with :meth:`.Client.session_check` and request new objects before you make any requests using your old objects.
+The old data like the description or the subject will still be accessible, but
+any functions that request from pronote will not work (pronotepy will raise the
+:class:`.ExpiredObject` exception). To make sure that you don't get any errors
+you can check the session with :meth:`.Client.session_check` and request new
+objects before you make any requests using your old objects.
 
-Below you can see sample code for a bot that checks one specific lesson content (useless but good for this example).
+Below you can see sample code for a bot that checks one specific lesson content
+(useless but good for this example).
 
 .. code-block:: python
 
