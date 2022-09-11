@@ -8,7 +8,7 @@ import secrets
 import threading
 import zlib
 from time import time, sleep
-from typing import Union, Optional, TYPE_CHECKING, Any, List
+from typing import Union, Optional, TYPE_CHECKING, Any, List, Tuple
 
 import requests
 from Crypto.Cipher import AES, PKCS1_v1_5
@@ -22,7 +22,7 @@ from .exceptions import *
 if TYPE_CHECKING:
     from requests import Response
     from requests.cookies import RequestsCookieJar
-    from .clients import _ClientBase
+    from .clients import ClientBase
 
 log = getLogger(__name__)
 log.setLevel(DEBUG)
@@ -37,7 +37,7 @@ error_messages = {
 
 class _Communication(object):
     def __init__(
-        self, site: str, cookies: RequestsCookieJar, client: _ClientBase
+        self, site: str, cookies: RequestsCookieJar, client: ClientBase
     ) -> None:
         """Handles all communication with the PRONOTE servers"""
         self.root_site, self.html_page = self.get_root_address(site)
@@ -115,14 +115,11 @@ class _Communication(object):
         Handler for all POST requests by the api to PRONOTE servers. Automatically provides all needed data for the
         verification of posts. Session id and order numbers are preserved.
 
-        Parameters
-        ----------
-        function_name : str
-            The name of the function (eg. Authentification)
-        data : dict
-            The date that will be sent in the donneesSec dictionary
-        decryption_change
-            If the decryption key or iv is changing in the middle of the request, you can set it here
+        Args:
+            function_name (str): The name of the function (eg. Authentification)
+            data (dict): The date that will be sent in the donneesSec dictionary
+            decryption_change (Optional[dict]): If the decryption key or iv is
+                changing in the middle of the request, you can set it here
         """
         if (
             "_Signature_" in data
@@ -234,12 +231,9 @@ class _Communication(object):
         """
         Key change after the authentification was successful.
 
-        Parameters
-        ----------
-        auth_key
-            AES authentification key used to calculate the challenge (From password of the user)
-        data
-            Data from the request
+        Args:
+            auth_key (bytes): AES authentification key used to calculate the challenge (From password of the user)
+            data (dict): Data from the request
         """
         self.encryption.aes_key = auth_key
         if not self.cookies:
@@ -253,10 +247,8 @@ class _Communication(object):
     def _parse_html(self, html: bytes) -> dict:
         """Parses the html for the RSA keys
 
-        Returns
-        -------
-        dict
-            HTML attributes
+        Returns:
+            dict: HTML attributes
         """
         parsed = BeautifulSoup(html, "html.parser")
 
@@ -354,7 +346,7 @@ class _Encryption(object):
 
 
 class _KeepAlive(threading.Thread):
-    def __init__(self, client: _ClientBase) -> None:
+    def __init__(self, client: ClientBase) -> None:
         super().__init__(target=self.alive)
         self._client = client
         self.keep_alive = True

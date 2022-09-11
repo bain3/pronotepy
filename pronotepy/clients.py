@@ -18,35 +18,29 @@ from .pronoteAPI import (
     log,
 )
 
-T = TypeVar("T", bound="_ClientBase")
+__all__ = ("ClientBase", "Client", "ParentClient", "VieScolaireClient")
+
+T = TypeVar("T", bound="ClientBase")
 
 
-class _ClientBase:
-    """
-    Base for every PRONOTE client. Ensures login.
+class ClientBase:
+    """Base for every PRONOTE client. Provides login.
 
-    Parameters
-    ----------
-    pronote_url : str
-        URL of the server
-    username : str
-    password : str
-    ent : Callable
-        Cookies for ENT connections
+    Args:
+        pronote_url (str): URL of the server
+        username (str)
+        password (str)
+        ent (Callable): Cookies for ENT connections
+        qr_code (bool): internal option
 
-    Attributes
-    ----------
-    start_day : datetime.datetime
-        The first day of the school year
-    week : int
-        The current week of the school year
-    logged_in : bool
-        If the user is successfully logged in
-    username : str
-    password : str
-    pronote_url : str
-    info: dataClasses.ClientInfo
-        Provides information about the current client. Name etc...
+    Attributes:
+        start_day (datetime.datetime): The first day of the school year
+        week (int): The current week of the school year
+        logged_in (bool): If the user is successfully logged in
+        username (str)
+        password (str)
+        pronote_url (str)
+        info (ClientInfo): Provides information about the current client. Name etc...
     """
 
     def __init__(
@@ -106,13 +100,11 @@ class _ClientBase:
 
     @classmethod
     def qrcode_login(cls: Type[T], qr_code: dict, pin: str) -> T:
-        """
-        Login with QR code
+        """Login with QR code
 
-        qr_code: dict
-            JSON store in the QR code
-        pin: str
-            4-digit confirmation code created during QR code setup
+        Args:
+            qr_code (dict): JSON store in the QR code
+            pin (str): 4-digit confirmation code created during QR code setup
         """
         encryption = _Encryption()
         encryption.aes_set_key(pin.encode())
@@ -135,13 +127,10 @@ class _ClientBase:
         return cls(url, login, jeton, qr_code=True)
 
     def _login(self) -> bool:
-        """
-        Logs in the user.
+        """Logs in the user.
 
-        Returns
-        -------
-        bool
-            True if logged in, False if not
+        Returns:
+            bool: True if logged in, False if not
         """
         if self.ent:
             self.username = self.attributes["e"]
@@ -248,13 +237,10 @@ class _ClientBase:
 
     @property
     def periods(self) -> List[dataClasses.Period]:
-        """
-        Get all of the periods of the year.
+        """Get all of the periods of the year.
 
-        Returns
-        -------
-        List[Period]
-            All the periods of the year
+        Returns:
+            List[Period]: All the periods of the year
         """
         if hasattr(self, "periods_") and self.periods_:
             return self.periods_
@@ -303,18 +289,14 @@ class _ClientBase:
         return False
 
     def post(self, function_name: str, onglet: int = None, data: dict = None) -> dict:
-        """
-        Preforms a raw post to the PRONOTE server. Adds signature, then passes it to _Communication.post
+        """Preforms a raw post to the PRONOTE server. Adds signature, then passes it to _Communication.post
 
-        Parameters
-        ----------
-        function_name: str
-        onglet: int
-        data: dict
-
-        Returns
-        -------
-        Raw JSON
+        Args:
+            function_name (str)
+            onglet (int)
+            data (dict)
+        Returns:
+            dict: Raw JSON
         """
         post_data = {}
         if onglet:
@@ -343,32 +325,15 @@ class _ClientBase:
             return self.communication.post(function_name, post_data)
 
 
-class Client(_ClientBase):
+class Client(ClientBase):
     """
     A PRONOTE client.
 
-    Parameters
-    ----------
-    pronote_url : str
-        URL of the server
-    username : str
-    password : str
-    ent : Callable
-        Cookies for ENT connections
-
-    Attributes
-    ----------
-    start_day : datetime.datetime
-        The first day of the school year
-    week : int
-        The current week of the school year
-    logged_in : bool
-        If the user is successfully logged in
-    username : str
-    password : str
-    pronote_url : str
-    info: dataClasses.ClientInfo
-        Provides information about the current client. Name etc...
+    Args:
+        pronote_url (str): URL of the server
+        username (str)
+        password (str)
+        ent (Callable): Cookies for ENT connections
     """
 
     def __init__(
@@ -386,16 +351,14 @@ class Client(_ClientBase):
         date_from: Union[datetime.date, datetime.datetime],
         date_to: Union[datetime.date, datetime.datetime] = None,
     ) -> List[dataClasses.Lesson]:
-        """
-        Gets all lessons in a given timespan.
+        """Gets all lessons in a given timespan.
 
-        :rtype: List[dataClasses.Lesson]
-        :returns: List of lessons
+        Args:
+            date_from (Union[datetime.date, datetime.datetime]): first date
+            date_to (Union[datetime.date, datetime.datetime]): second date
 
-        :param date_from: Union[datetime.date, datetime.datetime]
-            first date
-        :param date_to: Union[datetime.date, datetime.datetime]
-            second date
+        Returns:
+            List[Lesson]: List of lessons
         """
         user = self.parametres_utilisateur["donneesSec"]["donnees"]["ressource"]
         data = {
@@ -437,16 +400,12 @@ class Client(_ClientBase):
         return [lesson for lesson in output if date_from <= lesson.start <= date_to]
 
     def export_ical(self, timezone_shift: int = 0) -> str:
-        """
-        Exports ICal URL for the client's timetable
-        Parameters
-        ----------
-        timezone_shift : int
-            in what timezone should the exported calendar be in (hour shift)
+        """Exports ICal URL for the client's timetable
 
-        Returns
-        -------
-        URL for the exported ICal file
+        Args:
+            timezone_shift (int): in what timezone should the exported calendar be in (hour shift)
+        Returns:
+            str: URL for the exported ICal file
         """
         user = self.parametres_utilisateur["donneesSec"]["donnees"]["ressource"]
         data = {
@@ -474,18 +433,13 @@ class Client(_ClientBase):
     def homework(
         self, date_from: datetime.date, date_to: datetime.date = None
     ) -> List[dataClasses.Homework]:
-        """
-        Get homework between two given points.
+        """Get homework between two given points.
 
-        date_from : datetime
-            The first date
-        date_to : datetime
-            The second date. If unspecified to the end of the year.
-
-        Returns
-        -------
-        List[Homework]
-            Homework between two given points
+        Args:
+            date_from (datetime): The first date
+            date_to (datetime): The second date. If unspecified to the end of the year.
+        Returns:
+            List[Homework]: Homework between two given points
         """
         if not date_to:
             date_to = datetime.datetime.strptime(
@@ -511,12 +465,10 @@ class Client(_ClientBase):
         return out
 
     def get_recipients(self) -> List[dataClasses.Recipient]:
-        """
-        Get recipients for new discussion
+        """Get recipients for new discussion
 
-        Returns
-        -------
-        List[dataClasses.Recipient]
+        Returns:
+            List[Recipient]: list of available recipients
         """
         # add teacher
         data = {"onglet": {"N": 0, "G": 3}}
@@ -531,11 +483,16 @@ class Client(_ClientBase):
 
         return [dataClasses.Recipient(self, r) for r in recipients]
 
+    # TODO: change to "subject"
     def new_discussion(
         self, subjet: str, message: str, recipients: List[dataClasses.Recipient]
     ) -> None:
-        """
-        Create a new discussion
+        """Create a new discussion
+
+        Args:
+            subjet (str): subject of the message
+            message (str): content of the message
+            recipients (List[Recipient])
         """
         recipients_json = [{"N": r.id, "G": r._type, "L": r.name} for r in recipients]
         data = {
@@ -547,13 +504,7 @@ class Client(_ClientBase):
         self.post("SaisieMessage", 131, data)
 
     def discussions(self) -> List[dataClasses.Discussion]:
-        """
-        Gets all the discussions in the discussions tab
-
-        Returns
-        -------
-        List[Discussion]
-        """
+        """Gets all the discussions in the discussions tab"""
         discussions = self.post(
             "ListeMessagerie", 131, {"avecMessage": True, "avecLu": True}
         )
@@ -569,22 +520,12 @@ class Client(_ClientBase):
         date_to: Optional[datetime.datetime] = None,
         only_unread: bool = False,
     ) -> List[dataClasses.Information]:
-        """
-        Gets all the information and surveys in the information and surveys tab.
+        """Gets all the information and surveys in the information and surveys tab.
 
-        Parameters
-        ----------
-        only_unread : bool
-            Return only unread information
-        date_from : datetime.datetime
-            Since datetime (included)
-        date_to : datetime.datetime
-            Until datetime (excluded)
-
-        Returns
-        -------
-        List[Information]
-            Information
+        Args:
+            only_unread (bool): Return only unread information
+            date_from (datetime.datetime): Since datetime (included)
+            date_to (datetime.datetime): Until datetime (excluded)
         """
         response = self.post(
             "PageActualites", 8, {"modesAffActus": {"_T": 26, "V": "[0..3]"}}
@@ -620,18 +561,13 @@ class Client(_ClientBase):
     def menus(
         self, date_from: datetime.date, date_to: Optional[datetime.date] = None
     ) -> List[dataClasses.Menu]:
-        """
-        Get menus between two given points.
+        """Get menus between two given points.
 
-        date_from : datetime
-            The first date
-        date_to : datetime
-            The second date. If unspecified to the end of the year.
-
-        Returns
-        -------
-        List[Menu]
-            Menu between two given points
+        Args:
+            date_from (datetime): The first date
+            date_to (datetime): The second date. If unspecified to the end of the year.
+        Returns:
+            List[Menu]: Menu between two given points
         """
         output = []
 
@@ -656,7 +592,7 @@ class Client(_ClientBase):
 
     @property
     def current_period(self) -> dataClasses.Period:
-        """Get the current period."""
+        """the current period"""
         id_period = self.parametres_utilisateur["donneesSec"]["donnees"]["ressource"][
             "listeOngletsPourPeriodes"
         ]["V"][0]["periodeParDefaut"]["V"]["N"]
@@ -667,27 +603,15 @@ class ParentClient(Client):
     """
     A parent PRONOTE client.
 
-    Parameters
-    ----------
-    pronote_url : str
-        URL of the server
-    username : str
-    password : str
-    ent : Callable
-        Cookies for ENT connections
+    Args:
+        pronote_url (str): URL of the server
+        username (str)
+        password (str)
+        ent (Callable): Cookies for ENT connections
 
-    Attributes
-    ----------
-    start_day : datetime.datetime
-        The first day of the school year
-    week : int
-        The current week of the school year
-    logged_in : bool
-        If the user is successfully logged in
-    info: dataClasses.ClientInfo
-        Provides information about the current client. Name etc...
-    children: List[dataClasses.ClientInfo]
-        List of sub-clients representing all the children connected to the main parent account.
+    Attributes:
+        children (List[ClientInfo]): List of sub-clients representing all the
+            children connected to the main parent account.
     """
 
     def __init__(
@@ -715,13 +639,10 @@ class ParentClient(Client):
         ] = self._selected_child.raw_resource
 
     def set_child(self, child: Union[str, dataClasses.ClientInfo]) -> None:
-        """
-        Select a child
+        """Select a child
 
-        Parameters
-        ----------
-        child: Union[str, dataClasses.ClientInfo]
-            Name or ClientInfo of a child.
+        Args:
+            child (Union[str, ClientInfo]): Name or ClientInfo of a child.
         """
         if type(child) == str:
             candidates = dataClasses.Util.get(self.children, name=child)
@@ -738,18 +659,16 @@ class ParentClient(Client):
         ] = self._selected_child.raw_resource
 
     def post(self, function_name: str, onglet: int = None, data: dict = None) -> dict:
-        """
-        Preforms a raw post to the PRONOTE server. Adds signature, then passes it to _Communication.post
+        """Preforms a raw post to the PRONOTE server.
 
-        Parameters
-        ----------
-        function_name: str
-        onglet: int
-        data: dict
+        Adds signature, then passes it to _Communication.post
 
-        Returns
-        -------
-        Raw JSON
+        Args:
+            function_name (str)
+            onglet (int)
+            data (dict)
+        Returns:
+            Raw JSON
         """
         post_data = {}
         if onglet:
@@ -774,31 +693,17 @@ class ParentClient(Client):
             return self.communication.post(function_name, post_data)
 
 
-class VieScolaireClient(_ClientBase):
-    """
-    A PRONOTE client for Vie Scolaire accounts.
+class VieScolaireClient(ClientBase):
+    """A PRONOTE client for Vie Scolaire accounts.
 
-    Parameters
-    ----------
-    pronote_url : str
-        URL of the server
-    username : str
-    password : str
-    ent : Callable
-        Cookies for ENT connections
+    Args:
+        pronote_url (str): URL of the server
+        username (str)
+        password (str)
+        ent (Callable): Cookies for ENT connections
 
-    Attributes
-    ----------
-    start_day : datetime.datetime
-        The first day of the school year
-    week : int
-        The current week of the school year
-    logged_in : bool
-        If the user is successfully logged in
-    info: dataClasses.ClientInfo
-        Provides information about the current client. Name etc...
-    classes: List[dataClasses.StudentClass]
-        List of all classes this account has access to.
+    Attributes:
+        classes (List[StudentClass]): List of all classes this account has access to.
     """
 
     def __init__(

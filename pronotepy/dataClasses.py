@@ -22,8 +22,36 @@ from urllib.parse import quote
 from Crypto.Util import Padding
 
 if TYPE_CHECKING:
-    from .clients import _ClientBase, Client
+    from .clients import ClientBase, Client
 from .exceptions import DataError, ParsingError, DateParsingError, UnsupportedOperation
+
+
+__all__ = (
+    "Util",
+    "Object",
+    "Subject",
+    "Absence",
+    "Period",
+    "Average",
+    "Grade",
+    "Attachment",
+    "LessonContent",
+    "Lesson",
+    "Homework",
+    "Information",
+    "Recipient",
+    "Message",
+    "Discussion",
+    "ClientInfo",
+    "Acquisition",
+    "Evaluation",
+    "Identity",
+    "Guardian",
+    "Student",
+    "StudentClass",
+    "Menu",
+    "Punishment",
+)
 
 log = logging.getLogger(__name__)
 
@@ -54,10 +82,8 @@ class Util:
     def get(cls, iterable: Iterable, **kwargs: Any) -> list:
         """Gets items from the list with the attributes specified.
 
-        Parameters
-        ----------
-        iterable : list
-            The iterable to loop over
+        Args:
+            iterable (list): The iterable to loop over
         """
         output = []
         for i in iterable:
@@ -153,21 +179,15 @@ class Object:
             strict: bool = True,
         ) -> R:
             """
+            Resolves an arbitrary value from a json dictionary
 
-            Parameters
-            ----------
-            converter : Callable[[Any], R]
-                the final value will be passed to this converter, it can be any callable with a single argument
-            path : str
-                arguments describing the path through the dictionary to the value
-            default : Union[MissingType, R]
-                default value if the actual one cannot be found, works with strict as False
-            strict : bool
-                if True, the resolver will return None when it can't find the correct value
-
-            Returns
-            -------
-            the resolved value
+            Args:
+                converter (Callable[[Any], R]): the final value will be passed to this converter, it can be any callable with a single argument
+                path (str): arguments describing the path through the dictionary to the value
+                default (Union[MissingType, R]): default value if the actual one cannot be found, works with strict as False
+                strict (bool): if True, the resolver will return None when it can't find the correct value
+            Returns:
+                the resolved value
             """
             json_value: Any = self.json_dict
             try:
@@ -203,14 +223,10 @@ class Subject(Object):
     """
     Represents a subject. You shouldn't have to create this class manually.
 
-    Attributes
-    ----------
-    id : str
-        the id of the subject (used internally)
-    name : str
-        name of the subject
-    groups : bool
-        if the subject is in groups
+    Attributes:
+        id (str): the id of the subject (used internally)
+        name (str): name of the subject
+        groups (bool): if the subject is in groups
     """
 
     __slots__ = ["id", "name", "groups"]
@@ -229,22 +245,14 @@ class Absence(Object):
     """
     Represents an absence with a given period. You shouldn't have to create this class manually.
 
-    Attributes
-    ----------
-    id : str
-        the id of the absence (used internally)
-    from_date : datetime.datetime
-        starting time of the absence
-    to_date : datetime.datetime
-        end of the absence
-    justified : bool
-        is the absence justified
-    hours : str
-        the number of hours missed
-    days : int
-        the number of days missed
-    reasons: List[str]
-        The reason(s) for the absence
+    Attributes:
+        id (str): the id of the absence (used internally)
+        from_date (datetime.datetime): starting time of the absence
+        to_date (datetime.datetime): end of the absence
+        justified (bool): is the absence justified
+        hours (str): the number of hours missed
+        days (int): the number of days missed
+        reasons (List[str]): The reason(s) for the absence
     """
 
     __slots__ = ["id", "from_date", "to_date", "justified", "hours" "days", "reasons"]
@@ -273,22 +281,17 @@ class Period(Object):
     """
     Represents a period of the school year. You shouldn't have to create this class manually.
 
-    Attributes
-    ----------
-    id : str
-        the id of the period (used internally)
-    name : str
-        name of the period
-    start : datetime.datetime
-        date on which the period starts
-    end : datetime.datetime
-        date on which the period ends
+    Attributes:
+        id (str): the id of the period (used internally)
+        name (str): name of the period
+        start (datetime.datetime): date on which the period starts
+        end (datetime.datetime): date on which the period ends
     """
 
     __slots__ = ["_client", "id", "name", "start", "end"]
     instances: Set[Any] = set()
 
-    def __init__(self, client: _ClientBase, json_dict: dict) -> None:
+    def __init__(self, client: ClientBase, json_dict: dict) -> None:
         super().__init__(json_dict)
 
         self.__class__.instances.add(self)
@@ -360,6 +363,9 @@ class Period(Object):
 
     @property
     def evaluations(self) -> List["Evaluation"]:
+        """
+        All evaluations from this period
+        """
         json_data = {"periode": {"N": self.id, "L": self.name, "G": 2}}
         response = self._client.post("DernieresEvaluations", 201, json_data)
         evaluations = response["donneesSec"]["donnees"]["listeEvaluations"]["V"]
@@ -368,12 +374,7 @@ class Period(Object):
     @property
     def absences(self) -> List[Absence]:
         """
-        Gets all absences from a given period.
-
-        Returns
-        -------
-        List[Absence]
-            All the absences of the period
+        All absences from this period
         """
         json_data = {
             "periode": {"N": self.id, "L": self.name, "G": 2},
@@ -388,12 +389,7 @@ class Period(Object):
     @property
     def punishments(self) -> List[Punishment]:
         """
-        Gets all punishments from a given period.
-
-        Returns
-        -------
-        List[Punishment]
-            All the punishments given during the period
+        All punishments from a given period
         """
         json_data = {
             "periode": {"N": self.id, "L": self.name, "G": 2},
@@ -410,22 +406,14 @@ class Average(Object):
     """
     Represents an Average.
 
-    Attributes
-    ----------
-    student : str
-        students average in the subject
-    class_average : str
-        classes average in the subject
-    max : str
-        highest average in the class
-    min : str
-        lowest average in the class
-    out_of : str
-        maximum amount of points
-    default_out_of : str
-        the default maximum amount of points
-    subject : pronotepy.dataClasses.Subject
-        subject the average is from
+    Attributes:
+        student (str): students average in the subject
+        class_average (str): classes average in the subject
+        max (str): highest average in the class
+        min (str): lowest average in the class
+        out_of (str): maximum amount of points
+        default_out_of (str): the default maximum amount of points
+        subject (Subject): subject the average is from
     """
 
     __slots__ = [
@@ -457,39 +445,25 @@ class Average(Object):
 class Grade(Object):
     """Represents a grade. You shouldn't have to create this class manually.
 
-    Attributes
-    ----------
-    id : str
-        the id of the grade (used internally)
-    grade : str
-        the actual grade
-    out_of : str
-        the maximum amount of points
-    default_out_of : Optional[str]
-        the default maximum amount of points
-    date : datetime.date
-        the date on which the grade was given
-    subject : pronotepy.dataClasses.Subject
-        the subject in which the grade was given
-    period : pronotepy.dataClasses.Period
-        the period in which the grade was given
-    average : str
-        the average of the class
-    max : str
-        the highest grade of the test
-    min : str
-        the lowest grade of the test
-    coefficient : str
-        the coefficient of the grade
-    comment : str
-        the comment on the grade description
-    is_bonus : bool
-        is the grade bonus : only points above 10 count
-    is_optionnal : bool
-        is the grade optionnal : the grade only counts if it increases the average
-    is_out_of_20: bool
-        is the grade out of 20. Example 8/10 -> 16/20
+    Attributes:
+        id (str): the id of the grade (used internally)
+        grade (str): the actual grade
+        out_of (str): the maximum amount of points
+        default_out_of (Optional[str]): the default maximum amount of points
+        date (datetime.date): the date on which the grade was given
+        subject (Subject): the subject in which the grade was given
+        period (Period): the period in which the grade was given
+        average (str): the average of the class
+        max (str): the highest grade of the test
+        min (str): the lowest grade of the test
+        coefficient (str): the coefficient of the grade
+        comment (str): the comment on the grade description
+        is_bonus (bool): is the grade bonus : only points above 10 count
+        is_optionnal (bool): is the grade optionnal : the grade only counts if it increases the average
+        is_out_of_20 (bool): is the grade out of 20. Example 8/10 -> 16/20
     """
+
+    # TODO: optionnal -> optional
 
     __slots__ = [
         "id",
@@ -543,19 +517,15 @@ class Attachment(Object):
     """
     Represents a attachment to homework for example
 
-    Attributes
-    ----------
-    name : str
-        Name of the file or url of the link.
-    id : str
-        id of the file (used internally and for url)
-    url : str
-        url of the file/link
+    Attributes:
+        name (str): Name of the file or url of the link.
+        id (str): id of the file (used internally and for url)
+        url (str): url of the file/link
     """
 
     __slots__ = ["name", "id", "_client", "url", "_data"]
 
-    def __init__(self, client: _ClientBase, json_dict: dict) -> None:
+    def __init__(self, client: ClientBase, json_dict: dict) -> None:
         super().__init__(json_dict)
 
         self._client = client
@@ -586,10 +556,8 @@ class Attachment(Object):
         """
         Saves the file on to local storage.
 
-        Parameters
-        ----------
-        file_name : str
-            file name
+        Args:
+            file_name (str): file name
         """
         if self.type == 1:
             response = self._client.communication.session.get(self.url)
@@ -616,21 +584,15 @@ class LessonContent(Object):
     """
     Represents the content of a lesson. You shouldn't have to create this class manually.
 
-    Attributes
-    ----------
-    title : Optional[str]
-        title of the lesson content
-    description : Optional[str]
-        description of the lesson content
-    category : Optional[str]
-        category of the lesson content
-    files : tuple
-        files attached on lesson content
+    Attributes:
+        title (Optional[str]): title of the lesson content
+        description (Optional[str]): description of the lesson content
+        category (Optional[str]): category of the lesson content
     """
 
     __slots__ = ["title", "description", "_files", "_client"]
 
-    def __init__(self, client: _ClientBase, json_dict: dict) -> None:
+    def __init__(self, client: ClientBase, json_dict: dict) -> None:
         super().__init__(json_dict)
 
         self._client = client
@@ -656,44 +618,25 @@ class Lesson(Object):
     """
     Represents a lesson with a given time. You shouldn't have to create this class manually.
 
-    Attributes
-    ----------
-    id : str
-        the id of the lesson (used internally)
-    subject : Optional[pronotepy.Subject]
-        the subject that the lesson is from
-    teacher_name : Optional[str]
-        name of the teacher
-    teacher_names : Optional[List[str]]
-        name of the teachers
-    classroom : Optional[str]
-        name of the classroom
-    classrooms : Optional[List[str]]
-        name of the classrooms
-    canceled : bool
-        if the lesson is canceled
-    status : Optional[str]
-        status of the lesson
-    background_color : Optional[str]
-        background color of the lesson
-    outing : bool
-        if it is a pedagogical outing
-    start : datetime.datetime
-        starting time of the lesson
-    end : datetime.datetime
-        end of the lesson
-    group_name : Optional[str]
-        Name of the group.
-    group_names : Optional[List[str]]
-        Name of the groups.
-    exempted : bool
-        Specifies if the student's presence is exempt.
-    virtual_classrooms : List[str]
-        List of urls for virtual classrooms
-    num : int
-        For the same lesson time, the biggest num is the one shown on pronote.
-    detention : bool
-        is marked as detention
+    Attributes:
+        id (str): the id of the lesson (used internally)
+        subject (Optional[Subject]): the subject that the lesson is from
+        teacher_name (Optional[str]): name of the teacher
+        teacher_names (Optional[List[str]]): name of the teachers
+        classroom (Optional[str]): name of the classroom
+        classrooms (Optional[List[str]]): name of the classrooms
+        canceled (bool): if the lesson is canceled
+        status (Optional[str]): status of the lesson
+        background_color (Optional[str]): background color of the lesson
+        outing (bool): if it is a pedagogical outing
+        start (datetime.datetime): starting time of the lesson
+        end (datetime.datetime): end of the lesson
+        group_name (Optional[str]): Name of the group.
+        group_names (Optional[List[str]]): Name of the groups.
+        exempted (bool): Specifies if the student's presence is exempt.
+        virtual_classrooms (List[str]): List of urls for virtual classrooms
+        num (int): For the same lesson time, the biggest num is the one shown on pronote.
+        detention (bool): is marked as detention
     """
 
     __slots__ = [
@@ -719,7 +662,7 @@ class Lesson(Object):
         "num",
     ]
 
-    def __init__(self, client: _ClientBase, json_dict: dict) -> None:
+    def __init__(self, client: ClientBase, json_dict: dict) -> None:
         super().__init__(json_dict)
         self._client = client
         self._content: Optional[LessonContent] = None
@@ -819,9 +762,8 @@ class Lesson(Object):
         """
         Gets content of the lesson. May be None if there is no description.
 
-        Notes
-        -----
-        This property is very inefficient and will send a request to pronote, so don't use it often.
+        .. note:: This property is very inefficient and will send
+           a request to pronote, so don't use it often.
         """
         if self._content:
             return self._content
@@ -843,20 +785,13 @@ class Homework(Object):
     """
     Represents a homework. You shouldn't have to create this class manually.
 
-    Attributes
-    ----------
-    id : str
-        the id of the homework (used internally)
-    subject : pronotepy.dataClasses.Subject
-        the subject that the homework is for
-    description : str
-        the description of the homework
-    background_color : str
-        the background color of the homework
-    done : bool
-        if the homework is marked done
-    date : datetime.date
-        deadline
+    Attributes:
+        id (str): the id of the homework (used internally)
+        subject (Subject): the subject that the homework is for
+        description (str): the description of the homework
+        background_color (str): the background color of the homework
+        done (bool): if the homework is marked done
+        date (datetime.date): deadline
     """
 
     __slots__ = [
@@ -870,7 +805,7 @@ class Homework(Object):
         "_files",
     ]
 
-    def __init__(self, client: _ClientBase, json_dict: dict) -> None:
+    def __init__(self, client: ClientBase, json_dict: dict) -> None:
         super().__init__(json_dict)
 
         self._client = client
@@ -889,10 +824,8 @@ class Homework(Object):
         """
         Sets the status of the homework.
 
-        Parameters
-        ----------
-        status : bool
-            The status to which to change
+        Args:
+            status (bool): The status to which to change
         """
         data = {"listeTAF": [{"N": self.id, "TAFFait": status}]}
         self._client.post("SaisieTAFFaitEleve", 88, data)
@@ -908,28 +841,17 @@ class Information(Object):
     """
     Represents a information in a information and surveys tab.
 
-    Attributes
-    ----------
-    id : str
-        the id of the information
-    author : str
-        author of the information
-    title : str
-        title of the information
-    read : bool
-        if the message has been read
-    creation_date : datetime.datetime
-        the date when the message was created
-    start_date : datetime.datetime
-        the date when the message became visible
-    end_date : datetime.datetime
-        the date on which the message will be withdrawn
-    category: str
-        category of the information
-    survey: bool
-        if the message is a survey
-    anonymous_response : bool
-        if the survey response is anonymous
+    Attributes:
+        id (str): the id of the information
+        author (str): author of the information
+        title (str): title of the information
+        read (bool): if the message has been read
+        creation_date (datetime.datetime): the date when the message was created
+        start_date (datetime.datetime): the date when the message became visible
+        end_date (datetime.datetime): the date on which the message will be withdrawn
+        category (str): category of the information
+        survey (bool): if the message is a survey
+        anonymous_response (bool): if the survey response is anonymous
     """
 
     __slots__ = [
@@ -947,7 +869,7 @@ class Information(Object):
         "_client",
     ]
 
-    def __init__(self, client: _ClientBase, json_dict: dict) -> None:
+    def __init__(self, client: ClientBase, json_dict: dict) -> None:
         super().__init__(json_dict)
 
         self._client = client
@@ -1004,21 +926,13 @@ class Recipient(Object):
     """
     Represents a recipient to create a discussion
 
-    Attributes
-    ----------
-    id : str
-        the id of the recipient (used internally)
-    name : str
-        name of the recipient
-    type : str
-        teacher or staff
-    email: Optional[str]
-        email of the recipient
-    functions : List[str]
-        all function or subject of the recipient
-    with_discussion: bool
-        can be contacted by message
-
+    Attributes:
+        id (str): the id of the recipient (used internally)
+        name (str): name of the recipient
+        type (str): teacher or staff
+        email (Optional[str]): email of the recipient
+        functions (List[str]): all function or subject of the recipient
+        with_discussion (bool): can be contacted by message
     """
 
     __slots__ = [
@@ -1031,7 +945,7 @@ class Recipient(Object):
         "_type",
     ]
 
-    def __init__(self, client: _ClientBase, json_dict: dict) -> None:
+    def __init__(self, client: ClientBase, json_dict: dict) -> None:
         super().__init__(json_dict)
         self._client = client
         self._type: int = self._resolver(int, "G")
@@ -1062,23 +976,17 @@ class Message(Object):
     """
     Represents a message in a discussion.
 
-    Attributes
-    ----------
-    id : str
-        the id of the message (used internally)
-    author : str
-        author of the message
-    seen : bool
-        if the message was seen
-    date : datetime.datetime
-        the date when the message was sent
-    content: str
-        content of the messages
+    Attributes:
+        id (str): the id of the message (used internally)
+        author (str): author of the message
+        seen (bool): if the message was seen
+        date (datetime.datetime): the date when the message was sent
+        content (str): content of the messages
     """
 
     __slots__ = ["id", "author", "seen", "date", "content", "_client", "_listePM"]
 
-    def __init__(self, client: _ClientBase, json_dict: dict) -> None:
+    def __init__(self, client: ClientBase, json_dict: dict) -> None:
         super().__init__(json_dict)
         self._client = client
 
@@ -1100,12 +1008,8 @@ class Message(Object):
         """
         Get the message of a specific id
 
-        id: str
-            id of the message
-
-        Returns
-        -------
-        Message
+        Args:
+            id (str): id of the message
         """
         message = client.post(
             "ListeMessages", 131, {"listePossessionsMessages": [{"N": id}]}
@@ -1120,22 +1024,14 @@ class Discussion(Object):
     """
     Represents a discussion.
 
-    Attributes
-    ----------
-    id : str
-        the id of the discussion (used internally)
-    subject: str
-        the subject of the discussion
-    creator: str
-        the person who open the discussion
-    messages: List[Message]
-        messages link to the discussion
-    unread: int
-        number of unread messages
-    close: bool
-        True if the discussion is close
-    date : datetime.datetime
-        the date when the discussion was open
+    Attributes:
+        id (str): the id of the discussion (used internally)
+        subject (str): the subject of the discussion
+        creator (str): the person who open the discussion
+        messages (List[Message]): messages link to the discussion
+        unread (int): number of unread messages
+        close (bool): True if the discussion is close
+        date (datetime.datetime): the date when the discussion was open
     """
 
     __slots__ = [
@@ -1176,10 +1072,8 @@ class Discussion(Object):
         """
         Mark as read/unread the discussion
 
-        Parameters
-        ----------
-        read : bool
-            read/unread
+        Args:
+            read (bool): read/unread
         """
         self._client.post(
             "SaisieMessage",
@@ -1195,9 +1089,8 @@ class Discussion(Object):
         """
         Reply to a discussion
 
-        Parameters
-        ----------
-        message : str
+        Args:
+            message (str)
         """
         self._client.post(
             "SaisieMessage",
@@ -1224,17 +1117,14 @@ class ClientInfo:
     """
     Contains info for a resource (a client).
 
-    Attributes
-    ----------
-    id : str
-      id of the client (used internally)
-    raw_resource : dict
-      Raw json defining the resource
+    Attributes:
+        id (str): id of the client (used internally)
+        raw_resource (dict): Raw json defining the resource
     """
 
     __slots__ = ["id", "raw_resource", "_client", "__cache"]
 
-    def __init__(self, client: _ClientBase, json_: dict) -> None:
+    def __init__(self, client: ClientBase, json_: dict) -> None:
         self.id: str = json_["N"]
         self.raw_resource: dict = json_
         self._client = client
@@ -1301,14 +1191,13 @@ class ClientInfo:
         """
         Address of the client
 
-        Returns
-        -------
-        A tuple of 8 elements:
-            - 4 lines of address info
-            - postal code
-            - city
-            - province
-            - country
+        Returns:
+            A tuple of 8 elements:
+                - 4 lines of address info
+                - postal code
+                - city
+                - province
+                - country
         """
         c = self._cache()
         return (
@@ -1331,9 +1220,8 @@ class ClientInfo:
         """
         Phone of the client
 
-        Returns
-        -------
-        Phone in the format +[country-code][phone-number]
+        Returns:
+            str: Phone in the format +[country-code][phone-number]
         """
         c = self._cache()
         return "+" + c["indicatifTel"] + c["telephonePortable"]
@@ -1347,27 +1235,19 @@ class Acquisition(Object):
     """
     Contains acquisition info for an evaluation.
 
-    Attributes
-    ----------
-    order : int
-        Telling the order in which the acquisition is. The list of acquisitions is already sorted by this.
-    level : str
-        the level achieved for this acquisition
-    id : int
-        id, used internally
-    abbreviation : str
-        abbreviation for the level achieved
-    coefficient : int
-        coefficient
-    domain : str
-        domain in which the acquisition is
-    domain_id : str
-    name : str
-        name (description) of the acquisition
-    name_id : str
-    pillar : str
-    pillar_id : str
-    pillar_prefix : str
+    Attributes:
+        order (int): Telling the order in which the acquisition is. The list of acquisitions is already sorted by this.
+        level (str): the level achieved for this acquisition
+        id (int): id, used internally
+        abbreviation (str): abbreviation for the level achieved
+        coefficient (int): coefficient
+        domain (str): domain in which the acquisition is
+        domain_id (str)
+        name (str): name (description) of the acquisition
+        name_id (str)
+        pillar (str)
+        pillar_id (str)
+        pillar_prefix (str)
     """
 
     __slots__ = [
@@ -1410,19 +1290,17 @@ class Evaluation(Object):
     """
     Data class for an evaluation.
 
-    Attributes
-    ----------
-    name : str
-    id : str
-    domain : Optional[str]
-    teacher : str
-        the teacher who issued the evaluation
-    coefficient : int
-    description : str
-    subject : pronotepy.dataClasses.Subject
-    paliers : List[str]
-    acquisitions : List[pronotepy.dataClasses.Acquisition]
-    date : datetime.date
+    Attributes:
+        name (str)
+        id (str)
+        domain (Optional[str])
+        teacher (str): the teacher who issued the evaluation
+        coefficient (int)
+        description (str)
+        subject (Subject)
+        paliers (List[str])
+        acquisitions (List[Acquisition])
+        date (datetime.date)
     """
 
     __slots__ = [
@@ -1467,22 +1345,20 @@ class Identity(Object):
     """
     Represents an Identity of a person
 
-    Attributes
-    ----------
-    postal_code : str
-    date_of_birth : datetime.date
-    email : Optional[str]
-    last_name : str
-    country : str
-    mobile_number : Optional[str]
-    landline_number : Optional[str]
-    other_phone_number : Optional[str]
-    city : str
-    place_of_birth : Optional[str]
-    first_names : List[str]
-    address : List[str]
-    formatted_address : str
-        concatenated address information into a single string
+    Attributes:
+        postal_code (str)
+        date_of_birth (datetime.date)
+        email (Optional[str])
+        last_name (str)
+        country (str)
+        mobile_number (Optional[str])
+        landline_number (Optional[str])
+        other_phone_number (Optional[str])
+        city (str)
+        place_of_birth (Optional[str])
+        first_names (List[str])
+        address (List[str])
+        formatted_address (str): concatenated address information into a single string
     """
 
     __slots__ = [
@@ -1547,20 +1423,19 @@ class Guardian(Object):
     """
     Represents a guardian of a student.
 
-    Attributes
-    ----------
-    identity : dataClasses.Identity
-    accepteInfosProf : bool
-    authorized_email : bool
-    authorized_pick_up_kid : bool
-    urgency_contact : bool
-    preferred_responsible_contact : bool
-    accomodates_kid : bool
-    relatives_link : str
-    responsibility_level : str
-    financially_responsible : bool
-    full_name : str
-    is_legal : bool
+    Attributes:
+        identity (Identity)
+        accepteInfosProf (bool)
+        authorized_email (bool)
+        authorized_pick_up_kid (bool)
+        urgency_contact (bool)
+        preferred_responsible_contact (bool)
+        accomodates_kid (bool)
+        relatives_link (str)
+        responsibility_level (str)
+        financially_responsible (bool)
+        full_name (str)
+        is_legal (bool)
     """
 
     __slots__ = [
@@ -1608,18 +1483,16 @@ class Student(Object):
     """
     Represents a student
 
-    Attributes
-    ----------
-    full_name : str
-    id : str
-    enrollment_date : datetime.date
-    date_of_birth : datetime.date
-    projects : List[str]
-    last_name : str
-    first_names : str
-    sex : str
-    options : List[str]
-        language options
+    Attributes:
+        full_name (str)
+        id (str)
+        enrollment_date (datetime.date)
+        date_of_birth (datetime.date)
+        projects (List[str])
+        last_name (str)
+        first_names (str)
+        sex (str)
+        options (List[str]): language options
     """
 
     __slots__ = [
@@ -1636,7 +1509,7 @@ class Student(Object):
         "_cache",
     ]
 
-    def __init__(self, client: _ClientBase, json_dict: dict) -> None:
+    def __init__(self, client: ClientBase, json_dict: dict) -> None:
         super().__init__(json_dict)
 
         self.full_name: str = self._resolver(str, "L")
@@ -1704,18 +1577,16 @@ class StudentClass(Object):
     """
     Represents a class of students
 
-    Attributes
-    ----------
-    name : str
-    id : str
-    responsible : bool
-        is the teacher responsible for the class
-    grade : str
+    Attributes:
+        name (str)
+        id (str)
+        responsible (bool): is the teacher responsible for the class
+        grade (str)
     """
 
     __slots__ = ["name", "id", "responsible", "grade", "_client"]
 
-    def __init__(self, client: _ClientBase, json_dict: dict) -> None:
+    def __init__(self, client: ClientBase, json_dict: dict) -> None:
         super().__init__(json_dict)
 
         self.name: str = self._resolver(str, "L")
@@ -1744,55 +1615,43 @@ class Menu(Object):
     """
     Represents the menu of a meal
 
-    Attributes
-    ----------
-    id : str
-    self.name: Optional[str]
-    date : datetime.date
-        the date of the menu
-    is_lunch : bool
-        the menu is a lunch menu
-    is_dinner : bool
-        the menu is a dinner menu
-    first_meal : Optional[List[Food]]
-        food list of first meal
-    main_meal : Optional[List[Food]]
-        food list of main meal
-    side_meal : Optional[List[Food]]
-        food list of side meal
-    other_meal : Optional[List[Food]]
-        food list of other meal
-    cheese : Optional[List[Food]]
-        food list of cheese
-    dessert : Optional[List[Food]]
-        food list of dessert
+    Attributes:
+        id (str)
+        self.name (Optional[str])
+        date (datetime.date): the date of the menu
+        is_lunch (bool): the menu is a lunch menu
+        is_dinner (bool): the menu is a dinner menu
+        first_meal (Optional[List[Food]]): food list of first meal
+        main_meal (Optional[List[Food]]): food list of main meal
+        side_meal (Optional[List[Food]]): food list of side meal
+        other_meal (Optional[List[Food]]): food list of other meal
+        cheese (Optional[List[Food]]): food list of cheese
+        dessert (Optional[List[Food]]): food list of dessert
     """
 
     class Food(Object):
         """
         Represents food of a menu
 
-        Attributes
-        ----------
-        id : str
-        name : str
-        labels : List[FoodLabel]
+        Attributes:
+            id (str)
+            name (str)
+            labels (List[FoodLabel])
         """
 
         class FoodLabel(Object):
             """
             Represents the label of a food
 
-            Attributes
-            ----------
-            id : str
-            name: str
-            color: str
+            Attributes:
+                id (str)
+                name (str)
+                color (str)
             """
 
             __slots__ = ["name", "id", "color", "_client"]
 
-            def __init__(self, client: _ClientBase, json_dict: dict) -> None:
+            def __init__(self, client: ClientBase, json_dict: dict) -> None:
                 super().__init__(json_dict)
 
                 self.id: str = self._resolver(str, "N")
@@ -1805,7 +1664,7 @@ class Menu(Object):
 
         __slots__ = ["name", "id", "labels", "_client"]
 
-        def __init__(self, client: _ClientBase, json_dict: dict) -> None:
+        def __init__(self, client: ClientBase, json_dict: dict) -> None:
             super().__init__(json_dict)
 
             self.id: str = self._resolver(str, "N")
@@ -1835,7 +1694,7 @@ class Menu(Object):
         "_client",
     ]
 
-    def __init__(self, client: _ClientBase, json_dict: dict) -> None:
+    def __init__(self, client: ClientBase, json_dict: dict) -> None:
         super().__init__(json_dict)
 
         self.id: str = self._resolver(str, "N")
@@ -1879,30 +1738,21 @@ class Punishment(Object):
     """
     Represents a punishment.
 
-    Attributes
-    ----------
-    id : str
-    given : datetime.datetime
-        Date and time when the punishment was given
-    exclusion : bool
-        If the punishment is an exclusion
-    during_lesson : bool
-    homework : str
-        Text description of the homework that was given as the punishment
-    homework_documents : List[Attachment]
-        Attached documents for homework
-    circumstances : str
-    circumstance_documents : List[Attachment]
-    nature : str
-        Text description of the nature of the punishment (ex. "Retenue")
-    reasons : List[str]
-        Text descriptions of the reasons for the punishment
-    giver : str
-        Name of the person that gave the punishment
-    schedule : List[Punishment.ScheduledPunishment]
-        List of scheduled date-times with durations
-    schedulable : bool
-    duration : datetime.timedelta
+    Attributes:
+        id (str)
+        given (datetime.datetime): Date and time when the punishment was given
+        exclusion (bool): If the punishment is an exclusion
+        during_lesson (bool)
+        homework (str): Text description of the homework that was given as the punishment
+        homework_documents (List[Attachment]): Attached documents for homework
+        circumstances (str)
+        circumstance_documents (List[Attachment])
+        nature (str): Text description of the nature of the punishment (ex. "Retenue")
+        reasons (List[str]): Text descriptions of the reasons for the punishment
+        giver (str): Name of the person that gave the punishment
+        schedule (List[ScheduledPunishment]): List of scheduled date-times with durations
+        schedulable (bool)
+        duration (datetime.timedelta)
     """
 
     __slots__ = [
@@ -1926,16 +1776,15 @@ class Punishment(Object):
         """
         Represents a sheduled punishment.
 
-        Attributes
-        ----------
-        id : str
-        start : datetime.datetime
-        duration : datetime.timedelta
+        Attributes:
+            id (str)
+            start (datetime.datetime)
+            duration (datetime.timedelta)
         """
 
         __slots__ = ["start", "duration"]
 
-        def __init__(self, client: _ClientBase, json_dict: dict) -> None:
+        def __init__(self, client: ClientBase, json_dict: dict) -> None:
             super().__init__(json_dict)
             self.id: str = self._resolver(str, "N")
 
@@ -1958,7 +1807,7 @@ class Punishment(Object):
 
             del self._resolver
 
-    def __init__(self, client: _ClientBase, json_dict: dict) -> None:
+    def __init__(self, client: ClientBase, json_dict: dict) -> None:
         super().__init__(json_dict)
         self.id: str = self._resolver(str, "N")
 

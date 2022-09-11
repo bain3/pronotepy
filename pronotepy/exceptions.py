@@ -1,5 +1,18 @@
 from typing import Tuple
 
+__all__ = (
+    "PronoteAPIError",
+    "CryptoError",
+    "ExpiredObject",
+    "ChildNotFound",
+    "DataError",
+    "ParsingError",
+    "ICalExportError",
+    "DateParsingError",
+    "ENTLoginError",
+    "UnsupportedOperation",
+)
+
 
 class PronoteAPIError(Exception):
     """
