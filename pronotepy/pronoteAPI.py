@@ -115,14 +115,11 @@ class _Communication(object):
         Handler for all POST requests by the api to PRONOTE servers. Automatically provides all needed data for the
         verification of posts. Session id and order numbers are preserved.
 
-        Parameters
-        ----------
-        function_name : str
-            The name of the function (eg. Authentification)
-        data : dict
-            The date that will be sent in the donneesSec dictionary
-        decryption_change
-            If the decryption key or iv is changing in the middle of the request, you can set it here
+        Args:
+            function_name (str): The name of the function (eg. Authentification)
+            data (dict): The date that will be sent in the donneesSec dictionary
+            decryption_change (Optional[dict]): If the decryption key or iv is
+                changing in the middle of the request, you can set it here
         """
         if (
             "_Signature_" in data
@@ -234,12 +231,9 @@ class _Communication(object):
         """
         Key change after the authentification was successful.
 
-        Parameters
-        ----------
-        auth_key
-            AES authentification key used to calculate the challenge (From password of the user)
-        data
-            Data from the request
+        Args:
+            auth_key (bytes): AES authentification key used to calculate the challenge (From password of the user)
+            data (dict): Data from the request
         """
         self.encryption.aes_key = auth_key
         if not self.cookies:
@@ -253,10 +247,8 @@ class _Communication(object):
     def _parse_html(self, html: bytes) -> dict:
         """Parses the html for the RSA keys
 
-        Returns
-        -------
-        dict
-            HTML attributes
+        Returns:
+            dict: HTML attributes
         """
         parsed = BeautifulSoup(html, "html.parser")
 
