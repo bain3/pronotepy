@@ -1,7 +1,7 @@
 Exceptions
 ==========
 This section documents all exceptions that pronotepy intentionally
-raises. All of them extend the :class:`.PronoteAPIError` exception
+raises. All of them extend the :class:`.PronoteAPIError` exception.
 
 ------------------------------------------------------------------
 

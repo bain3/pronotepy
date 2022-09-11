@@ -3,9 +3,9 @@
 ENT / CAS
 =========
 
-All ENT functions that you can use while initialising the client:
+All ENT functions that you can use while initialising the client.
 
-An example of client initialisation with the ac_reunion ENT.
+An example of client initialisation with the ac_reunion ENT:
 
 .. code-block:: python
 

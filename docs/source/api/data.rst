@@ -1,7 +1,7 @@
 Data classes
 ============
 This section documents all data classes / models that pronotepy receives
-from pronotepy. It also includes a :class:`.Util` class.
+from PRONOTE. It also includes a useful :class:`.Util` class.
 
 ------------------------------------------------------------------------
 
