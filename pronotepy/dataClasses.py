@@ -1848,12 +1848,16 @@ class Punishment(Object):
         )
         self.giver: str = self._resolver(str, "demandeur", "V", "L")
 
-        self.schedule: List[Punishment.ScheduledPunishment] = self._resolver(
-            lambda x: [Punishment.ScheduledPunishment(client, i) for i in x],
-            "programmation",
-            "V",
-        )
         self.schedulable: bool = self._resolver(bool, "estProgrammable")
+
+        self.schedule: List[Punishment.ScheduledPunishment] = []
+        if self.schedulable:
+            self.schedule = self._resolver(
+                lambda x: [Punishment.ScheduledPunishment(client, i) for i in x],
+                "programmation",
+                "V",
+            )
+
         self.duration: datetime.timedelta = self._resolver(
             lambda v: datetime.timedelta(minutes=int(v)), "duree"
         )
