@@ -71,7 +71,11 @@ def _educonnect(
 
 @typing.no_type_check
 def _cas_edu(
-    username: str, password: str, url: str = "", redirect_form: bool = True, pronote_url: str = None
+    username: str,
+    password: str,
+    url: str = "",
+    redirect_form: bool = True,
+    pronote_url: str = None,
 ) -> requests.cookies.RequestsCookieJar:
     """
     Generic function for CAS with Educonnect
@@ -96,7 +100,7 @@ def _cas_edu(
     """
     if not url:
         raise ENTLoginError("Missing url attribute")
-    
+
     if pronote_url:
         url += "&service=" + pronote_url
 
