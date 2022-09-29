@@ -6,6 +6,7 @@ from functools import partial
 import pronotepy
 from pronotepy import ent
 import logging
+import requests
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
@@ -26,7 +27,10 @@ class TestENT(unittest.TestCase):
             }
             for func in as_completed(futures):
                 with self.subTest(futures[func]):
-                    self.assertRaises(pronotepy.ENTLoginError, func.result)
+                    self.assertRaises(
+                        (pronotepy.ENTLoginError, requests.exceptions.ConnectionError),
+                        func.result,
+                    )
 
 
 if __name__ == "__main__":
