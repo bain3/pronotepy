@@ -101,9 +101,6 @@ def _cas_edu(
     if not url:
         raise ENTLoginError("Missing url attribute")
 
-    if pronote_url:
-        url += "&service=" + pronote_url
-
     log.debug(f"[ENT {url}] Logging in with {username}")
 
     # ENT Connection

@@ -62,9 +62,7 @@ class ClientBase:
         if ent:
             pronote_url = pronote_url.replace("login=true", "")
             cookies = (
-                ent(username, password, pronote_url=pronote_url)
-                if ent.func.__name__ == "_cas_edu"
-                else ent(username, password)
+                ent(username, password)
             )
         else:
             cookies = None
