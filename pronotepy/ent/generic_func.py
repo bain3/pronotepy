@@ -71,11 +71,7 @@ def _educonnect(
 
 @typing.no_type_check
 def _cas_edu(
-    username: str,
-    password: str,
-    url: str = "",
-    redirect_form: bool = True,
-    pronote_url: str = None,
+    username: str, password: str, url: str = "", redirect_form: bool = True
 ) -> requests.cookies.RequestsCookieJar:
     """
     Generic function for CAS with Educonnect
@@ -90,8 +86,6 @@ def _cas_edu(
         url of the ent login page
     redirect_form : bool
         True if the site use JS redirection
-    pronote_url : str
-        Url of the pronote server, could be nedeed if you're to connect to Pronote
 
     Returns
     -------
