@@ -3,7 +3,7 @@ import typing
 
 import requests
 from bs4 import BeautifulSoup
-from urllib.parse import urlparse
+from urllib.parse import urljoin, urlparse, urlunparse
 
 from ..exceptions import *
 
@@ -380,6 +380,34 @@ def _oze_ent(
             raise ENTLoginError(
                 f"Fail to connect with Oze ENT {url} : probably wrong login information"
             )
+
+        # Compute the Oze API url
+        api_url = urlunparse(
+            urlparse(url)._replace(netloc="api-" + urlparse(url).netloc)
+        )
+
+        # Get mandatory user info for next call
+        info_url = urljoin(api_url, "/v1/users/me")
+        r = session.get(info_url, headers=HEADERS)
+        info = r.json()
+        ctx_profil = info["currentProfil"]["codeProfil"]
+        ctx_etab = info["currentProfil"]["uai"]
+
+        # Get info about Oze apps
+        ozeapps_url = urljoin(api_url, "/v1/ozapps")
+        payload = {}
+        payload["ctx_profil"] = ctx_profil
+        payload["ctx_etab"] = ctx_etab
+        r = session.get(ozeapps_url, params=payload, headers=HEADERS)
+
+        # Find proxySSO url for Pronote app and call it
+        ozeapps = r.json()
+        proxysso_url = None
+        for app in ozeapps:
+            if app["code"] == "pronote":
+                proxysso_url = urljoin(url, app["externalRoute"])
+
+        r = session.get(proxysso_url, headers=HEADERS)
 
         return session.cookies
 
