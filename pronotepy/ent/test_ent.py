@@ -6,6 +6,7 @@ from functools import partial
 import pronotepy
 from pronotepy import ent
 import logging
+from concurrent.futures import ThreadPoolExecutor, as_completed
 
 
 class TestENT(unittest.TestCase):
@@ -18,8 +19,14 @@ class TestENT(unittest.TestCase):
         )
 
     def test_functions(self) -> None:
-        for func in self.functions:
-            self.assertRaises(pronotepy.ENTLoginError, func[1], "username", "password")
+        with ThreadPoolExecutor(max_workers=10) as executor:
+            futures = {
+                executor.submit(func[1], "username", "password"): func[0]
+                for func in self.functions
+            }
+            for func in as_completed(futures):
+                with self.subTest(futures[func]):
+                    self.assertRaises(pronotepy.ENTLoginError, func.result)
 
 
 if __name__ == "__main__":
