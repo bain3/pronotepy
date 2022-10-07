@@ -43,25 +43,17 @@ Example of client initialisation:
 
 -----------------------------------------------------------------------
 
-ClientBase
-~~~~~~~~~~
 .. autoclass:: ClientBase
     :members:
 
-Client
-~~~~~~
 .. autoclass:: Client
     :members:
     :show-inheritance:
 
-ParentClient
-~~~~~~~~~~~~
 .. autoclass:: ParentClient
     :members:
     :show-inheritance:
 
-VieScolaireClient
-~~~~~~~~~~~~~~~~~
 .. autoclass:: VieScolaireClient
     :members:
     :show-inheritance:
