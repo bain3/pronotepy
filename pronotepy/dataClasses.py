@@ -852,6 +852,7 @@ class Information(Object):
         category (str): category of the information
         survey (bool): if the message is a survey
         anonymous_response (bool): if the survey response is anonymous
+        attachments (List[Attachment])
     """
 
     __slots__ = [
