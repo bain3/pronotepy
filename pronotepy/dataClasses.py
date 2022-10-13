@@ -896,7 +896,7 @@ class Information(Object):
         )
         self.anonymous_response: bool = self._resolver(bool, "reponseAnonyme")
 
-        def make_attachments(questions):
+        def make_attachments(questions: dict) -> List[Attachment]:
             attachments = []
             for question in questions:
                 for j in question["listePiecesJointes"]["V"]:
