@@ -82,7 +82,9 @@ ac_reunion = partial(
     url="https://sso.ac-reunion.fr/saml/discovery/?idp_ident=https://educonnect.education.gouv.fr/idp",
 )
 
-cas_agora06 = partial(_cas_edu, url="https://cas.agora06.fr/login?selection=EDU")
+cas_agora06 = partial(
+    _cas_edu, url="https://cas.agora06.fr/login?selection=EDU&service=https://0/"
+)
 
 cas_seinesaintdenis_edu = partial(
     _cas_edu,
