@@ -18,6 +18,7 @@ from typing import (
     TYPE_CHECKING,
 )
 from urllib.parse import quote
+from autoslot import Slots  # type: ignore
 
 from Crypto.Util import Padding
 
@@ -219,7 +220,7 @@ class Object:
         self._resolver: Object._Resolver = self._Resolver(json_dict)
 
 
-class Subject(Object):
+class Subject(Object, Slots):
     """
     Represents a subject. You shouldn't have to create this class manually.
 
@@ -228,8 +229,6 @@ class Subject(Object):
         name (str): name of the subject
         groups (bool): if the subject is in groups
     """
-
-    __slots__ = ["id", "name", "groups"]
 
     def __init__(self, parsed_json: dict) -> None:
         super().__init__(parsed_json)
@@ -241,7 +240,7 @@ class Subject(Object):
         del self._resolver
 
 
-class Absence(Object):
+class Absence(Object, Slots):
     """
     Represents an absence with a given period. You shouldn't have to create this class manually.
 
@@ -254,8 +253,6 @@ class Absence(Object):
         days (int): the number of days missed
         reasons (List[str]): The reason(s) for the absence
     """
-
-    __slots__ = ["id", "from_date", "to_date", "justified", "hours" "days", "reasons"]
 
     def __init__(self, json_dict: dict) -> None:
         super().__init__(json_dict)
@@ -277,7 +274,7 @@ class Absence(Object):
         del self._resolver
 
 
-class Period(Object):
+class Period(Object, Slots):
     """
     Represents a period of the school year. You shouldn't have to create this class manually.
 
@@ -288,7 +285,6 @@ class Period(Object):
         end (datetime.datetime): date on which the period ends
     """
 
-    __slots__ = ["_client", "id", "name", "start", "end"]
     instances: Set[Any] = set()
 
     def __init__(self, client: ClientBase, json_dict: dict) -> None:
@@ -402,7 +398,7 @@ class Period(Object):
         return [Punishment(self._client, a) for a in absences if a["G"] == 41]
 
 
-class Average(Object):
+class Average(Object, Slots):
     """
     Represents an Average.
 
@@ -415,16 +411,6 @@ class Average(Object):
         default_out_of (str): the default maximum amount of points
         subject (Subject): subject the average is from
     """
-
-    __slots__ = [
-        "student",
-        "out_of",
-        "default_out_of",
-        "class_average",
-        "min",
-        "max",
-        "subject",
-    ]
 
     def __init__(self, json_dict: dict) -> None:
         super().__init__(json_dict)
@@ -442,7 +428,7 @@ class Average(Object):
         del self._resolver
 
 
-class Grade(Object):
+class Grade(Object, Slots):
     """Represents a grade. You shouldn't have to create this class manually.
 
     Attributes:
@@ -464,24 +450,6 @@ class Grade(Object):
     """
 
     # TODO: optionnal -> optional
-
-    __slots__ = [
-        "id",
-        "grade",
-        "out_of",
-        "default_out_of",
-        "date",
-        "subject",
-        "period",
-        "average",
-        "max",
-        "min",
-        "coefficient",
-        "comment",
-        "bonus",
-        "is_optionnal",
-        "is_out_of_20",
-    ]
 
     def __init__(self, json_dict: dict) -> None:
         super().__init__(json_dict)
@@ -513,7 +481,7 @@ class Grade(Object):
         del self._resolver
 
 
-class Attachment(Object):
+class Attachment(Object, Slots):
     """
     Represents a attachment to homework for example
 
@@ -522,8 +490,6 @@ class Attachment(Object):
         id (str): id of the file (used internally and for url)
         url (str): url of the file/link
     """
-
-    __slots__ = ["name", "id", "_client", "url", "_data"]
 
     def __init__(self, client: ClientBase, json_dict: dict) -> None:
         super().__init__(json_dict)
@@ -580,7 +546,7 @@ class Attachment(Object):
         return response.content
 
 
-class LessonContent(Object):
+class LessonContent(Object, Slots):
     """
     Represents the content of a lesson. You shouldn't have to create this class manually.
 
@@ -589,8 +555,6 @@ class LessonContent(Object):
         description (Optional[str]): description of the lesson content
         category (Optional[str]): category of the lesson content
     """
-
-    __slots__ = ["title", "description", "_files", "_client"]
 
     def __init__(self, client: ClientBase, json_dict: dict) -> None:
         super().__init__(json_dict)
@@ -614,7 +578,7 @@ class LessonContent(Object):
         return [Attachment(self._client, jsn) for jsn in self._files]
 
 
-class Lesson(Object):
+class Lesson(Object, Slots):
     """
     Represents a lesson with a given time. You shouldn't have to create this class manually.
 
@@ -638,29 +602,6 @@ class Lesson(Object):
         num (int): For the same lesson time, the biggest num is the one shown on pronote.
         detention (bool): is marked as detention
     """
-
-    __slots__ = [
-        "id",
-        "subject",
-        "teacher_name",
-        "teacher_names",
-        "classroom",
-        "classrooms",
-        "start",
-        "canceled",
-        "status",
-        "background_color",
-        "detention",
-        "end",
-        "outing",
-        "group_name",
-        "group_names",
-        "exempted",
-        "_client",
-        "_content",
-        "virtual_classrooms",
-        "num",
-    ]
 
     def __init__(self, client: ClientBase, json_dict: dict) -> None:
         super().__init__(json_dict)
@@ -781,7 +722,7 @@ class Lesson(Object):
         return self._content
 
 
-class Homework(Object):
+class Homework(Object, Slots):
     """
     Represents a homework. You shouldn't have to create this class manually.
 
@@ -793,17 +734,6 @@ class Homework(Object):
         done (bool): if the homework is marked done
         date (datetime.date): deadline
     """
-
-    __slots__ = [
-        "id",
-        "subject",
-        "description",
-        "done",
-        "background_color",
-        "_client",
-        "date",
-        "_files",
-    ]
 
     def __init__(self, client: ClientBase, json_dict: dict) -> None:
         super().__init__(json_dict)
@@ -837,7 +767,7 @@ class Homework(Object):
         return [Attachment(self._client, jsn) for jsn in self._files]  # type: ignore
 
 
-class Information(Object):
+class Information(Object, Slots):
     """
     Represents a information in a information and surveys tab.
 
@@ -854,21 +784,6 @@ class Information(Object):
         anonymous_response (bool): if the survey response is anonymous
         attachments (List[Attachment])
     """
-
-    __slots__ = [
-        "id",
-        "title",
-        "author",
-        "read",
-        "creation_date",
-        "start_date",
-        "end_date",
-        "category",
-        "survey",
-        "anonymous_response",
-        "_raw_content",
-        "_client",
-    ]
 
     def __init__(self, client: ClientBase, json_dict: dict) -> None:
         super().__init__(json_dict)
@@ -934,7 +849,7 @@ class Information(Object):
         self.read = status
 
 
-class Recipient(Object):
+class Recipient(Object, Slots):
     """
     Represents a recipient to create a discussion
 
@@ -946,16 +861,6 @@ class Recipient(Object):
         functions (List[str]): all function or subject of the recipient
         with_discussion (bool): can be contacted by message
     """
-
-    __slots__ = [
-        "id",
-        "name",
-        "type",
-        "functions",
-        "with_discussion",
-        "_client",
-        "_type",
-    ]
 
     def __init__(self, client: ClientBase, json_dict: dict) -> None:
         super().__init__(json_dict)
@@ -984,7 +889,7 @@ class Recipient(Object):
         del self._resolver
 
 
-class Message(Object):
+class Message(Object, Slots):
     """
     Represents a message in a discussion.
 
@@ -995,8 +900,6 @@ class Message(Object):
         date (datetime.datetime): the date when the message was sent
         content (str): content of the messages
     """
-
-    __slots__ = ["id", "author", "seen", "date", "content", "_client", "_listePM"]
 
     def __init__(self, client: ClientBase, json_dict: dict) -> None:
         super().__init__(json_dict)
@@ -1032,7 +935,7 @@ class Message(Object):
         )
 
 
-class Discussion(Object):
+class Discussion(Object, Slots):
     """
     Represents a discussion.
 
@@ -1045,17 +948,6 @@ class Discussion(Object):
         close (bool): True if the discussion is close
         date (datetime.datetime): the date when the discussion was open
     """
-
-    __slots__ = [
-        "id",
-        "subject",
-        "messages",
-        "unread",
-        "close",
-        "date",
-        "_client",
-        "_possessions",
-    ]
 
     def __init__(self, client: Client, json_dict: dict) -> None:
         super().__init__(json_dict)
@@ -1125,7 +1017,7 @@ class Discussion(Object):
         )
 
 
-class ClientInfo:
+class ClientInfo(Slots):
     """
     Contains info for a resource (a client).
 
@@ -1133,8 +1025,6 @@ class ClientInfo:
         id (str): id of the client (used internally)
         raw_resource (dict): Raw json defining the resource
     """
-
-    __slots__ = ["id", "raw_resource", "_client", "__cache"]
 
     def __init__(self, client: ClientBase, json_: dict) -> None:
         self.id: str = json_["N"]
@@ -1243,7 +1133,7 @@ class ClientInfo:
         return self._cache()["numeroINE"]
 
 
-class Acquisition(Object):
+class Acquisition(Object, Slots):
     """
     Contains acquisition info for an evaluation.
 
@@ -1261,21 +1151,6 @@ class Acquisition(Object):
         pillar_id (str)
         pillar_prefix (str)
     """
-
-    __slots__ = [
-        "order",
-        "level",
-        "id",
-        "abbreviation",
-        "coefficient",
-        "domain",
-        "domain_id",
-        "name",
-        "name_id",
-        "pillar",
-        "pillar_id",
-        "pillar_prefix",
-    ]
 
     def __init__(self, json_dict: dict) -> None:
         super().__init__(json_dict)
@@ -1298,7 +1173,7 @@ class Acquisition(Object):
         del self._resolver
 
 
-class Evaluation(Object):
+class Evaluation(Object, Slots):
     """
     Data class for an evaluation.
 
@@ -1314,20 +1189,6 @@ class Evaluation(Object):
         acquisitions (List[Acquisition])
         date (datetime.date)
     """
-
-    __slots__ = [
-        "name",
-        "name",
-        "id",
-        "domain",
-        "teacher",
-        "coefficient",
-        "description",
-        "subject",
-        "paliers",
-        "acquisitions",
-        "date",
-    ]
 
     def __init__(self, json_dict: dict) -> None:
         super().__init__(json_dict)
@@ -1353,7 +1214,7 @@ class Evaluation(Object):
         del self._resolver
 
 
-class Identity(Object):
+class Identity(Object, Slots):
     """
     Represents an Identity of a person
 
@@ -1372,22 +1233,6 @@ class Identity(Object):
         address (List[str])
         formatted_address (str): concatenated address information into a single string
     """
-
-    __slots__ = [
-        "postal_code",
-        "date_of_birth",
-        "email",
-        "last_name",
-        "country",
-        "mobile_number",
-        "landline_number",
-        "other_phone_number",
-        "city",
-        "place_of_birth",
-        "first_names",
-        "address",
-        "formatted_address",
-    ]
 
     def __init__(self, json_dict: dict) -> None:
         super().__init__(json_dict)
@@ -1431,7 +1276,7 @@ class Identity(Object):
         del self._resolver
 
 
-class Guardian(Object):
+class Guardian(Object, Slots):
     """
     Represents a guardian of a student.
 
@@ -1449,21 +1294,6 @@ class Guardian(Object):
         full_name (str)
         is_legal (bool)
     """
-
-    __slots__ = [
-        "identity",
-        "accepteInfosProf",
-        "authorized_email",
-        "authorized_pick_up_kid",
-        "urgency_contact",
-        "preferred_responsible_contact",
-        "accomodates_kid",
-        "relatives_link",
-        "responsibility_level",
-        "financially_responsible",
-        "full_name",
-        "is_legal",
-    ]
 
     def __init__(self, json_dict: dict) -> None:
         super().__init__(json_dict)
@@ -1491,7 +1321,7 @@ class Guardian(Object):
         del self._resolver
 
 
-class Student(Object):
+class Student(Object, Slots):
     """
     Represents a student
 
@@ -1506,20 +1336,6 @@ class Student(Object):
         sex (str)
         options (List[str]): language options
     """
-
-    __slots__ = [
-        "_client",
-        "full_name",
-        "id",
-        "enrollment_date",
-        "date_of_birth",
-        "projects",
-        "last_name",
-        "first_names",
-        "sex",
-        "options",
-        "_cache",
-    ]
 
     def __init__(self, client: ClientBase, json_dict: dict) -> None:
         super().__init__(json_dict)
@@ -1585,7 +1401,7 @@ class Student(Object):
         ]
 
 
-class StudentClass(Object):
+class StudentClass(Object, Slots):
     """
     Represents a class of students
 
@@ -1595,8 +1411,6 @@ class StudentClass(Object):
         responsible (bool): is the teacher responsible for the class
         grade (str)
     """
-
-    __slots__ = ["name", "id", "responsible", "grade", "_client"]
 
     def __init__(self, client: ClientBase, json_dict: dict) -> None:
         super().__init__(json_dict)
@@ -1623,7 +1437,7 @@ class StudentClass(Object):
         ]
 
 
-class Menu(Object):
+class Menu(Object, Slots):
     """
     Represents the menu of a meal
 
@@ -1641,7 +1455,7 @@ class Menu(Object):
         dessert (Optional[List[Food]]): food list of dessert
     """
 
-    class Food(Object):
+    class Food(Object, Slots):
         """
         Represents food of a menu
 
@@ -1651,7 +1465,7 @@ class Menu(Object):
             labels (List[FoodLabel])
         """
 
-        class FoodLabel(Object):
+        class FoodLabel(Object, Slots):
             """
             Represents the label of a food
 
@@ -1660,8 +1474,6 @@ class Menu(Object):
                 name (str)
                 color (str)
             """
-
-            __slots__ = ["name", "id", "color", "_client"]
 
             def __init__(self, client: ClientBase, json_dict: dict) -> None:
                 super().__init__(json_dict)
@@ -1673,8 +1485,6 @@ class Menu(Object):
                 self._client = client
 
                 del self._resolver
-
-        __slots__ = ["name", "id", "labels", "_client"]
 
         def __init__(self, client: ClientBase, json_dict: dict) -> None:
             super().__init__(json_dict)
@@ -1690,21 +1500,6 @@ class Menu(Object):
             self._client = client
 
             del self._resolver
-
-    __slots__ = [
-        "name",
-        "id",
-        "date",
-        "is_lunch",
-        "is_dinner",
-        "first_meal",
-        "main_meal",
-        "side_meal",
-        "other_meal",
-        "cheese",
-        "dessert",
-        "_client",
-    ]
 
     def __init__(self, client: ClientBase, json_dict: dict) -> None:
         super().__init__(json_dict)
@@ -1746,7 +1541,7 @@ class Menu(Object):
         del self._resolver
 
 
-class Punishment(Object):
+class Punishment(Object, Slots):
     """
     Represents a punishment.
 
@@ -1767,24 +1562,7 @@ class Punishment(Object):
         duration (datetime.timedelta)
     """
 
-    __slots__ = [
-        "given",
-        "exclusion",
-        "during_lesson",
-        "homework",
-        "incident",
-        "homework_documents",
-        "circumstances",
-        "circumstance_documents",
-        "nature",
-        "reasons",
-        "giver",
-        "schedule",
-        "schedulable",
-        "duration",
-    ]
-
-    class ScheduledPunishment(Object):
+    class ScheduledPunishment(Object, Slots):
         """
         Represents a sheduled punishment.
 
@@ -1793,8 +1571,6 @@ class Punishment(Object):
             start (datetime.datetime)
             duration (datetime.timedelta)
         """
-
-        __slots__ = ["start", "duration"]
 
         def __init__(self, client: ClientBase, json_dict: dict) -> None:
             super().__init__(json_dict)
