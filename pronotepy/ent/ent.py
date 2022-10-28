@@ -83,7 +83,8 @@ ac_reunion = partial(
 )
 
 cas_agora06 = partial(
-    _cas_edu, url="https://cas.agora06.fr/login?selection=EDU&service=https://0/"
+    _cas_edu,
+    url="https://cas.agora06.fr/login?selection=EDU&service=https://example.com/",
 )
 
 cas_seinesaintdenis_edu = partial(
@@ -109,7 +110,7 @@ ac_reims = monbureaunumerique
 
 occitanie_montpellier_educonnect = partial(
     _cas_edu,
-    url="https://cas.mon-ent-occitanie.fr/login?selection=MONT-EDU_parent_eleve&service=https://0/",
+    url="https://cas.mon-ent-occitanie.fr/login?selection=MONT-EDU_parent_eleve&service=https://example.com/",
 )
 
 """Open ENT NG"""
