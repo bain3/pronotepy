@@ -50,6 +50,11 @@ def _educonnect(
     # 2nd SAML Authentication
     soup = BeautifulSoup(response.text, "html.parser")
     input_SAMLResponse = soup.find("input", {"name": "SAMLResponse"})
+    if not input_SAMLResponse and response.status_code == 200 and url != response.url:
+        # manual redirect
+        response = session.post(response.url, headers=HEADERS, data=payload)
+        soup = BeautifulSoup(response.text, "html.parser")
+        input_SAMLResponse = soup.find("input", {"name": "SAMLResponse"})
     if not input_SAMLResponse:
         if exceptions:
             raise ENTLoginError(
