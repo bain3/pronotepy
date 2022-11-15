@@ -1851,8 +1851,8 @@ class Punishment(Object):
 
         # TODO: change to an enum (out of scope for this comment: change this kind of string to enums everywhere)
         self.nature: str = self._resolver(str, "nature", "V", "L")
-        self.requires_parent: str = self._resolver(
-            str, "nature", "V", "estAvecARParent"
+        self.requires_parent: Optional[str] = self._resolver(
+            str, "nature", "V", "estAvecARParent", strict=False
         )
 
         self.reasons: List[str] = self._resolver(
