@@ -1044,6 +1044,9 @@ class Discussion(Object):
         unread (int): number of unread messages
         close (bool): True if the discussion is close
         date (datetime.datetime): the date when the discussion was open
+        replyable (bool): because pronotepy does not currently support replying
+            to discussions that are inside other discussions, this boolean signifies
+            if pronotepy is able to reply
     """
 
     __slots__ = [
@@ -1064,7 +1067,13 @@ class Discussion(Object):
             lambda l: [m["N"] for m in l], "listePossessionsMessages", "V"
         )
 
-        self.id: str = self._resolver(str, "messageFenetre", "V", "N")
+        # FIXME: Quick fix! Reading messages is more important than replying to them
+        # but we should figure out how the general structure works. ID should always be
+        # present.
+        self.id: Optional[str] = self._resolver(
+            str, "messageFenetre", "V", "N", strict=False
+        )
+        self.replyable: bool = self.id is not None
         self.subject: str = self._resolver(str, "objet")
         self.creator: str = self._resolver(
             str, "initiateur", strict=False

@@ -56,12 +56,6 @@ class TestClient(unittest.TestCase):
         # We assume demo website will always have discussions
         self.assertGreater(len(recipients), 0)
 
-    def test_discussion(self) -> None:
-        discussions = parent_client.discussions()
-
-        # We assume demo website will always have discussions
-        self.assertGreater(len(discussions), 0)
-
     def test_menus(self) -> None:
         start = client.start_day
         end = client.start_day + datetime.timedelta(days=8)
@@ -212,15 +206,8 @@ class TestMenu(unittest.TestCase):
 
 
 class TestParentClient(unittest.TestCase):
-    client: pronotepy.ParentClient
-
-    @classmethod
-    def setUpClass(cls) -> None:
-        cls.client = pronotepy.ParentClient(
-            "https://demo.index-education.net/pronote/parent.html",
-            "demonstration",
-            "pronotevs",
-        )
+    global parent_client
+    client: pronotepy.ParentClient = parent_client
 
     def test_set_child(self) -> None:
         self.client.set_child(self.client.children[1])
@@ -233,6 +220,12 @@ class TestParentClient(unittest.TestCase):
                 self.client.start_day + datetime.timedelta(days=31),
             )
         )
+
+    def test_discussion(self) -> None:
+        discussions = self.client.discussions()
+
+        # We assume demo website will always have discussions
+        self.assertGreater(len(discussions), 0)
 
 
 class TestVieScolaireClient(unittest.TestCase):
