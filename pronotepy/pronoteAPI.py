@@ -329,10 +329,10 @@ class _Encryption(object):
                 "Decryption failed while trying to un pad. (probably bad decryption key/iv)"
             )
 
-    def aes_set_iv(self, iv: bytes = None) -> None:
+    def aes_set_iv(self, iv: Optional[bytes] = None) -> None:
         self.aes_iv = iv or MD5.new(self.aes_iv_temp).digest()
 
-    def aes_set_key(self, key: bytes = None) -> None:
+    def aes_set_key(self, key: Optional[bytes] = None) -> None:
         if key:
             self.aes_key = MD5.new(key).digest()
 

@@ -552,7 +552,7 @@ class Attachment(Object):
 
         del self._resolver
 
-    def save(self, file_name: str = None) -> None:
+    def save(self, file_name: Optional[str] = None) -> None:
         """
         Saves the file on to local storage.
 
@@ -1610,7 +1610,7 @@ class StudentClass(Object):
 
         del self._resolver
 
-    def students(self, period: Period = None) -> List[Student]:
+    def students(self, period: Optional[Period] = None) -> List[Student]:
         period = period or self._client.periods[0]
         r = self._client.post(
             "ListeRessources",
