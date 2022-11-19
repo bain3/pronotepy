@@ -160,6 +160,8 @@ class Object:
     Base object for all pronotepy data classes.
     """
 
+    __slots__ = ("_resolver",)
+
     class _Resolver:
         """
         Resolves an arbitrary value from a json dictionary.
@@ -255,7 +257,15 @@ class Absence(Object):
         reasons (List[str]): The reason(s) for the absence
     """
 
-    __slots__ = ["id", "from_date", "to_date", "justified", "hours" "days", "reasons"]
+    __slots__ = [
+        "id",
+        "from_date",
+        "to_date",
+        "justified",
+        "hours",
+        "days",
+        "reasons",
+    ]
 
     def __init__(self, json_dict: dict) -> None:
         super().__init__(json_dict)
@@ -478,7 +488,7 @@ class Grade(Object):
         "min",
         "coefficient",
         "comment",
-        "bonus",
+        "is_bonus",
         "is_optionnal",
         "is_out_of_20",
     ]
@@ -521,9 +531,10 @@ class Attachment(Object):
         name (str): Name of the file or url of the link.
         id (str): id of the file (used internally and for url)
         url (str): url of the file/link
+        type (int): type of the attachment (0 = link, 1 = file)
     """
 
-    __slots__ = ["name", "id", "_client", "url", "_data"]
+    __slots__ = ["name", "id", "_client", "url", "_data", "type"]
 
     def __init__(self, client: ClientBase, json_dict: dict) -> None:
         super().__init__(json_dict)
@@ -590,7 +601,7 @@ class LessonContent(Object):
         category (Optional[str]): category of the lesson content
     """
 
-    __slots__ = ["title", "description", "_files", "_client"]
+    __slots__ = ["title", "description", "_files", "_client", "category"]
 
     def __init__(self, client: ClientBase, json_dict: dict) -> None:
         super().__init__(json_dict)
@@ -637,6 +648,7 @@ class Lesson(Object):
         virtual_classrooms (List[str]): List of urls for virtual classrooms
         num (int): For the same lesson time, the biggest num is the one shown on pronote.
         detention (bool): is marked as detention
+        test (bool): if there will be a test in the lesson
     """
 
     __slots__ = [
@@ -660,6 +672,7 @@ class Lesson(Object):
         "_content",
         "virtual_classrooms",
         "num",
+        "test",
     ]
 
     def __init__(self, client: ClientBase, json_dict: dict) -> None:
@@ -853,6 +866,8 @@ class Information(Object):
         survey (bool): if the message is a survey
         anonymous_response (bool): if the survey response is anonymous
         attachments (List[Attachment])
+        template (bool): if it is a template message
+        shared_template (bool): if it is a shared template message
     """
 
     __slots__ = [
@@ -868,6 +883,9 @@ class Information(Object):
         "anonymous_response",
         "_raw_content",
         "_client",
+        "attachments",
+        "template",
+        "shared_template",
     ]
 
     def __init__(self, client: ClientBase, json_dict: dict) -> None:
@@ -953,6 +971,7 @@ class Recipient(Object):
         "type",
         "functions",
         "with_discussion",
+        "email",
         "_client",
         "_type",
     ]
@@ -1056,8 +1075,10 @@ class Discussion(Object):
         "unread",
         "close",
         "date",
+        "replyable",
         "_client",
         "_possessions",
+        "creator",
     ]
 
     def __init__(self, client: Client, json_dict: dict) -> None:
@@ -1777,6 +1798,7 @@ class Punishment(Object):
     """
 
     __slots__ = [
+        "id",
         "given",
         "exclusion",
         "during_lesson",
@@ -1791,6 +1813,7 @@ class Punishment(Object):
         "schedule",
         "schedulable",
         "duration",
+        "requires_parent",
     ]
 
     class ScheduledPunishment(Object):
@@ -1803,7 +1826,7 @@ class Punishment(Object):
             duration (datetime.timedelta)
         """
 
-        __slots__ = ["start", "duration"]
+        __slots__ = ["start", "duration", "id"]
 
         def __init__(self, client: ClientBase, json_dict: dict) -> None:
             super().__init__(json_dict)
