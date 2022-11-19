@@ -127,3 +127,36 @@ Below you can see sample code for a bot that checks one specific lesson content
 Other usage
 ^^^^^^^^^^^
 For other usage please consult the API reference.
+
+JSON serialization
+^^^^^^^^^^^^^^^^^^
+Pronotepy currently supports serialization to a python :class:`dict` for easier
+further processing. The built in :mod:`json` module cannot serialize
+:mod:`datetime` objects, so a ``default`` function must be passed to :func:`json.dumps`.
+
+An example showing serialization of :class:`.Period` into JSON, including
+properties, because :attr:`.Period.grades` is a property, but also excluding
+:attr:`.Period.punishments`:
+
+.. code-block:: python
+
+    import pronotepy
+    import datetime
+    import json
+    
+    # initialising the client
+    client = pronotepy.Client('https://demo.index-education.net/pronote/eleve.html',
+                              username='demonstration',
+                              password='pronotevs')
+
+    def serializer(obj):
+        if isinstance(obj, datetime.datetime):
+            return str(obj)
+        elif isinstance(obj, datetime.date):
+            return str(obj)
+        elif isinstance(obj, datetime.timedelta):
+            return str(obj)
+
+    for period in client.periods:
+        serialized = period.to_dict(include_properties=True, exclude={"punishments", })
+        print(json.dumps(serialized, default=serializer, indent=2))
