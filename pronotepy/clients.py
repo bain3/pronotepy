@@ -360,7 +360,8 @@ class Client(ClientBase):
 
         Args:
             date_from (Union[datetime.date, datetime.datetime]): first date
-            date_to (Union[datetime.date, datetime.datetime]): second date
+            date_to (Union[datetime.date, datetime.datetime]): second date,
+                if None, then to the end of day_from
 
         Returns:
             List[Lesson]: List of lessons

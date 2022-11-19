@@ -3,7 +3,7 @@ from __future__ import annotations
 import base64
 import json as jsn
 import re
-from logging import getLogger, DEBUG
+from logging import getLogger
 import secrets
 import threading
 import zlib
@@ -25,7 +25,6 @@ if TYPE_CHECKING:
     from .clients import ClientBase
 
 log = getLogger(__name__)
-log.setLevel(DEBUG)
 
 error_messages = {
     22: '[ERROR 22] The object was from a previous session. Please read the "Long Term Usage" section in README on '
@@ -163,6 +162,7 @@ class _Communication(object):
             "nom": function_name,
             "donneesSec": post_data,
         }
+        log.debug("[_Communication.post] sending post request: %s", json)
 
         p_site = f'{self.root_site}/appelfonction/{self.attributes["a"]}/{self.attributes["h"]}/{r_number}'
 

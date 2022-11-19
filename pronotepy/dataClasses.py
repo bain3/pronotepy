@@ -25,6 +25,8 @@ if TYPE_CHECKING:
     from .clients import ClientBase, Client
 from .exceptions import DataError, ParsingError, DateParsingError, UnsupportedOperation
 
+from itertools import chain
+
 
 __all__ = (
     "Util",
@@ -220,6 +222,65 @@ class Object:
     def __init__(self, json_dict: dict) -> None:
         self._resolver: Object._Resolver = self._Resolver(json_dict)
 
+    def to_dict(
+        self, exclude: Set[str] = set(), include_properties: bool = False
+    ) -> dict:
+        """
+        Recursively serializes this object into a dict
+
+        .. note:: Does not check for loops, which are currently handled on a case to case basis.
+
+        Args:
+            exclude (Set[str]): items to exclude from serialization
+            include_properties (bool): whether to evaluate properties.
+                This may be useful for example for a :class:`Period` for which you want to
+                serialize its grades too. :attr:`Period.grades` is a property that is evaluated
+                only when called.
+
+                .. warning:: Setting this option to `True` can be **extremely** inefficient!
+
+        Returns:
+            dict: A dictionary containing all non-private properties
+        """
+
+        def serialize_slot(slot: Any) -> Any:
+            if isinstance(slot, Object):
+                return slot.to_dict()
+            else:
+                # Assume all other values are primitives
+                return slot
+
+        serialized = {}
+
+        # Join __slots__ with a list of all properties if include_properties is True
+        # otherwise just iterate overs __slots__
+        to_iter = (
+            chain(
+                self.__slots__,
+                [
+                    prop
+                    for prop in dir(self.__class__)
+                    if not prop.startswith("_")
+                    and isinstance(getattr(self.__class__, prop), property)
+                ],
+            )
+            if include_properties
+            else self.__slots__
+        )
+        for slot_name in to_iter:
+            if slot_name.startswith("_") or slot_name in exclude:
+                # Skip private and excluded slots
+                continue
+
+            slot = getattr(self, slot_name)
+
+            serialized[slot_name] = (
+                [serialize_slot(v) for v in slot]
+                if isinstance(slot, list)
+                else serialize_slot(slot)
+            )
+        return serialized
+
 
 class Subject(Object):
     """
@@ -299,6 +360,8 @@ class Period(Object):
     """
 
     __slots__ = ["_client", "id", "name", "start", "end"]
+
+    # TODO: remove; does not support multiple clients
     instances: Set[Any] = set()
 
     def __init__(self, client: ClientBase, json_dict: dict) -> None:
@@ -504,6 +567,7 @@ class Grade(Object):
         )
         self.date: datetime.date = self._resolver(Util.date_parse, "date", "V")
         self.subject: Subject = self._resolver(Subject, "service", "V")
+        # TODO: remove, because it creates a loop when trying to `to_dict`
         self.period: Period = self._resolver(
             lambda p: Util.get(Period.instances, id=p)[0], "periode", "V", "N"
         )
@@ -521,6 +585,17 @@ class Grade(Object):
         self.is_out_of_20: bool = self._resolver(bool, "estRamenerSur20")
 
         del self._resolver
+
+    def to_dict(
+        self, exclude: Set[str] = set(), include_properties: bool = False
+    ) -> dict:
+        # Exclude self.period, because it would otherwise cause a loop
+        return super().to_dict(
+            exclude={
+                "period",
+            }.union(exclude),
+            include_properties=include_properties,
+        )
 
 
 class Attachment(Object):
@@ -1803,7 +1878,6 @@ class Punishment(Object):
         "exclusion",
         "during_lesson",
         "homework",
-        "incident",
         "homework_documents",
         "circumstances",
         "circumstance_documents",
