@@ -1,4 +1,4 @@
-from typing import Tuple
+from typing import Optional, Tuple
 
 __all__ = (
     "PronoteAPIError",
@@ -22,8 +22,8 @@ class PronoteAPIError(Exception):
     def __init__(
         self,
         *args: object,
-        pronote_error_code: int = None,
-        pronote_error_msg: str = None
+        pronote_error_code: Optional[int] = None,
+        pronote_error_msg: Optional[str] = None
     ) -> None:
         super().__init__(*args)
         self.pronote_error_code = pronote_error_code

@@ -26,6 +26,8 @@ if TYPE_CHECKING:
     from .clients import ClientBase, Client
 from .exceptions import DataError, ParsingError, DateParsingError, UnsupportedOperation
 
+from itertools import chain
+
 
 __all__ = (
     "Util",
@@ -161,6 +163,8 @@ class Object:
     Base object for all pronotepy data classes.
     """
 
+    __slots__ = ("_resolver",)
+
     class _Resolver:
         """
         Resolves an arbitrary value from a json dictionary.
@@ -218,6 +222,65 @@ class Object:
 
     def __init__(self, json_dict: dict) -> None:
         self._resolver: Object._Resolver = self._Resolver(json_dict)
+
+    def to_dict(
+        self, exclude: Set[str] = set(), include_properties: bool = False
+    ) -> dict:
+        """
+        Recursively serializes this object into a dict
+
+        .. note:: Does not check for loops, which are currently handled on a case to case basis.
+
+        Args:
+            exclude (Set[str]): items to exclude from serialization
+            include_properties (bool): whether to evaluate properties.
+                This may be useful for example for a :class:`Period` for which you want to
+                serialize its grades too. :attr:`Period.grades` is a property that is evaluated
+                only when called.
+
+                .. warning:: Setting this option to `True` can be **extremely** inefficient!
+
+        Returns:
+            dict: A dictionary containing all non-private properties
+        """
+
+        def serialize_slot(slot: Any) -> Any:
+            if isinstance(slot, Object):
+                return slot.to_dict()
+            else:
+                # Assume all other values are primitives
+                return slot
+
+        serialized = {}
+
+        # Join __slots__ with a list of all properties if include_properties is True
+        # otherwise just iterate overs __slots__
+        to_iter = (
+            chain(
+                self.__slots__,
+                [
+                    prop
+                    for prop in dir(self.__class__)
+                    if not prop.startswith("_")
+                    and isinstance(getattr(self.__class__, prop), property)
+                ],
+            )
+            if include_properties
+            else self.__slots__
+        )
+        for slot_name in to_iter:
+            if slot_name.startswith("_") or slot_name in exclude:
+                # Skip private and excluded slots
+                continue
+
+            slot = getattr(self, slot_name)
+
+            serialized[slot_name] = (
+                [serialize_slot(v) for v in slot]
+                if isinstance(slot, list)
+                else serialize_slot(slot)
+            )
+        return serialized
 
 
 class Subject(Object, Slots):
@@ -462,6 +525,7 @@ class Grade(Object, Slots):
         )
         self.date: datetime.date = self._resolver(Util.date_parse, "date", "V")
         self.subject: Subject = self._resolver(Subject, "service", "V")
+        # TODO: remove, because it creates a loop when trying to `to_dict`
         self.period: Period = self._resolver(
             lambda p: Util.get(Period.instances, id=p)[0], "periode", "V", "N"
         )
@@ -480,6 +544,17 @@ class Grade(Object, Slots):
 
         del self._resolver
 
+    def to_dict(
+        self, exclude: Set[str] = set(), include_properties: bool = False
+    ) -> dict:
+        # Exclude self.period, because it would otherwise cause a loop
+        return super().to_dict(
+            exclude={
+                "period",
+            }.union(exclude),
+            include_properties=include_properties,
+        )
+
 
 class Attachment(Object, Slots):
     """
@@ -489,6 +564,7 @@ class Attachment(Object, Slots):
         name (str): Name of the file or url of the link.
         id (str): id of the file (used internally and for url)
         url (str): url of the file/link
+        type (int): type of the attachment (0 = link, 1 = file)
     """
 
     def __init__(self, client: ClientBase, json_dict: dict) -> None:
@@ -518,7 +594,7 @@ class Attachment(Object, Slots):
 
         del self._resolver
 
-    def save(self, file_name: str = None) -> None:
+    def save(self, file_name: Optional[str] = None) -> None:
         """
         Saves the file on to local storage.
 
@@ -601,6 +677,7 @@ class Lesson(Object, Slots):
         virtual_classrooms (List[str]): List of urls for virtual classrooms
         num (int): For the same lesson time, the biggest num is the one shown on pronote.
         detention (bool): is marked as detention
+        test (bool): if there will be a test in the lesson
     """
 
     def __init__(self, client: ClientBase, json_dict: dict) -> None:
@@ -783,6 +860,8 @@ class Information(Object, Slots):
         survey (bool): if the message is a survey
         anonymous_response (bool): if the survey response is anonymous
         attachments (List[Attachment])
+        template (bool): if it is a template message
+        shared_template (bool): if it is a shared template message
     """
 
     def __init__(self, client: ClientBase, json_dict: dict) -> None:
@@ -947,6 +1026,9 @@ class Discussion(Object, Slots):
         unread (int): number of unread messages
         close (bool): True if the discussion is close
         date (datetime.datetime): the date when the discussion was open
+        replyable (bool): because pronotepy does not currently support replying
+            to discussions that are inside other discussions, this boolean signifies
+            if pronotepy is able to reply
     """
 
     def __init__(self, client: Client, json_dict: dict) -> None:
@@ -956,7 +1038,13 @@ class Discussion(Object, Slots):
             lambda l: [m["N"] for m in l], "listePossessionsMessages", "V"
         )
 
-        self.id: str = self._resolver(str, "messageFenetre", "V", "N")
+        # FIXME: Quick fix! Reading messages is more important than replying to them
+        # but we should figure out how the general structure works. ID should always be
+        # present.
+        self.id: Optional[str] = self._resolver(
+            str, "messageFenetre", "V", "N", strict=False
+        )
+        self.replyable: bool = self.id is not None
         self.subject: str = self._resolver(str, "objet")
         self.creator: str = self._resolver(
             str, "initiateur", strict=False
@@ -1424,7 +1512,7 @@ class StudentClass(Object, Slots):
 
         del self._resolver
 
-    def students(self, period: Period = None) -> List[Student]:
+    def students(self, period: Optional[Period] = None) -> List[Student]:
         period = period or self._client.periods[0]
         r = self._client.post(
             "ListeRessources",
@@ -1627,8 +1715,8 @@ class Punishment(Object, Slots):
 
         # TODO: change to an enum (out of scope for this comment: change this kind of string to enums everywhere)
         self.nature: str = self._resolver(str, "nature", "V", "L")
-        self.requires_parent: str = self._resolver(
-            str, "nature", "V", "estAvecARParent"
+        self.requires_parent: Optional[str] = self._resolver(
+            str, "nature", "V", "estAvecARParent", strict=False
         )
 
         self.reasons: List[str] = self._resolver(

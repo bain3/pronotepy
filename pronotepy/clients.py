@@ -288,7 +288,12 @@ class ClientBase:
             return True
         return False
 
-    def post(self, function_name: str, onglet: int = None, data: dict = None) -> dict:
+    def post(
+        self,
+        function_name: str,
+        onglet: Optional[int] = None,
+        data: Optional[dict] = None,
+    ) -> dict:
         """Preforms a raw post to the PRONOTE server. Adds signature, then passes it to _Communication.post
 
         Args:
@@ -349,13 +354,14 @@ class Client(ClientBase):
     def lessons(
         self,
         date_from: Union[datetime.date, datetime.datetime],
-        date_to: Union[datetime.date, datetime.datetime] = None,
+        date_to: Optional[Union[datetime.date, datetime.datetime]] = None,
     ) -> List[dataClasses.Lesson]:
         """Gets all lessons in a given timespan.
 
         Args:
             date_from (Union[datetime.date, datetime.datetime]): first date
-            date_to (Union[datetime.date, datetime.datetime]): second date
+            date_to (Union[datetime.date, datetime.datetime]): second date,
+                if None, then to the end of day_from
 
         Returns:
             List[Lesson]: List of lessons
@@ -431,7 +437,7 @@ class Client(ClientBase):
         return f"{self.communication.root_site}/ical/Edt.ics?icalsecurise={icalsecurise}&version={ver}&param={param}"
 
     def homework(
-        self, date_from: datetime.date, date_to: datetime.date = None
+        self, date_from: datetime.date, date_to: Optional[datetime.date] = None
     ) -> List[dataClasses.Homework]:
         """Get homework between two given points.
 
@@ -658,7 +664,12 @@ class ParentClient(Client):
             "ressource"
         ] = self._selected_child.raw_resource
 
-    def post(self, function_name: str, onglet: int = None, data: dict = None) -> dict:
+    def post(
+        self,
+        function_name: str,
+        onglet: Optional[int] = None,
+        data: Optional[dict] = None,
+    ) -> dict:
         """Preforms a raw post to the PRONOTE server.
 
         Adds signature, then passes it to _Communication.post

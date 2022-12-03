@@ -3,7 +3,7 @@ from __future__ import annotations
 import base64
 import json as jsn
 import re
-from logging import getLogger, DEBUG
+from logging import getLogger
 import secrets
 import threading
 import zlib
@@ -25,7 +25,6 @@ if TYPE_CHECKING:
     from .clients import ClientBase
 
 log = getLogger(__name__)
-log.setLevel(DEBUG)
 
 error_messages = {
     22: '[ERROR 22] The object was from a previous session. Please read the "Long Term Usage" section in README on '
@@ -163,6 +162,7 @@ class _Communication(object):
             "nom": function_name,
             "donneesSec": post_data,
         }
+        log.debug("[_Communication.post] sending post request: %s", json)
 
         p_site = f'{self.root_site}/appelfonction/{self.attributes["a"]}/{self.attributes["h"]}/{r_number}'
 
@@ -329,10 +329,10 @@ class _Encryption(object):
                 "Decryption failed while trying to un pad. (probably bad decryption key/iv)"
             )
 
-    def aes_set_iv(self, iv: bytes = None) -> None:
+    def aes_set_iv(self, iv: Optional[bytes] = None) -> None:
         self.aes_iv = iv or MD5.new(self.aes_iv_temp).digest()
 
-    def aes_set_key(self, key: bytes = None) -> None:
+    def aes_set_key(self, key: Optional[bytes] = None) -> None:
         if key:
             self.aes_key = MD5.new(key).digest()
 
@@ -353,7 +353,8 @@ class _KeepAlive(threading.Thread):
 
     def alive(self) -> None:
         while self.keep_alive:
-            if time() - self._client.communication.last_ping >= 300:
+            # The delay set in eleve.js is 2 * 60 * 1000 ms (2 minutes)
+            if time() - self._client.communication.last_ping >= 110:
                 self._client.post("Presence", 7)
             sleep(1)
 
