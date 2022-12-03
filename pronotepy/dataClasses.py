@@ -572,7 +572,7 @@ class Attachment(Object, Slots):
 
         self._client = client
 
-        self.name: str = self._resolver(str, "L")
+        self.name: str = self._resolver(str, "L", default="")
         self.id: str = self._resolver(str, "N")
         self.type: int = self._resolver(int, "G")  # 0 link, 1 file
 
