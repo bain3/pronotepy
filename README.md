@@ -31,6 +31,7 @@ This is a Python API wrapper for the PRONOTE student administration service. Eve
  - pycryptodome
  - beautifulsoup4
  - requests
+ - autoslot
 
 ### Installation
 **Stable**
