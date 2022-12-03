@@ -1560,7 +1560,7 @@ class Menu(Object, Slots):
             Attributes:
                 id (str)
                 name (str)
-                color (str)
+                color (Optional[str])
             """
 
             def __init__(self, client: ClientBase, json_dict: dict) -> None:
@@ -1568,7 +1568,7 @@ class Menu(Object, Slots):
 
                 self.id: str = self._resolver(str, "N")
                 self.name: str = self._resolver(str, "L")
-                self.color: str = self._resolver(str, "couleur")
+                self.color: Optional[str] = self._resolver(str, "couleur", strict=False)
 
                 self._client = client
 
