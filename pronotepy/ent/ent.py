@@ -149,7 +149,9 @@ ent_var = partial(
 
 l_normandie = partial(_open_ent_ng_edu, domain="https://ent.l-educdenormandie.fr")
 
-lyceeconnecte_aquitaine = partial(_open_ent_ng_edu, domain="https://mon.lyceeconnecte.fr/")
+lyceeconnecte_aquitaine = partial(
+    _open_ent_ng_edu, domain="https://mon.lyceeconnecte.fr/"
+)
 
 """WAYF"""
 
