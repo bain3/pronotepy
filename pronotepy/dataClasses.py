@@ -158,7 +158,7 @@ class Util:
         return start_time
 
 
-class Object:
+class Object(Slots):
     """
     Base object for all pronotepy data classes.
     """
@@ -283,7 +283,7 @@ class Object:
         return serialized
 
 
-class Subject(Object, Slots):
+class Subject(Object):
     """
     Represents a subject. You shouldn't have to create this class manually.
 
@@ -303,7 +303,7 @@ class Subject(Object, Slots):
         del self._resolver
 
 
-class Absence(Object, Slots):
+class Absence(Object):
     """
     Represents an absence with a given period. You shouldn't have to create this class manually.
 
@@ -337,7 +337,7 @@ class Absence(Object, Slots):
         del self._resolver
 
 
-class Period(Object, Slots):
+class Period(Object):
     """
     Represents a period of the school year. You shouldn't have to create this class manually.
 
@@ -461,7 +461,7 @@ class Period(Object, Slots):
         return [Punishment(self._client, a) for a in absences if a["G"] == 41]
 
 
-class Average(Object, Slots):
+class Average(Object):
     """
     Represents an Average.
 
@@ -491,7 +491,7 @@ class Average(Object, Slots):
         del self._resolver
 
 
-class Grade(Object, Slots):
+class Grade(Object):
     """Represents a grade. You shouldn't have to create this class manually.
 
     Attributes:
@@ -556,7 +556,7 @@ class Grade(Object, Slots):
         )
 
 
-class Attachment(Object, Slots):
+class Attachment(Object):
     """
     Represents a attachment to homework for example
 
@@ -622,7 +622,7 @@ class Attachment(Object, Slots):
         return response.content
 
 
-class LessonContent(Object, Slots):
+class LessonContent(Object):
     """
     Represents the content of a lesson. You shouldn't have to create this class manually.
 
@@ -654,7 +654,7 @@ class LessonContent(Object, Slots):
         return [Attachment(self._client, jsn) for jsn in self._files]
 
 
-class Lesson(Object, Slots):
+class Lesson(Object):
     """
     Represents a lesson with a given time. You shouldn't have to create this class manually.
 
@@ -799,7 +799,7 @@ class Lesson(Object, Slots):
         return self._content
 
 
-class Homework(Object, Slots):
+class Homework(Object):
     """
     Represents a homework. You shouldn't have to create this class manually.
 
@@ -844,7 +844,7 @@ class Homework(Object, Slots):
         return [Attachment(self._client, jsn) for jsn in self._files]  # type: ignore
 
 
-class Information(Object, Slots):
+class Information(Object):
     """
     Represents a information in a information and surveys tab.
 
@@ -928,7 +928,7 @@ class Information(Object, Slots):
         self.read = status
 
 
-class Recipient(Object, Slots):
+class Recipient(Object):
     """
     Represents a recipient to create a discussion
 
@@ -968,7 +968,7 @@ class Recipient(Object, Slots):
         del self._resolver
 
 
-class Message(Object, Slots):
+class Message(Object):
     """
     Represents a message in a discussion.
 
@@ -1014,7 +1014,7 @@ class Message(Object, Slots):
         )
 
 
-class Discussion(Object, Slots):
+class Discussion(Object):
     """
     Represents a discussion.
 
@@ -1221,7 +1221,7 @@ class ClientInfo(Slots):
         return self._cache()["numeroINE"]
 
 
-class Acquisition(Object, Slots):
+class Acquisition(Object):
     """
     Contains acquisition info for an evaluation.
 
@@ -1261,7 +1261,7 @@ class Acquisition(Object, Slots):
         del self._resolver
 
 
-class Evaluation(Object, Slots):
+class Evaluation(Object):
     """
     Data class for an evaluation.
 
@@ -1302,7 +1302,7 @@ class Evaluation(Object, Slots):
         del self._resolver
 
 
-class Identity(Object, Slots):
+class Identity(Object):
     """
     Represents an Identity of a person
 
@@ -1364,7 +1364,7 @@ class Identity(Object, Slots):
         del self._resolver
 
 
-class Guardian(Object, Slots):
+class Guardian(Object):
     """
     Represents a guardian of a student.
 
@@ -1409,7 +1409,7 @@ class Guardian(Object, Slots):
         del self._resolver
 
 
-class Student(Object, Slots):
+class Student(Object):
     """
     Represents a student
 
@@ -1489,7 +1489,7 @@ class Student(Object, Slots):
         ]
 
 
-class StudentClass(Object, Slots):
+class StudentClass(Object):
     """
     Represents a class of students
 
@@ -1525,7 +1525,7 @@ class StudentClass(Object, Slots):
         ]
 
 
-class Menu(Object, Slots):
+class Menu(Object):
     """
     Represents the menu of a meal
 
@@ -1543,7 +1543,7 @@ class Menu(Object, Slots):
         dessert (Optional[List[Food]]): food list of dessert
     """
 
-    class Food(Object, Slots):
+    class Food(Object):
         """
         Represents food of a menu
 
@@ -1553,7 +1553,7 @@ class Menu(Object, Slots):
             labels (List[FoodLabel])
         """
 
-        class FoodLabel(Object, Slots):
+        class FoodLabel(Object):
             """
             Represents the label of a food
 
@@ -1629,7 +1629,7 @@ class Menu(Object, Slots):
         del self._resolver
 
 
-class Punishment(Object, Slots):
+class Punishment(Object):
     """
     Represents a punishment.
 
@@ -1650,7 +1650,7 @@ class Punishment(Object, Slots):
         duration (datetime.timedelta)
     """
 
-    class ScheduledPunishment(Object, Slots):
+    class ScheduledPunishment(Object):
         """
         Represents a sheduled punishment.
 

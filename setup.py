@@ -17,7 +17,7 @@ setuptools.setup(
         "beautifulsoup4>=4.8.2",
         "pycryptodome>=3.9.4",
         "requests>=2.22.0",
-        "autoslot>=2021.10.1",
+        "autoslot>=2022.12.1",
     ],
     classifiers=[
         "Programming Language :: Python :: 3",
