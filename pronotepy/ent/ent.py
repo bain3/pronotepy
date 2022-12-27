@@ -39,16 +39,12 @@ cas_cybercolleges42 = partial(
 
 cas_ent27 = partial(_cas, url="https://cas.ent27.fr/login?selection=ATS_parent_eleve")
 
-cas_seinesaintdenis = partial(
-    _cas,
-    url="https://cas.webcollege.seinesaintdenis.fr/login?selection=ATS_parent_eleve",
-)
-
 cas_kosmos = partial(_cas, url="https://cas.kosmoseducation.com/login")
 
 ecollege_haute_garonne = partial(
     _cas, url="https://cas.ecollege.haute-garonne.fr/login?selection=ATS_parent_eleve"
 )
+
 ent_creuse = partial(_cas, url="https://cas.entcreuse.fr/login")
 
 occitanie_toulouse = partial(
@@ -64,6 +60,15 @@ val_doise = partial(
 )
 
 """CAS with EduConnect"""
+
+cas_cybercolleges42_edu = partial(
+    _cas_edu, url="https://cas.cybercolleges42.fr/login?selection=EDU_parent_eleve"
+)
+
+ecollege_haute_garonne_edu = partial(
+    _cas_edu,
+    url="https://cas.ecollege.haute-garonne.fr/login?selection=EDU_parent_eleve",
+)
 
 ac_orleans_tours = partial(
     _cas_edu,
@@ -92,6 +97,10 @@ cas_seinesaintdenis_edu = partial(
     url="https://cas.webcollege.seinesaintdenis.fr/login?selection=EDU_parent_eleve",
 )
 
+cas_arsene76_edu = partial(
+    _cas_edu, url="https://cas.arsene76.fr/login?selection=EDU_parent_eleve"
+)
+
 eclat_bfc = partial(_cas_edu, url="https://cas.eclat-bfc.fr/login?selection=EDU")
 
 ent_auvergnerhonealpe = partial(
@@ -111,6 +120,11 @@ ac_reims = monbureaunumerique
 occitanie_montpellier_educonnect = partial(
     _cas_edu,
     url="https://cas.mon-ent-occitanie.fr/login?selection=MONT-EDU_parent_eleve&service=https://example.com/",
+)
+
+occitanie_toulouse_edu = partial(
+    _cas_edu,
+    url="https://cas.mon-ent-occitanie.fr/login?selection=TOULO-EDU_parent_eleve",
 )
 
 """Open ENT NG"""
@@ -135,6 +149,10 @@ paris_classe_numerique = partial(
     _open_ent_ng, url="https://ent.parisclassenumerique.fr/auth/login"
 )
 
+lyceeconnecte_aquitaine = partial(
+    _open_ent_ng, url="https://mon.lyceeconnecte.fr/auth/login"
+)
+
 """Open ENT NG with EduConnect"""
 
 ent_hdf = partial(_open_ent_ng_edu, domain="https://enthdf.fr")
@@ -149,9 +167,7 @@ ent_var = partial(
 
 l_normandie = partial(_open_ent_ng_edu, domain="https://ent.l-educdenormandie.fr")
 
-lyceeconnecte_aquitaine = partial(
-    _open_ent_ng_edu, domain="https://mon.lyceeconnecte.fr/"
-)
+lyceeconnecte_edu = partial(_open_ent_ng_edu, domain="https://mon.lyceeconnecte.fr/")
 
 """WAYF"""
 
@@ -178,3 +194,8 @@ atrium_sud = partial(
     form_attr={"id": "fm1"},
 )
 laclasse_lyon = partial(_simple_auth, url="https://www.laclasse.com/sso/login")
+
+extranet_colleges_somme = partial(
+    _simple_auth,
+    url="http://www.colleges.cg80.fr/identification/identification.php",
+)

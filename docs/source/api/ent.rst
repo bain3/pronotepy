@@ -48,19 +48,23 @@ An example of client initialisation with the ac_reunion ENT:
 
 .. autofunction:: cas_arsene76
 
+.. autofunction:: cas_arsene76_edu
+
 .. autofunction:: cas_cybercolleges42
+
+.. autofunction:: cas_cybercolleges42_edu
 
 .. autofunction:: cas_ent27
 
 .. autofunction:: cas_kosmos
-
-.. autofunction:: cas_seinesaintdenis
 
 .. autofunction:: cas_seinesaintdenis_edu
 
 .. autofunction:: eclat_bfc
 
 .. autofunction:: ecollege_haute_garonne
+
+.. autofunction:: ecollege_haute_garonne_edu
 
 .. autofunction:: enc_hauts_de_seine
 
@@ -94,6 +98,8 @@ An example of client initialisation with the ac_reunion ENT:
 
 .. autofunction:: lyceeconnecte_aquitaine
 
+.. autofunction:: lyceeconnecte_edu
+
 .. autofunction:: monbureaunumerique
 
 .. autofunction:: neoconnect_guadeloupe
@@ -104,8 +110,12 @@ An example of client initialisation with the ac_reunion ENT:
 
 .. autofunction:: occitanie_toulouse
 
+.. autofunction:: occitanie_toulouse_edu
+
 .. autofunction:: ozecollege_yvelines
 
 .. autofunction:: paris_classe_numerique
 
 .. autofunction:: val_doise
+
+.. autofunction:: extranet_colleges_somme
