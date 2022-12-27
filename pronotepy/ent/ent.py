@@ -39,11 +39,6 @@ cas_cybercolleges42 = partial(
 
 cas_ent27 = partial(_cas, url="https://cas.ent27.fr/login?selection=ATS_parent_eleve")
 
-cas_seinesaintdenis = partial(
-    _cas,
-    url="https://cas.webcollege.seinesaintdenis.fr/login?selection=ATS_parent_eleve",
-)
-
 cas_kosmos = partial(_cas, url="https://cas.kosmoseducation.com/login")
 
 ecollege_haute_garonne = partial(
