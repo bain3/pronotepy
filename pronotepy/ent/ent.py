@@ -49,6 +49,7 @@ cas_kosmos = partial(_cas, url="https://cas.kosmoseducation.com/login")
 ecollege_haute_garonne = partial(
     _cas, url="https://cas.ecollege.haute-garonne.fr/login?selection=ATS_parent_eleve"
 )
+
 ent_creuse = partial(_cas, url="https://cas.entcreuse.fr/login")
 
 occitanie_toulouse = partial(
@@ -64,6 +65,10 @@ val_doise = partial(
 )
 
 """CAS with EduConnect"""
+
+ecollege_haute_garonne_edu = partial(
+    _cas_edu, url="https://cas.ecollege.haute-garonne.fr/login?selection=EDU_parent_eleve"
+)
 
 ac_orleans_tours = partial(
     _cas_edu,
@@ -93,7 +98,7 @@ cas_seinesaintdenis_edu = partial(
 )
 
 cas_arsene76_edu = partial(
-    _cas, url="https://cas.arsene76.fr/login?selection=EDU_parent_eleve"
+    _cas_edu, url="https://cas.arsene76.fr/login?selection=EDU_parent_eleve"
 )
 
 eclat_bfc = partial(_cas_edu, url="https://cas.eclat-bfc.fr/login?selection=EDU")
