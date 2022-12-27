@@ -71,7 +71,8 @@ cas_cybercolleges42_edu = partial(
 )
 
 ecollege_haute_garonne_edu = partial(
-    _cas_edu, url="https://cas.ecollege.haute-garonne.fr/login?selection=EDU_parent_eleve"
+    _cas_edu,
+    url="https://cas.ecollege.haute-garonne.fr/login?selection=EDU_parent_eleve",
 )
 
 ac_orleans_tours = partial(
@@ -127,7 +128,8 @@ occitanie_montpellier_educonnect = partial(
 )
 
 occitanie_toulouse_edu = partial(
-    _cas_edu, url="https://cas.mon-ent-occitanie.fr/login?selection=TOULO-EDU_parent_eleve"
+    _cas_edu,
+    url="https://cas.mon-ent-occitanie.fr/login?selection=TOULO-EDU_parent_eleve",
 )
 
 """Open ENT NG"""
@@ -170,9 +172,7 @@ ent_var = partial(
 
 l_normandie = partial(_open_ent_ng_edu, domain="https://ent.l-educdenormandie.fr")
 
-lyceeconnecte_edu = partial(
-    _open_ent_ng_edu, domain="https://mon.lyceeconnecte.fr/"
-)
+lyceeconnecte_edu = partial(_open_ent_ng_edu, domain="https://mon.lyceeconnecte.fr/")
 
 """WAYF"""
 
