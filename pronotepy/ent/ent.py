@@ -155,7 +155,7 @@ paris_classe_numerique = partial(
 )
 
 lyceeconnecte_aquitaine = partial(
-    _open_ent_ng, domain="https://mon.lyceeconnecte.fr/auth/login"
+    _open_ent_ng, url="https://mon.lyceeconnecte.fr/auth/login"
 )
 
 """Open ENT NG with EduConnect"""
