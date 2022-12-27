@@ -8,6 +8,7 @@ setuptools.setup(
     version="2.8.0",
     description='A wrapper for the pronote "API"',
     long_description=long_description,
+    long_description_content_type="text/markdown",
     url="https://www.github.com/bain3/pronotepy",
     author="bain",
     license="MIT",
