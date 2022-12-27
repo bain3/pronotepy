@@ -66,6 +66,10 @@ val_doise = partial(
 
 """CAS with EduConnect"""
 
+cas_cybercolleges42_edu = partial(
+    _cas_edu, url="https://cas.cybercolleges42.fr/login?selection=EDU_parent_eleve"
+)
+
 ecollege_haute_garonne_edu = partial(
     _cas_edu, url="https://cas.ecollege.haute-garonne.fr/login?selection=EDU_parent_eleve"
 )
