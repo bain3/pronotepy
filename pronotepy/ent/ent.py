@@ -92,6 +92,10 @@ cas_seinesaintdenis_edu = partial(
     url="https://cas.webcollege.seinesaintdenis.fr/login?selection=EDU_parent_eleve",
 )
 
+cas_arsene76_edu = partial(
+    _cas, url="https://cas.arsene76.fr/login?selection=EDU_parent_eleve"
+)
+
 eclat_bfc = partial(_cas_edu, url="https://cas.eclat-bfc.fr/login?selection=EDU")
 
 ent_auvergnerhonealpe = partial(
