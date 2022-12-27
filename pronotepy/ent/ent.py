@@ -126,6 +126,10 @@ occitanie_montpellier_educonnect = partial(
     url="https://cas.mon-ent-occitanie.fr/login?selection=MONT-EDU_parent_eleve&service=https://example.com/",
 )
 
+occitanie_toulouse_edu = partial(
+    _cas_edu, url="https://cas.mon-ent-occitanie.fr/login?selection=TOULO-EDU_parent_eleve"
+)
+
 """Open ENT NG"""
 
 ent77 = partial(_open_ent_ng, url="https://ent77.seine-et-marne.fr/auth/login")
