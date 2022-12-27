@@ -191,3 +191,8 @@ atrium_sud = partial(
     form_attr={"id": "fm1"},
 )
 laclasse_lyon = partial(_simple_auth, url="https://www.laclasse.com/sso/login")
+
+extranet_colleges_somme = partial(
+    _simple_auth,
+    url="http://www.colleges.cg80.fr/identification/identification.php",
+)
