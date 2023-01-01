@@ -667,6 +667,7 @@ class Lesson(Object):
         classrooms (Optional[List[str]]): name of the classrooms
         canceled (bool): if the lesson is canceled
         status (Optional[str]): status of the lesson
+        memo (Optional[str]): memo of the lesson
         background_color (Optional[str]): background color of the lesson
         outing (bool): if it is a pedagogical outing
         start (datetime.datetime): starting time of the lesson
@@ -688,6 +689,7 @@ class Lesson(Object):
         self.id: str = self._resolver(str, "N")
         self.canceled: bool = self._resolver(bool, "estAnnule", default=False)
         self.status: Optional[str] = self._resolver(str, "Statut", strict=False)
+        self.memo: Optional[str] = self._resolver(str, "memo", strict=False)
         self.background_color: Optional[str] = self._resolver(
             str, "CouleurFond", strict=False
         )
