@@ -599,6 +599,13 @@ class Client(ClientBase):
     @property
     def current_period(self) -> dataClasses.Period:
         """the current period"""
+        # We look for the period matching the current date
+        today = datetime.datetime.today()
+        for period in self.periods:
+            if period.start <= today <= period.end:
+                return period
+
+        #fallback : legacy code
         id_period = self.parametres_utilisateur["donneesSec"]["donnees"]["ressource"][
             "listeOngletsPourPeriodes"
         ]["V"][0]["periodeParDefaut"]["V"]["N"]
