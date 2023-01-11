@@ -337,6 +337,36 @@ class Absence(Object):
         del self._resolver
 
 
+class Delay(Object):
+    """
+    Represents a delay with a given period. You shouldn't have to create this class manually.
+
+    Attributes:
+        id (str): the id of the delay (used internally)
+        date (datetime.datetime): date of the delay
+        minutes (str): the number of minutes missed
+        justified (bool): is the delay justified
+        justification (str): the justification for the delay
+        reasons (List[str]): The reason(s) for the delay
+    """
+
+    def __init__(self, json_dict: dict) -> None:
+        super().__init__(json_dict)
+
+        self.id: str = self._resolver(str, "N")
+        self.date: datetime.datetime = self._resolver(Util.datetime_parse, "date", "V")
+        self.minutes: int = self._resolver(int, "duree", default=0)
+        self.justified: bool = self._resolver(bool, "justifie", default=False)
+        self.justification: Optional[str] = self._resolver(
+            str, "justification", strict=False
+        )
+        self.reasons: List[str] = self._resolver(
+            lambda l: [i["L"] for i in l], "listeMotifs", "V", default=[]
+        )
+
+        del self._resolver
+
+
 class Period(Object):
     """
     Represents a period of the school year. You shouldn't have to create this class manually.
@@ -444,6 +474,21 @@ class Period(Object):
         response = self._client.post("PagePresence", 19, json_data)
         absences = response["donneesSec"]["donnees"]["listeAbsences"]["V"]
         return [Absence(a) for a in absences if a["G"] == 13]
+
+    @property
+    def delays(self) -> List[Delay]:
+        """
+        All delays from this period
+        """
+        json_data = {
+            "periode": {"N": self.id, "L": self.name, "G": 2},
+            "DateDebut": {"_T": 7, "V": self.start.strftime("%d/%m/%Y %H:%M:%S")},
+            "DateFin": {"_T": 7, "V": self.end.strftime("%d/%m/%Y %H:%M:%S")},
+        }
+
+        response = self._client.post("PagePresence", 19, json_data)
+        delays = response["donneesSec"]["donnees"]["listeAbsences"]["V"]
+        return [Delay(a) for a in delays if a["G"] == 14]
 
     @property
     def punishments(self) -> List[Punishment]:
@@ -667,11 +712,11 @@ class Lesson(Object):
         classrooms (Optional[List[str]]): name of the classrooms
         canceled (bool): if the lesson is canceled
         status (Optional[str]): status of the lesson
-        memo (Optional[str]): memo of the lesson
         background_color (Optional[str]): background color of the lesson
         outing (bool): if it is a pedagogical outing
         start (datetime.datetime): starting time of the lesson
         end (datetime.datetime): end of the lesson
+        memo (Optional[str]): memo of the lesson
         group_name (Optional[str]): Name of the group.
         group_names (Optional[List[str]]): Name of the groups.
         exempted (bool): Specifies if the student's presence is exempt.
