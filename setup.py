@@ -5,8 +5,10 @@ with open("README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="pronotepy",
-    version="2.7.0",
+    version="2.8.0",
     description='A wrapper for the pronote "API"',
+    long_description=long_description,
+    long_description_content_type="text/markdown",
     url="https://www.github.com/bain3/pronotepy",
     author="bain",
     license="MIT",
@@ -24,5 +26,5 @@ setuptools.setup(
         "License :: OSI Approved :: MIT License",
         "Operating System :: OS Independent",
     ],
-    package_data={"pronotepy": ["py.typed"]}
+    package_data={"pronotepy": ["py.typed"]},
 )
