@@ -107,6 +107,12 @@ class TestPeriod(unittest.TestCase):
         for period in client.periods:
             all_absences.extend(period.absences)
         self.assertGreater(len(all_absences), 0)
+        
+    def test_delays(self) -> None:
+        all_delays = []
+        for period in client.periods:
+            all_delays.extend(period.delays)
+        self.assertGreater(len(all_delays), 0)
 
     def test_punishments(self) -> None:
         all_punishments = []
