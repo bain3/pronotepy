@@ -335,7 +335,8 @@ class Absence(Object):
         )
 
         del self._resolver
-        
+
+
 class Delay(Object):
     """
     Represents a delay with a given period. You shouldn't have to create this class manually.
@@ -348,17 +349,17 @@ class Delay(Object):
         justification (str): the justification for the delay
         reasons (List[str]): The reason(s) for the delay
     """
-    
+
     def __init__(self, json_dict: dict) -> None:
         super().__init__(json_dict)
 
         self.id: str = self._resolver(str, "N")
-        self.date: datetime.datetime = self._resolver(
-            Util.datetime_parse, "date", "V"
-        )
+        self.date: datetime.datetime = self._resolver(Util.datetime_parse, "date", "V")
         self.minutes: int = self._resolver(int, "duree", default=0)
         self.justified: bool = self._resolver(bool, "justifie", default=False)
-        self.justification: Optional[str] = self._resolver(str, "justification", strict=False)
+        self.justification: Optional[str] = self._resolver(
+            str, "justification", strict=False
+        )
         self.reasons: List[str] = self._resolver(
             lambda l: [i["L"] for i in l], "listeMotifs", "V", default=[]
         )
@@ -473,7 +474,7 @@ class Period(Object):
         response = self._client.post("PagePresence", 19, json_data)
         absences = response["donneesSec"]["donnees"]["listeAbsences"]["V"]
         return [Absence(a) for a in absences if a["G"] == 13]
-    
+
     @property
     def delays(self) -> List[Delay]:
         """
