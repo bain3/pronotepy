@@ -449,6 +449,18 @@ class Period(Object):
         else:
             average = -1
         return average
+    
+    @property
+    def group_average(self) -> float:
+        """Get group average from the period. """
+        json_data = {"Periode": {"N": self.id, "L": self.name}}
+        response = self._client.post("DernieresNotes", 198, json_data)
+        average = response["donneesSec"]["donnees"].get("moyGeneraleClasse")
+        if average:
+            return average["V"]
+        else:
+            return None
+
 
     @property
     def evaluations(self) -> List["Evaluation"]:
