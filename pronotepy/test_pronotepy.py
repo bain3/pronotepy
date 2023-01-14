@@ -37,7 +37,15 @@ class TestClient(unittest.TestCase):
         self.assertIsNotNone(client.periods)
 
     def test_current_period(self) -> None:
-        self.assertIsNotNone(client.current_period)
+        p = client.current_period
+        self.assertIsNotNone(p)
+        pronote_time = pronotepy.Util.datetime_parse(
+            client.func_options["donneesSec"]["donnees"]["DateServeurHttp"]["V"]
+        )
+        self.assertTrue(
+            p.start < pronote_time < p.end,
+            "current_period is not in progress",
+        )
 
     def test_homework(self) -> None:
         start = client.start_day
