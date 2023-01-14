@@ -452,7 +452,7 @@ class Period(Object):
     
     @property
     def group_average(self) -> Optional[float]:
-        """Get group average from the period. """
+        """Get group average from the period."""
         json_data = {"Periode": {"N": self.id, "L": self.name}}
         response = self._client.post("DernieresNotes", 198, json_data)
         average = response["donneesSec"]["donnees"].get("moyGeneraleClasse")
