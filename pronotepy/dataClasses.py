@@ -449,6 +449,37 @@ class Period(Object):
         else:
             average = -1
         return average
+    
+    @property
+    def class_overall_average(self) -> float:
+        """Get class overall average from the period. If the period average is not provided by pronote, then it's calculated.
+        Calculation may not be the same as the actual average. (max difference 0.01)"""
+        json_data = {"Periode": {"N": self.id, "L": self.name}}
+        response = self._client.post("DernieresNotes", 198, json_data)
+        average = response["donneesSec"]["donnees"].get("moyGeneraleClasse")
+        if average:
+            return average["V"]
+        # VVVVVVVV will be removed in v3.0.0
+        elif response["donneesSec"]["donnees"]["listeServices"]["V"]:
+            a: float = 0
+            total = 0
+            services = response["donneesSec"]["donnees"]["listeServices"]["V"]
+            for s in services:
+                try:
+                    avrg = s["moyClasse"]["V"].replace(",", ".")
+                except KeyError:
+                    raise UnsupportedOperation("Could not get averages")
+                try:
+                    flt = float(avrg)
+                except ValueError:
+                    flt = False
+                if flt:
+                    a += flt
+                    total += 1
+            average = round(a / total, 2) if total else -1
+        else:
+            average = -1
+        return average
 
     @property
     def evaluations(self) -> List["Evaluation"]:

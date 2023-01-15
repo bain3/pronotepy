@@ -94,6 +94,9 @@ class TestPeriod(unittest.TestCase):
 
     def test_overall_average(self) -> None:
         self.assertIsNotNone(self.period.overall_average)
+        
+    def test_class_overall_average(self) -> None:
+        self.assertIsNotNone(self.period.class_overall_average)
 
     def test_evaluations(self) -> None:
         evaluations = self.period.evaluations
