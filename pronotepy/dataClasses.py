@@ -449,7 +449,7 @@ class Period(Object):
         else:
             average = -1
         return average
- 
+
     @property
     def class_overall_average(self) -> float:
         """Get class overall average from the period. If the period average is not provided by pronote, then it's calculated.
