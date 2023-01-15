@@ -1087,6 +1087,7 @@ class Discussion(Object):
         subject (str): the subject of the discussion
         creator (str): the person who open the discussion
         messages (List[Message]): messages link to the discussion
+        participants (List[str]): participants of the discussion
         unread (int): number of unread messages
         close (bool): True if the discussion is close
         date (datetime.datetime): the date when the discussion was open
