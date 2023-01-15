@@ -599,9 +599,15 @@ class Client(ClientBase):
     @property
     def current_period(self) -> dataClasses.Period:
         """the current period"""
-        id_period = self.parametres_utilisateur["donneesSec"]["donnees"]["ressource"][
+        onglets = self.parametres_utilisateur["donneesSec"]["donnees"]["ressource"][
             "listeOngletsPourPeriodes"
-        ]["V"][0]["periodeParDefaut"]["V"]["N"]
+        ]["V"]
+
+        # get onglet with number 198 (mes notes), otherwise fallback to the
+        # first one in the list
+        onglet = next(filter(lambda x: x.get("G") == 198, onglets), onglets[0])
+
+        id_period = onglet["periodeParDefaut"]["V"]["N"]
         return dataClasses.Util.get(self.periods, id=id_period)[0]
 
 

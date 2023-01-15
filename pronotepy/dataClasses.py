@@ -420,7 +420,7 @@ class Period(Object):
             raise
 
     @property
-    def overall_average(self) -> float:
+    def overall_average(self) -> str:
         """Get overall average from the period. If the period average is not provided by pronote, then it's calculated.
         Calculation may not be the same as the actual average. (max difference 0.01)"""
         json_data = {"Periode": {"N": self.id, "L": self.name}}
@@ -449,7 +449,7 @@ class Period(Object):
         else:
             average = -1
         return average
-    
+ 
     @property
     def class_overall_average(self) -> float:
         """Get class overall average from the period. If the period average is not provided by pronote, then it's calculated.
