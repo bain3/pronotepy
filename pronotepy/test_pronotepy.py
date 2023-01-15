@@ -128,8 +128,8 @@ class TestPeriod(unittest.TestCase):
             all_punishments.extend(period.punishments)
         self.assertGreater(len(all_punishments), 0)
 
-    def test_group_average(self) -> None:
-        a = self.period.group_average
+    def test_class_overall_average(self) -> None:
+        a = self.period.class_overall_average
         self.assertTrue(type(a) is str or a is None)
 
 
