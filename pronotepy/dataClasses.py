@@ -123,6 +123,12 @@ class Util:
         elif re.match(r"\d{2}/\d{2}", formatted_date):
             formatted_date += f"/{datetime.date.today().year}"
             return datetime.datetime.strptime(formatted_date, "%d/%m/%Y").date()
+        elif re.match(r"\d{2}\d{2}$", formatted_date):
+            date = datetime.date.today()
+            hours = int(formatted_date[:2])
+            minutes = int(formatted_date[2:])
+            formatted_date = f"{date:%d}/{date:%m}/{date.year} {hours}h{minutes}"
+            return datetime.datetime.strptime(formatted_date, "%d/%m/%Y %Hh%M").date()
         else:
             raise DateParsingError("Could not parse date", formatted_date)
 
@@ -1081,6 +1087,7 @@ class Discussion(Object):
         subject (str): the subject of the discussion
         creator (str): the person who open the discussion
         messages (List[Message]): messages link to the discussion
+        participants (List[str]): participants of the discussion
         unread (int): number of unread messages
         close (bool): True if the discussion is close
         date (datetime.datetime): the date when the discussion was open
@@ -1110,6 +1117,11 @@ class Discussion(Object):
         self.messages: List[Message] = self._resolver(
             lambda l: [Message.get(self._client, m["N"]) for m in l],
             "listePossessionsMessages",
+            "V",
+        )
+        self.participants: List[str] = self._resolver(
+            lambda l: [d["L"] for d in l],
+            "destinatairesMessage",
             "V",
         )
         self.unread: int = self._resolver(int, "nbNonLus", default=0)
