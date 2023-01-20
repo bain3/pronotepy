@@ -155,6 +155,12 @@ lyceeconnecte_aquitaine = partial(
 
 """Open ENT NG with EduConnect"""
 
+ent_94 = partial(
+    _open_ent_ng_edu,
+    domain="https://ent94.opendigitaleducation.com",
+    providerId="urn:fi:ent:prod-cd94-edu:1.0",
+)
+
 ent_hdf = partial(_open_ent_ng_edu, domain="https://enthdf.fr")
 
 ent_somme = ent_hdf
