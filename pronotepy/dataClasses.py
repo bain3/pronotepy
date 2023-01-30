@@ -535,6 +535,7 @@ class Average(Object):
         out_of (str): maximum amount of points
         default_out_of (str): the default maximum amount of points
         subject (Subject): subject the average is from
+        background_color (str): background color of the subject
     """
 
     def __init__(self, json_dict: dict) -> None:
@@ -549,6 +550,9 @@ class Average(Object):
         self.min: str = self._resolver(Util.grade_parse, "moyMin", "V")
         self.max: str = self._resolver(Util.grade_parse, "moyMax", "V")
         self.subject = Subject(json_dict)
+        self.background_color: Optional[str] = self._resolver(
+            str, "couleur", strict=False
+        )
 
         del self._resolver
 
