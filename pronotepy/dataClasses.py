@@ -839,6 +839,7 @@ class Lesson(Object):
 
     @property
     def normal(self) -> bool:
+        """Is the lesson considered normal (is not detention, or an outing)."""
         if self.detention is None and self.outing is None:
             return True
         return False
@@ -974,9 +975,11 @@ class Information(Object):
 
     @property
     def content(self) -> str:
+        """Content of the information"""
         return Util.html_parse(self._raw_content[0]["texte"]["V"])
 
     def mark_as_read(self, status: bool) -> None:
+        """Mark this information as read"""
         data = {
             "listeActualites": [
                 {
@@ -1277,6 +1280,9 @@ class ClientInfo(Slots):
 
     @property
     def email(self) -> str:
+        """
+        Email of the client
+        """
         return self._cache()["eMail"]
 
     @property
@@ -1292,6 +1298,9 @@ class ClientInfo(Slots):
 
     @property
     def ine_number(self) -> str:
+        """
+        INE number of the client
+        """
         return self._cache()["numeroINE"]
 
 
@@ -1587,6 +1596,12 @@ class StudentClass(Object):
         del self._resolver
 
     def students(self, period: Optional[Period] = None) -> List[Student]:
+        """
+        Get students in the class
+
+        Args:
+            period (Optional[Period]): select a particular period (client.periods[0] by default)
+        """
         period = period or self._client.periods[0]
         r = self._client.post(
             "ListeRessources",
