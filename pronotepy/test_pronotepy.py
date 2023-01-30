@@ -37,7 +37,15 @@ class TestClient(unittest.TestCase):
         self.assertIsNotNone(client.periods)
 
     def test_current_period(self) -> None:
-        self.assertIsNotNone(client.current_period)
+        p = client.current_period
+        self.assertIsNotNone(p)
+        pronote_time = pronotepy.Util.datetime_parse(
+            client.func_options["donneesSec"]["donnees"]["DateServeurHttp"]["V"]
+        )
+        self.assertTrue(
+            p.start < pronote_time < p.end,
+            "current_period is not in progress",
+        )
 
     def test_homework(self) -> None:
         start = client.start_day
@@ -108,11 +116,21 @@ class TestPeriod(unittest.TestCase):
             all_absences.extend(period.absences)
         self.assertGreater(len(all_absences), 0)
 
+    def test_delays(self) -> None:
+        all_delays = []
+        for period in client.periods:
+            all_delays.extend(period.delays)
+        self.assertGreater(len(all_delays), 0)
+
     def test_punishments(self) -> None:
         all_punishments = []
         for period in client.periods:
             all_punishments.extend(period.punishments)
         self.assertGreater(len(all_punishments), 0)
+
+    def test_class_overall_average(self) -> None:
+        a = self.period.class_overall_average
+        self.assertTrue(type(a) is str or a is None)
 
 
 class TestInformation(unittest.TestCase):

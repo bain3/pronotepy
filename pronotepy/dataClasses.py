@@ -123,6 +123,12 @@ class Util:
         elif re.match(r"\d{2}/\d{2}", formatted_date):
             formatted_date += f"/{datetime.date.today().year}"
             return datetime.datetime.strptime(formatted_date, "%d/%m/%Y").date()
+        elif re.match(r"\d{2}\d{2}$", formatted_date):
+            date = datetime.date.today()
+            hours = int(formatted_date[:2])
+            minutes = int(formatted_date[2:])
+            formatted_date = f"{date:%d}/{date:%m}/{date.year} {hours}h{minutes}"
+            return datetime.datetime.strptime(formatted_date, "%d/%m/%Y %Hh%M").date()
         else:
             raise DateParsingError("Could not parse date", formatted_date)
 
@@ -337,6 +343,36 @@ class Absence(Object):
         del self._resolver
 
 
+class Delay(Object):
+    """
+    Represents a delay with a given period. You shouldn't have to create this class manually.
+
+    Attributes:
+        id (str): the id of the delay (used internally)
+        date (datetime.datetime): date of the delay
+        minutes (str): the number of minutes missed
+        justified (bool): is the delay justified
+        justification (str): the justification for the delay
+        reasons (List[str]): The reason(s) for the delay
+    """
+
+    def __init__(self, json_dict: dict) -> None:
+        super().__init__(json_dict)
+
+        self.id: str = self._resolver(str, "N")
+        self.date: datetime.datetime = self._resolver(Util.datetime_parse, "date", "V")
+        self.minutes: int = self._resolver(int, "duree", default=0)
+        self.justified: bool = self._resolver(bool, "justifie", default=False)
+        self.justification: Optional[str] = self._resolver(
+            str, "justification", strict=False
+        )
+        self.reasons: List[str] = self._resolver(
+            lambda l: [i["L"] for i in l], "listeMotifs", "V", default=[]
+        )
+
+        del self._resolver
+
+
 class Period(Object):
     """
     Represents a period of the school year. You shouldn't have to create this class manually.
@@ -390,7 +426,7 @@ class Period(Object):
             raise
 
     @property
-    def overall_average(self) -> float:
+    def overall_average(self) -> str:
         """Get overall average from the period. If the period average is not provided by pronote, then it's calculated.
         Calculation may not be the same as the actual average. (max difference 0.01)"""
         json_data = {"Periode": {"N": self.id, "L": self.name}}
@@ -418,7 +454,18 @@ class Period(Object):
             average = round(a / total, 2) if total else -1
         else:
             average = -1
-        return average
+        return str(average)
+
+    @property
+    def class_overall_average(self) -> Optional[str]:
+        """Get group average from the period."""
+        json_data = {"Periode": {"N": self.id, "L": self.name}}
+        response = self._client.post("DernieresNotes", 198, json_data)
+        average = response["donneesSec"]["donnees"].get("moyGeneraleClasse")
+        if average:
+            return average["V"]
+        else:
+            return None
 
     @property
     def evaluations(self) -> List["Evaluation"]:
@@ -444,6 +491,21 @@ class Period(Object):
         response = self._client.post("PagePresence", 19, json_data)
         absences = response["donneesSec"]["donnees"]["listeAbsences"]["V"]
         return [Absence(a) for a in absences if a["G"] == 13]
+
+    @property
+    def delays(self) -> List[Delay]:
+        """
+        All delays from this period
+        """
+        json_data = {
+            "periode": {"N": self.id, "L": self.name, "G": 2},
+            "DateDebut": {"_T": 7, "V": self.start.strftime("%d/%m/%Y %H:%M:%S")},
+            "DateFin": {"_T": 7, "V": self.end.strftime("%d/%m/%Y %H:%M:%S")},
+        }
+
+        response = self._client.post("PagePresence", 19, json_data)
+        delays = response["donneesSec"]["donnees"]["listeAbsences"]["V"]
+        return [Delay(a) for a in delays if a["G"] == 14]
 
     @property
     def punishments(self) -> List[Punishment]:
@@ -473,6 +535,7 @@ class Average(Object):
         out_of (str): maximum amount of points
         default_out_of (str): the default maximum amount of points
         subject (Subject): subject the average is from
+        background_color (str): background color of the subject
     """
 
     def __init__(self, json_dict: dict) -> None:
@@ -487,6 +550,9 @@ class Average(Object):
         self.min: str = self._resolver(Util.grade_parse, "moyMin", "V")
         self.max: str = self._resolver(Util.grade_parse, "moyMax", "V")
         self.subject = Subject(json_dict)
+        self.background_color: Optional[str] = self._resolver(
+            str, "couleur", strict=False
+        )
 
         del self._resolver
 
@@ -667,11 +733,11 @@ class Lesson(Object):
         classrooms (Optional[List[str]]): name of the classrooms
         canceled (bool): if the lesson is canceled
         status (Optional[str]): status of the lesson
-        memo (Optional[str]): memo of the lesson
         background_color (Optional[str]): background color of the lesson
         outing (bool): if it is a pedagogical outing
         start (datetime.datetime): starting time of the lesson
         end (datetime.datetime): end of the lesson
+        memo (Optional[str]): memo of the lesson
         group_name (Optional[str]): Name of the group.
         group_names (Optional[List[str]]): Name of the groups.
         exempted (bool): Specifies if the student's presence is exempt.
@@ -773,6 +839,7 @@ class Lesson(Object):
 
     @property
     def normal(self) -> bool:
+        """Is the lesson considered normal (is not detention, or an outing)."""
         if self.detention is None and self.outing is None:
             return True
         return False
@@ -908,9 +975,11 @@ class Information(Object):
 
     @property
     def content(self) -> str:
+        """Content of the information"""
         return Util.html_parse(self._raw_content[0]["texte"]["V"])
 
     def mark_as_read(self, status: bool) -> None:
+        """Mark this information as read"""
         data = {
             "listeActualites": [
                 {
@@ -1025,6 +1094,7 @@ class Discussion(Object):
         subject (str): the subject of the discussion
         creator (str): the person who open the discussion
         messages (List[Message]): messages link to the discussion
+        participants (List[str]): participants of the discussion
         unread (int): number of unread messages
         close (bool): True if the discussion is close
         date (datetime.datetime): the date when the discussion was open
@@ -1054,6 +1124,11 @@ class Discussion(Object):
         self.messages: List[Message] = self._resolver(
             lambda l: [Message.get(self._client, m["N"]) for m in l],
             "listePossessionsMessages",
+            "V",
+        )
+        self.participants: List[str] = self._resolver(
+            lambda l: [d["L"] for d in l],
+            "destinatairesMessage",
             "V",
         )
         self.unread: int = self._resolver(int, "nbNonLus", default=0)
@@ -1205,6 +1280,9 @@ class ClientInfo(Slots):
 
     @property
     def email(self) -> str:
+        """
+        Email of the client
+        """
         return self._cache()["eMail"]
 
     @property
@@ -1220,6 +1298,9 @@ class ClientInfo(Slots):
 
     @property
     def ine_number(self) -> str:
+        """
+        INE number of the client
+        """
         return self._cache()["numeroINE"]
 
 
@@ -1515,6 +1596,12 @@ class StudentClass(Object):
         del self._resolver
 
     def students(self, period: Optional[Period] = None) -> List[Student]:
+        """
+        Get students in the class
+
+        Args:
+            period (Optional[Period]): select a particular period (client.periods[0] by default)
+        """
         period = period or self._client.periods[0]
         r = self._client.post(
             "ListeRessources",
