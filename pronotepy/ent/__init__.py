@@ -21,6 +21,7 @@ from .ent import (
     enc_hauts_de_seine,
     ent2d_bordeaux,
     ent77,
+    ent_94,
     ent_auvergnerhonealpe,
     ent_creuse,
     ent_elyco,
