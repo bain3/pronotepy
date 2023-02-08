@@ -115,6 +115,12 @@ monbureaunumerique = partial(
     _cas_edu, url="https://cas.monbureaunumerique.fr/login?selection=EDU"
 )
 
+prn_educonnect = partial(
+    _cas_edu,
+    url="https://hubeduconnect.index-education.net/EduConnect/cas/login",
+    redirect_form=False,
+)
+
 ac_reims = monbureaunumerique
 
 occitanie_montpellier_educonnect = partial(
