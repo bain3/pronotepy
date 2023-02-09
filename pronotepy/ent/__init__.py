@@ -44,6 +44,7 @@ from .ent import (
     occitanie_toulouse_edu,
     ozecollege_yvelines,
     paris_classe_numerique,
+    prn_educonnect,
     val_doise,
     extranet_colleges_somme,
 )
