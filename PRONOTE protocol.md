@@ -346,7 +346,7 @@ POST /pronote/appelfonction/<espace_id>/<session_id>/<numero_ordre>
    POST /pronote/appelfonction/<espace_id>/<session_id>/<numero_ordre>
    
    {
-       "nom": "PageEmploiDuTemps",
+       "nom": "DernieresNotes",
        "numeroOrdre": "<numero_ordre>",
        "session": "<session_id>", // int
        "donneesSec": {
@@ -357,7 +357,7 @@ POST /pronote/appelfonction/<espace_id>/<session_id>/<numero_ordre>
                }
            },
            "_Signature_": {
-           	"onglet": 
+           	"onglet": 198
            }
        }
    }
