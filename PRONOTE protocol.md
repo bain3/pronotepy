@@ -45,7 +45,7 @@ Parameters in `onload` (`{h:'2052117',sCrA:true,sCoA:true,a:3,d:true,MR:'LONG NU
 - `sCrA`: skip request encryption. (`true` - do not encrypt, `false` - encrypt) More information in the <a href="#encryption">encryption</a> section.
 - `sCoA`: skip request compression. (`true` - do not compress, `false` - compress) More information in the <a href="#compression">compression</a> section.
 - `a`: id of the espace (eleve, professeur, vie scolaire, ...), a number
-- `d`: ??
+- `d`: facultative boolean, if exists and true it's a demo version of PRONOTE
 - `MR`: modulus for RSA encryption
 - `ER`: exponent for RSA encryption
 
