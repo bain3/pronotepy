@@ -62,12 +62,13 @@ val_doise = partial(
 """CAS with EduConnect"""
 
 cas_cybercolleges42_edu = partial(
-    _cas_edu, url="https://cas.cybercolleges42.fr/login?selection=EDU_parent_eleve"
+    _cas_edu,
+    url="https://cas.cybercolleges42.fr/login?selection=EDU_parent_eleve&service=https://example.com/",
 )
 
 ecollege_haute_garonne_edu = partial(
     _cas_edu,
-    url="https://cas.ecollege.haute-garonne.fr/login?selection=EDU_parent_eleve",
+    url="https://cas.ecollege.haute-garonne.fr/login?selection=EDU_parent_eleve&service=https://example.com/",
 )
 
 ac_orleans_tours = partial(
@@ -94,17 +95,22 @@ cas_agora06 = partial(
 
 cas_seinesaintdenis_edu = partial(
     _cas_edu,
-    url="https://cas.webcollege.seinesaintdenis.fr/login?selection=EDU_parent_eleve",
+    url="https://cas.webcollege.seinesaintdenis.fr/login?selection=EDU_parent_eleve&service=https://example.com/",
 )
 
 cas_arsene76_edu = partial(
-    _cas_edu, url="https://cas.arsene76.fr/login?selection=EDU_parent_eleve"
+    _cas_edu,
+    url="https://cas.arsene76.fr/login?selection=EDU_parent_eleve&service=https://example.com/",
 )
 
-eclat_bfc = partial(_cas_edu, url="https://cas.eclat-bfc.fr/login?selection=EDU")
+eclat_bfc = partial(
+    _cas_edu,
+    url="https://cas.eclat-bfc.fr/login?selection=EDU&service=https://example.com/",
+)
 
 ent_auvergnerhonealpe = partial(
-    _cas_edu, url="https://cas.ent.auvergnerhonealpes.fr/login?selection=EDU"
+    _cas_edu,
+    url="https://cas.ent.auvergnerhonealpes.fr/login?selection=EDU&service=https://example.com/",
 )
 
 laclasse_educonnect = partial(
@@ -112,7 +118,8 @@ laclasse_educonnect = partial(
 )
 
 monbureaunumerique = partial(
-    _cas_edu, url="https://cas.monbureaunumerique.fr/login?selection=EDU"
+    _cas_edu,
+    url="https://cas.monbureaunumerique.fr/login?selection=EDU&service=https://example.com/",
 )
 
 ac_reims = monbureaunumerique
@@ -124,7 +131,7 @@ occitanie_montpellier_educonnect = partial(
 
 occitanie_toulouse_edu = partial(
     _cas_edu,
-    url="https://cas.mon-ent-occitanie.fr/login?selection=TOULO-EDU_parent_eleve",
+    url="https://cas.mon-ent-occitanie.fr/login?selection=TOULO-EDU_parent_eleve&service=https://example.com/",
 )
 
 """Open ENT NG"""
