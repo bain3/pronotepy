@@ -79,8 +79,11 @@ def ac_rennes(username: str, password: str) -> requests.cookies.RequestsCookieJa
 
         return session.cookies
 
+
 @typing.no_type_check
-def pronote_hubeduconnect(username: str, password: str, pronote_url: str) -> requests.cookies.RequestsCookieJar:
+def pronote_hubeduconnect(
+    username: str, password: str, pronote_url: str
+) -> requests.cookies.RequestsCookieJar:
     """
     Pronote EduConnect connection (with HubEduConnect.index-education.net)
 
@@ -97,11 +100,15 @@ def pronote_hubeduconnect(username: str, password: str, pronote_url: str) -> req
         returns the ent session cookies
     """
     # URLs required for the connection
-    hubeduconnect_base = "https://hubeduconnect.index-education.net/EduConnect/cas/login"
-    
+    hubeduconnect_base = (
+        "https://hubeduconnect.index-education.net/EduConnect/cas/login"
+    )
+
     with requests.Session() as session:
-        response = session.get(f'{hubeduconnect_base}?service={pronote_url}', headers=HEADERS)
-        
+        response = session.get(
+            f"{hubeduconnect_base}?service={pronote_url}", headers=HEADERS
+        )
+
         soup = BeautifulSoup(response.text, "html.parser")
         input_SAMLRequest = soup.find("input", {"name": "SAMLRequest"})
         if input_SAMLRequest:
@@ -116,16 +123,18 @@ def pronote_hubeduconnect(username: str, password: str, pronote_url: str) -> req
             response = session.post(
                 soup.find("form")["action"], data=payload, headers=HEADERS
             )
-        
-        if response.content.__contains__(b'<label id="zone_msgDetail">L&#x27;url de service est vide</label>'):
+
+        if response.content.__contains__(
+            b'<label id="zone_msgDetail">L&#x27;url de service est vide</label>'
+        ):
             raise ENTLoginError(
                 "Fail to connect with HubEduConnect : Service URL not provided."
             )
-        elif response.content.__contains__(b'n&#x27;est pas une url de confiance.'):
+        elif response.content.__contains__(b"n&#x27;est pas une url de confiance."):
             raise ENTLoginError(
                 "Fail to connect with HubEduConnect : Service URL not trusted. Is Pronote instance supported?"
             )
-            
+
         _educonnect(session, username, password, response.url)
-        
+
     return session.cookies
