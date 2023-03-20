@@ -1724,9 +1724,10 @@ class Punishment(Object):
 
     Attributes:
         id (str)
-        given (datetime.datetime): Date and time when the punishment was given
-        exclusion (bool): If the punishment is an exclusion
-        during_lesson (bool)
+        given (Union[datetime.datetime, datetime.date]): Date and time when the punishment was given
+        exclusion (bool): If the punishment is an exclusion from class
+        during_lesson (bool): If the punishment was given during a lesson.
+            `self.during_lesson is True => self.given is datetime.datetime`
         homework (str): Text description of the homework that was given as the punishment
         homework_documents (List[Attachment]): Attached documents for homework
         circumstances (str)
@@ -1745,26 +1746,32 @@ class Punishment(Object):
 
         Attributes:
             id (str)
-            start (datetime.datetime)
+            start (Union[datetime.datetime, datetime.date])
             duration (datetime.timedelta)
         """
 
         def __init__(self, client: ClientBase, json_dict: dict) -> None:
             super().__init__(json_dict)
+            print(json_dict)
             self.id: str = self._resolver(str, "N")
 
             # construct a full datetime from "date" and "placeExecution" fields
             date = self._resolver(Util.date_parse, "date", "V")
-            place = self._resolver(int, "placeExecution")
-            liste_heures = client.func_options["donneesSec"]["donnees"]["General"][
-                "ListeHeures"
-            ]["V"]
-            try:
-                self.start: datetime.datetime = datetime.datetime.combine(
-                    date, Util.place2time(liste_heures, place)
-                )
-            except ValueError as e:
-                raise DataError(str(e))
+            place = self._resolver(int, "placeExecution", strict=False)
+
+            self.start: Union[datetime.datetime, datetime.date]
+            if place is not None:
+                liste_heures = client.func_options["donneesSec"]["donnees"]["General"][
+                    "ListeHeures"
+                ]["V"]
+                try:
+                    self.start = datetime.datetime.combine(
+                        date, Util.place2time(liste_heures, place)
+                    )
+                except ValueError as e:
+                    raise DataError(str(e))
+            else:
+                self.start = date
 
             self.duration: datetime.timedelta = self._resolver(
                 lambda v: datetime.timedelta(minutes=int(v)), "duree"
@@ -1776,21 +1783,26 @@ class Punishment(Object):
         super().__init__(json_dict)
         self.id: str = self._resolver(str, "N")
 
-        # construct a full datetime from "dateDemande" and "placeDemande" fields
         date = self._resolver(Util.date_parse, "dateDemande", "V")
-        time_place = self._resolver(int, "placeDemande")
-        liste_heures = client.func_options["donneesSec"]["donnees"]["General"][
-            "ListeHeures"
-        ]["V"]
-        try:
-            self.given: datetime.datetime = datetime.datetime.combine(
-                date, Util.place2time(liste_heures, time_place)
-            )
-        except ValueError as e:
-            raise DataError(str(e))
+        self.during_lesson: bool = self._resolver(lambda v: not bool(v), "horsCours")
+
+        # construct a full datetime from "dateDemande" and "placeDemande" fields
+        self.given: Union[datetime.datetime, datetime.date]
+        if self.during_lesson:
+            time_place = self._resolver(int, "placeDemande")
+            liste_heures = client.func_options["donneesSec"]["donnees"]["General"][
+                "ListeHeures"
+            ]["V"]
+            try:
+                self.given = datetime.datetime.combine(
+                    date, Util.place2time(liste_heures, time_place)
+                )
+            except ValueError as e:
+                raise DataError(str(e))
+        else:
+            self.given = date
 
         self.exclusion: bool = self._resolver(bool, "estUneExclusion")
-        self.during_lesson: bool = self._resolver(bool, "horsCours")
 
         self.homework: str = self._resolver(str, "travailAFaire")
         self.homework_documents: List[Attachment] = self._resolver(
@@ -1823,6 +1835,6 @@ class Punishment(Object):
                 "V",
             )
 
-        self.duration: datetime.timedelta = self._resolver(
-            lambda v: datetime.timedelta(minutes=int(v)), "duree"
+        self.duration: Optional[datetime.timedelta] = self._resolver(
+            lambda v: datetime.timedelta(minutes=int(v)), "duree", strict=False
         )
