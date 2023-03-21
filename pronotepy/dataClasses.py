@@ -1737,7 +1737,7 @@ class Punishment(Object):
         giver (str): Name of the person that gave the punishment
         schedule (List[ScheduledPunishment]): List of scheduled date-times with durations
         schedulable (bool)
-        duration (datetime.timedelta)
+        duration (Optional[datetime.timedelta])
     """
 
     class ScheduledPunishment(Object):
@@ -1747,7 +1747,7 @@ class Punishment(Object):
         Attributes:
             id (str)
             start (Union[datetime.datetime, datetime.date])
-            duration (datetime.timedelta)
+            duration (Optional[datetime.timedelta])
         """
 
         def __init__(self, client: ClientBase, json_dict: dict) -> None:
@@ -1773,8 +1773,8 @@ class Punishment(Object):
             else:
                 self.start = date
 
-            self.duration: datetime.timedelta = self._resolver(
-                lambda v: datetime.timedelta(minutes=int(v)), "duree"
+            self.duration: Optional[datetime.timedelta] = self._resolver(
+                lambda v: datetime.timedelta(minutes=int(v)), "duree", strict=False
             )
 
             del self._resolver
