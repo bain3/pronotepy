@@ -19,9 +19,6 @@ from PRONOTE. It also includes a useful :class:`.Util` class.
 .. autoclass:: Absence
    :members:
 
-.. autoclass:: Delay
-   :members:
-
 .. autoclass:: Period
    :members:
 
