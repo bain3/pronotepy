@@ -72,6 +72,8 @@ An example of client initialisation with the ac_reunion ENT:
 
 .. autofunction:: ent77
 
+.. autofunction:: ent_94
+
 .. autofunction:: ent_auvergnerhonealpe
 
 .. autofunction:: ent_creuse
@@ -87,6 +89,8 @@ An example of client initialisation with the ac_reunion ENT:
 .. autofunction:: ent_somme
 
 .. autofunction:: ent_var
+
+.. autofunction:: extranet_colleges_somme
 
 .. autofunction:: ile_de_france
 
@@ -116,6 +120,6 @@ An example of client initialisation with the ac_reunion ENT:
 
 .. autofunction:: paris_classe_numerique
 
-.. autofunction:: val_doise
+.. autofunction:: pronote_hubeduconnect
 
-.. autofunction:: extranet_colleges_somme
+.. autofunction:: val_doise

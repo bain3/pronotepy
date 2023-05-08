@@ -54,6 +54,7 @@ __all__ = (
     "StudentClass",
     "Menu",
     "Punishment",
+    "Delay",
 )
 
 log = logging.getLogger(__name__)

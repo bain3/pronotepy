@@ -16,7 +16,9 @@ class TestENT(unittest.TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.functions = getmembers(
-            ent, lambda x: isfunction(x) or isinstance(x, partial)
+            ent,
+            lambda x: (isfunction(x) and x.__name__ != "pronote_hubeduconnect")
+            or isinstance(x, partial),
         )
 
     def test_functions(self) -> None:
