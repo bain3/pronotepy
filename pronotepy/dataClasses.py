@@ -774,31 +774,25 @@ class Lesson(Object):
             bool, "cahierDeTextes", "V", "estDevoir", default=False
         )
 
-        # get correct ending time
-        # Pronote gives us the place where the hour should be in a week, when we modulo that with the amount of
-        # hours in a day we can get the "place" when the hour starts. Then we just add the duration (and substract 1)
-        end_place = (
-            json_dict["place"]
-            % (
-                len(
-                    client.func_options["donneesSec"]["donnees"]["General"][
-                        "ListeHeuresFin"
-                    ]["V"]
-                )
-                - 1
-            )
-            + json_dict["duree"]
-            - 1
+        self.end: datetime.datetime = self._resolver(
+            Util.datetime_parse, "DateDuCoursFin", "V", strict=False
         )
+        if self.end is None:
+            end_times = client.func_options["donneesSec"]["donnees"]["General"][
+                "ListeHeuresFin"
+            ]["V"]
 
-        # With the end "place" now known we can look up the ending time in func_options
-        liste_heures = client.func_options["donneesSec"]["donnees"]["General"][
-            "ListeHeuresFin"
-        ]["V"]
-        end_time = Util.place2time(liste_heures, end_place)
-        self.end: datetime.datetime = self.start.replace(
-            hour=end_time.hour, minute=end_time.minute
-        )
+            # get correct ending time
+            # Pronote gives us the place where the hour should be in a week, when
+            # we modulo that with the amount of hours in a day we can get the "place" when the
+            # hour starts. Then we just add the duration (and substract 1)
+            end_place = (
+                json_dict["place"] % (len(end_times) - 1) + json_dict["duree"] - 1
+            )
+
+            # With the end "place" now known we can look up the ending time in func_options
+            end_time = Util.place2time(end_times, end_place)
+            self.end = self.start.replace(hour=end_time.hour, minute=end_time.minute)
 
         # get additional information about the lesson
         self.teacher_names: Optional[List[str]] = []
