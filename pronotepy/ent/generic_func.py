@@ -400,9 +400,10 @@ def _oze_ent(
 
         # Get info about Oze apps
         ozeapps_url = urljoin(api_url, "/v1/ozapps")
-        payload = {}
-        payload["ctx_profil"] = ctx_profil
-        payload["ctx_etab"] = ctx_etab
+        payload = {
+            "ctx_profil": ctx_profil,
+            "ctx_etab": ctx_etab,
+        }
         r = session.get(ozeapps_url, params=payload, headers=HEADERS)
 
         # Find proxySSO url for Pronote app and call it
@@ -413,15 +414,16 @@ def _oze_ent(
                 proxysso_url = urljoin(url, app["externalRoute"])
 
         # If we still haven't got the url, try something else
-        pronoteConfig_url = urljoin(api_url, "/v1/config/Pronote")
-        payload = {}
-        payload["ctx_profil"] = ctx_profil
-        payload["ctx_etab"] = ctx_etab
-        r = session.get(pronoteConfig_url, params=payload, headers=HEADERS)
-        pronoteConfig = r.json()
-        if pronoteConfig["autorisationId"] and pronoteConfig["projet"]:
-            proxysso_url = f"{url}cas/proxySSO/{pronoteConfig['autorisationId']}?uai={ctx_etab}&projet={pronoteConfig['projet']}&fonction=ELV"
-        
+        if not proxysso_url:
+            pronoteConfig_url = urljoin(api_url, "/v1/config/Pronote")
+            payload = {}
+            payload["ctx_profil"] = ctx_profil
+            payload["ctx_etab"] = ctx_etab
+            r = session.get(pronoteConfig_url, params=payload, headers=HEADERS)
+            pronoteConfig = r.json()
+            if pronoteConfig["autorisationId"] and pronoteConfig["projet"]:
+                proxysso_url = f"{url}cas/proxySSO/{pronoteConfig['autorisationId']}?uai={ctx_etab}&projet={pronoteConfig['projet']}&fonction=ELV"
+
         r = session.get(proxysso_url, headers=HEADERS)
         return session.cookies
 
