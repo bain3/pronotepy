@@ -2,6 +2,7 @@ import datetime
 import unittest
 
 import pronotepy
+from pronotepy import DiscussionClosed
 
 client = pronotepy.Client(
     "https://demo.index-education.net/pronote/eleve.html", "demonstration", "pronotevs"
@@ -200,6 +201,20 @@ class TestDiscussion(unittest.TestCase):
             0,
             "Discussion has no message",
         )
+
+    def test_mark_read(self) -> None:
+        self.discussion.mark_as(True)
+
+    def test_reply(self) -> None:
+        for discussion in parent_client.discussions():
+            if discussion.closed:
+                with self.assertRaises(DiscussionClosed):
+                    discussion.reply("test")
+            else:
+                discussion.reply("test")
+
+    def test_delete(self) -> None:
+        self.discussion.delete()
 
 
 class TestMenu(unittest.TestCase):

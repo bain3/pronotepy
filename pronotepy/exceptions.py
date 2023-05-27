@@ -11,6 +11,7 @@ __all__ = (
     "DateParsingError",
     "ENTLoginError",
     "UnsupportedOperation",
+    "DiscussionClosed",
 )
 
 
@@ -87,5 +88,11 @@ class ENTLoginError(PronoteAPIError):
 
 class UnsupportedOperation(PronoteAPIError):
     """The PRONOTE server does not have the functionality"""
+
+    pass
+
+
+class DiscussionClosed(PronoteAPIError):
+    """The discussion is closed"""
 
     pass

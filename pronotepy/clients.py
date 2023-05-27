@@ -509,15 +509,21 @@ class Client(ClientBase):
 
         self.post("SaisieMessage", 131, data)
 
-    def discussions(self) -> List[dataClasses.Discussion]:
+    def discussions(self, only_unread: bool = False) -> List[dataClasses.Discussion]:
         """Gets all the discussions in the discussions tab"""
         discussions = self.post(
-            "ListeMessagerie", 131, {"avecMessage": True, "avecLu": True}
+            "ListeMessagerie", 131, {"avecMessage": True, "avecLu": not only_unread}
         )
+
+        labels = {
+            l["N"]: l["G"]
+            for l in discussions["donneesSec"]["donnees"]["listeEtiquettes"]["V"]
+        }
+
         return [
-            dataClasses.Discussion(self, d)
+            dataClasses.Discussion(self, d, labels)
             for d in discussions["donneesSec"]["donnees"]["listeMessagerie"]["V"]
-            if d.get("estUneDiscussion")
+            if d.get("estUneDiscussion") and d.get("profondeur", 1) == 0
         ]
 
     def information_and_surveys(

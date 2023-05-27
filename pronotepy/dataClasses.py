@@ -24,7 +24,13 @@ from Crypto.Util import Padding
 
 if TYPE_CHECKING:
     from .clients import ClientBase, Client
-from .exceptions import DataError, ParsingError, DateParsingError, UnsupportedOperation
+from .exceptions import (
+    DataError,
+    DiscussionClosed,
+    ParsingError,
+    DateParsingError,
+    UnsupportedOperation,
+)
 
 from itertools import chain
 
@@ -62,6 +68,13 @@ log = logging.getLogger(__name__)
 
 def _get_l(d: dict) -> str:
     return d["L"]
+
+
+T = TypeVar("T")
+
+
+def noop(any: T) -> T:
+    return any
 
 
 class MissingType:
@@ -109,7 +122,6 @@ class Util:
     @staticmethod
     def date_parse(formatted_date: str) -> datetime.date:
         """convert date to a datetime.date object"""
-        formatted_date = re.sub(r"([a-zA-Z ]*)", "", formatted_date, 0)
 
         if re.match(r"\d{2}/\d{2}/\d{4}$", formatted_date):
             return datetime.datetime.strptime(formatted_date, "%d/%m/%Y").date()
@@ -1042,41 +1054,87 @@ class Message(Object):
         id (str): the id of the message (used internally)
         author (str): author of the message
         seen (bool): if the message was seen
-        date (datetime.datetime): the date when the message was sent
+        created (datetime.datetime): when the message was created
         content (str): content of the messages
+        replying_to (Optional[Message]): the message that this is replying to, if None,
+            it is the first message in a discussion
     """
 
     def __init__(self, client: ClientBase, json_dict: dict) -> None:
         super().__init__(json_dict)
         self._client = client
+        self._possession = self._resolver(str, "possessionMessage", "V", "N")
 
         self.id: str = self._resolver(str, "N")
         self.content: str = ""
-        self.author: str = self._resolver(str, "public_gauche")
+        self.author: Optional[str] = (
+            None
+            if self._resolver(bool, "emetteur", default=False)
+            else self._resolver(str, "public_gauche")
+        )
         self.seen: bool = self._resolver(bool, "lu", default=False)
-        self.date: datetime.datetime = self._resolver(Util.datetime_parse, "date", "V")
+        self.created: datetime.datetime = self._resolver(
+            Util.datetime_parse, "date", "V"
+        )
 
-        if self._resolver(bool, "estHTML", default=False):
+        # TODO: DEPRECATED
+        self.date = self.created
+
+        self.replying_to: Optional[Message] = None
+
+        if json_dict.get("estHTML", False):
             self.content = self._resolver(Util.html_parse, "contenu", "V")
         else:
             self.content = self._resolver(str, "contenu")
 
         del self._resolver
 
-    @classmethod
-    def get(cls, client: Client, id: str) -> Message:
+    def recipients(self) -> List[str]:
         """
-        Get the message of a specific id
+        Recipients of this message
+        """
 
-        Args:
-            id (str): id of the message
-        """
-        message = client.post(
-            "ListeMessages", 131, {"listePossessionsMessages": [{"N": id}]}
+        resp = self._client.post(
+            "SaisiePublicMessage", 131, {"message": {"N": self.id}}
         )
 
-        return Message(
-            client, message["donneesSec"]["donnees"]["listeMessages"]["V"][0]
+        return [r["L"] for r in resp["donneesSec"]["donnees"]["listeDest"]["V"]]
+
+    def reply(self, message: str) -> None:
+        """
+        Reply to this message
+
+        Args:
+            message (str)
+
+        Raises:
+            DiscussionClosed: when the parent discussion is closed and we cannot reply
+        """
+
+        resp = self._client.post(
+            "ListeMessages",
+            131,
+            {
+                "listePossessionsMessages": [{"N": self._possession}],
+                "message": {"N": self.id},
+            },
+        )
+
+        if len(resp["donneesSec"]["donnees"].get("listeBoutons", {"V": []})["V"]) == 0:
+            raise DiscussionClosed("Cannot reply to discussion")
+
+        msg = resp["donneesSec"]["donnees"]["messagePourReponse"]["V"]
+        button = resp["donneesSec"]["donnees"]["listeBoutons"]["V"][0]
+
+        self._client.post(
+            "SaisieMessage",
+            131,
+            {
+                "messagePourReponse": msg,
+                "contenu": message,
+                "listeFichiers": [],
+                "bouton": button,  # pronote wants the specific button we pressed
+            },
         )
 
 
@@ -1084,53 +1142,134 @@ class Discussion(Object):
     """
     Represents a discussion.
 
+    A PRONOTE discussion is a channel that, in the web UI, has threads. The internal
+    structure, however, looks more linear, with messages begin replies to other messages.
+
+    You can get messages sent in a discussion using :attr:`.messages`. The messages will be
+    in ascending chronological order (ending with the newest). Each message also has a
+    :attr:`Message.replying_to` attribute specifying what message it is replying to. In most cases
+    this will be just the previous message.
+
+    For example, to get a chat like printout of a discussion:
+
+    .. code-block:: python
+
+        discussion: Discussion = ...
+
+        print(discussion.subject or "(no subject)")
+        print("-------------------")
+
+        last_msg = None
+
+        for message in discussion.messages:
+            if message.replying_to != last_msg and message.replying_to:
+                print(f"  (replying to {message.replying_to.author or 'Me'}: {message.replying_to.content[:20]})")
+
+            print(message.author or "Me", ">", message.content)
+            print()
+
+            last_msg = message
+
     Attributes:
         id (str): the id of the discussion (used internally)
         subject (str): the subject of the discussion
-        creator (str): the person who open the discussion
-        messages (List[Message]): messages link to the discussion
-        participants (List[str]): participants of the discussion
+        creator (Optional[str]): person that created the discussion, if None, then we are the creator
+        recipients (List[str]): recipients of the discussion
         unread (int): number of unread messages
-        close (bool): True if the discussion is close
-        date (datetime.datetime): the date when the discussion was open
+        closed (bool): if the discussion is closed
         replyable (bool): because pronotepy does not currently support replying
             to discussions that are inside other discussions, this boolean signifies
             if pronotepy is able to reply
+
+            .. deprecated:: 2.10
+
+               Always ``True``
+
+        participants (List[str]):
+            participants of the discussion
+
+            .. deprecated:: 2.10
+
+               Use :attr:`.recipients` instead
+
+        close (bool):
+            if the discussion is closed
+
+            .. deprecated:: 2.10
+
+               Use :attr:`.closed` instead
     """
 
-    def __init__(self, client: Client, json_dict: dict) -> None:
+    def __init__(self, client: Client, json_dict: dict, labels: dict) -> None:
         super().__init__(json_dict)
         self._client = client
-        self._possessions: list = self._resolver(
-            lambda l: [m["N"] for m in l], "listePossessionsMessages", "V"
-        )
+        self._possessions: list = self._resolver(noop, "listePossessionsMessages", "V")
+        self._date_cache: Optional[datetime.datetime] = None
 
-        # FIXME: Quick fix! Reading messages is more important than replying to them
-        # but we should figure out how the general structure works. ID should always be
-        # present.
-        self.id: Optional[str] = self._resolver(
-            str, "messageFenetre", "V", "N", strict=False
-        )
-        self.replyable: bool = self.id is not None
+        self.replyable: bool = True
         self.subject: str = self._resolver(str, "objet")
-        self.creator: str = self._resolver(
-            str, "initiateur", strict=False
-        ) or self._resolver(str, "public")
-        self.messages: List[Message] = self._resolver(
-            lambda l: [Message.get(self._client, m["N"]) for m in l],
-            "listePossessionsMessages",
-            "V",
-        )
-        self.participants: List[str] = self._resolver(
+        self.creator: Optional[str] = self._resolver(str, "initiateur", strict=False)
+
+        self.recipients: List[str] = self._resolver(
             lambda l: [d["L"] for d in l],
             "destinatairesMessage",
             "V",
         )
+
         self.unread: int = self._resolver(int, "nbNonLus", default=0)
-        self.close: bool = self._resolver(bool, "ferme", default=False)
-        self.date: datetime.date = self._resolver(Util.date_parse, "libelleDate")
+        self.closed: bool = self._resolver(bool, "ferme", default=False)
+
+        # TODO: DEPRECATED
+        self.participants: List[str] = self.recipients
+        self.close: bool = self.closed
+
+        labels_str = {4: "Drafts", 5: "Trash"}
+        self.labels: List[str] = self._resolver(
+            lambda l: [labels_str[labels[i["N"]]] for i in l],
+            "listeEtiquettes",
+            "V",
+            default=[],
+        )
 
         del self._resolver
+
+    @property
+    def messages(self) -> List[Message]:
+        """
+        Messages linked to the discussion
+
+        .. warning:: Makes a request everytime it is accessed
+
+        ..
+            TODO: should be a method instead
+        """
+        resp = self._client.post(
+            "ListeMessages",
+            131,
+            {"listePossessionsMessages": self._possessions},
+        )
+
+        messages = {}
+
+        for message_json in resp["donneesSec"]["donnees"]["listeMessages"]["V"]:
+            msg = Message(self._client, message_json)
+            messages[msg.id] = msg
+
+        for message_json in resp["donneesSec"]["donnees"]["listeMessages"]["V"]:
+            messages[message_json["N"]].replying_to = messages.get(
+                message_json["messageSource"]["V"]["N"]
+            )
+
+        return list(sorted(messages.values(), key=lambda x: x.created))
+
+    def date(self) -> datetime.datetime:
+        """
+        Date when the discussion was opened. Alias for ``Discussion.messages[0].date``.
+        """
+        if not self._date_cache:
+            msgs = self.messages
+            self._date_cache = msgs[0].date
+        return self._date_cache
 
     def mark_as(self, read: bool) -> None:
         """
@@ -1151,18 +1290,33 @@ class Discussion(Object):
 
     def reply(self, message: str) -> None:
         """
-        Reply to a discussion
+        Reply to a discussion, this usually means replying to the last message
 
         Args:
             message (str)
         """
+
+        if self.closed:
+            raise DiscussionClosed("Cannot reply to discussion")
+
+        # get the message we should respond to
+        resp = self._client.post(
+            "ListeMessages",
+            131,
+            {"listePossessionsMessages": self._possessions},
+        )
+
+        msg = resp["donneesSec"]["donnees"]["messagePourReponse"]["V"]
+        button = resp["donneesSec"]["donnees"]["listeBoutons"]["V"][0]
+
         self._client.post(
             "SaisieMessage",
             131,
             {
-                "messagePourReponse": {"N": self.id, "G": 0},
+                "messagePourReponse": msg,
                 "contenu": message,
                 "listeFichiers": [],
+                "bouton": button,  # pronote wants the specific button we pressed
             },
         )
 
@@ -1173,7 +1327,10 @@ class Discussion(Object):
         self._client.post(
             "SaisieMessage",
             131,
-            {"commande": "corbeille", "listePossessionsMessages": self._possessions},
+            {
+                "commande": "corbeille",
+                "listePossessionsMessages": self._possessions,
+            },
         )
 
 
@@ -1747,7 +1904,6 @@ class Punishment(Object):
 
         def __init__(self, client: ClientBase, json_dict: dict) -> None:
             super().__init__(json_dict)
-            print(json_dict)
             self.id: str = self._resolver(str, "N")
 
             # construct a full datetime from "date" and "placeExecution" fields
