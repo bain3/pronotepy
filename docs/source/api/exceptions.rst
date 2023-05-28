@@ -7,32 +7,35 @@ raises. All of them extend the :class:`.PronoteAPIError` exception.
 
 .. currentmodule:: pronotepy
 
-.. autoclass:: PronoteAPIError
+.. autoexception:: PronoteAPIError
    :members:
 
-.. autoclass:: CryptoError
+.. autoexception:: CryptoError
    :members:
 
-.. autoclass:: ExpiredObject
+.. autoexception:: ExpiredObject
    :members:
 
-.. autoclass:: ChildNotFound
+.. autoexception:: ChildNotFound
    :members:
 
-.. autoclass:: DataError
+.. autoexception:: DataError
    :members:
 
-.. autoclass:: ParsingError
+.. autoexception:: ParsingError
    :members:
 
-.. autoclass:: ICalExportError
+.. autoexception:: ICalExportError
    :members:
 
-.. autoclass:: DateParsingError
+.. autoexception:: DateParsingError
    :members:
 
-.. autoclass:: ENTLoginError
+.. autoexception:: ENTLoginError
    :members:
 
-.. autoclass:: UnsupportedOperation
+.. autoexception:: UnsupportedOperation
+   :members:
+
+.. autoexception:: DiscussionClosed
    :members:
