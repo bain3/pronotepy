@@ -1052,7 +1052,7 @@ class Message(Object):
 
     Attributes:
         id (str): the id of the message (used internally)
-        author (str): author of the message
+        author (Optional[str]): author of the message, if ``None``, then we are the author
         seen (bool): if the message was seen
         created (datetime.datetime): when the message was created
         content (str): content of the messages
@@ -1143,7 +1143,7 @@ class Discussion(Object):
     Represents a discussion.
 
     A PRONOTE discussion is a channel that, in the web UI, has threads. The internal
-    structure, however, looks more linear, with messages begin replies to other messages.
+    structure, however, looks more linear, with messages replying to other messages.
 
     You can get messages sent in a discussion using :attr:`.messages`. The messages will be
     in ascending chronological order (ending with the newest). Each message also has a
@@ -1172,8 +1172,8 @@ class Discussion(Object):
 
     Attributes:
         id (str): the id of the discussion (used internally)
-        subject (str): the subject of the discussion
-        creator (Optional[str]): person that created the discussion, if None, then we are the creator
+        subject (str): the subject of the discussion, can be an empty string
+        creator (Optional[str]): person that created the discussion, if ``None``, then we are the creator
         recipients (List[str]): recipients of the discussion
         unread (int): number of unread messages
         closed (bool): if the discussion is closed
