@@ -1262,6 +1262,7 @@ class Discussion(Object):
 
         return list(sorted(messages.values(), key=lambda x: x.created))
 
+    @property
     def date(self) -> datetime.datetime:
         """
         Date when the discussion was opened. Alias for ``Discussion.messages[0].date``.
