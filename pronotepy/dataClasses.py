@@ -1177,6 +1177,7 @@ class Discussion(Object):
         recipients (List[str]): recipients of the discussion
         unread (int): number of unread messages
         closed (bool): if the discussion is closed
+        labels (List[str]): labels on the discussion, usually can be ``["Trash"]``, or ``["Drafts"]``
         replyable (bool): because pronotepy does not currently support replying
             to discussions that are inside other discussions, this boolean signifies
             if pronotepy is able to reply
