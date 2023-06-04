@@ -22,7 +22,8 @@
 
 ## Introduction
 
-This is a Python API wrapper for the PRONOTE student administration service. Every function was tested on a student account, but the API should support parent accounts, too. This project does **not** use the HYPERPLANNING API provided by PRONOTE, because its main goal is to make programming with PRONOTE a lot easier for students who are still learning.
+Pronotepy is a Python API wrapper for the PRONOTE student administration service. It mainly focuses on student accounts but has limited support for teacher accounts as well.
+This project does **not** use the official HYPERPLANNING API provided by PRONOTE, which is inaccessible to students.
 
 ## About
 
@@ -34,32 +35,33 @@ This is a Python API wrapper for the PRONOTE student administration service. Eve
  - autoslot
 
 ### Installation
-**Stable**
+#### Stable
 
-Install directly from pypi using pip: `pip install pronotepy` (If you are on windows and have trouble with this command, use this one assuming you are using python 3.x.x installed on your computer: `py -3 -m pip install pronotepy`)
+Install directly from pypi using pip: `pip install -U pronotepy`
 
-**Latest**
+> **Note**
+> If you are on Windows and have trouble with this command, use `py -3 -m pip install pronotepy`. You must have Python 3 installed on your machine.
 
-You can install the latest version by installing directly from the repository zip:
+#### Latest
 
-`pip install https://github.com/bain3/pronotepy/archive/refs/heads/master.zip`
+You can install the latest version by installing directly from the repository:
 
-I cannot assure that the latest version will be working.
+`pip install -U git+https://github.com/bain3/pronotepy`
 
-#### Testing the package
+We cannot assure that the latest version will be working, but it might have features or bugfixes that are not yet released on pypi.
+
+### Testing the package
 To self test pronotepy run this command:
 
 `python -m pronotepy.test_pronotepy`
 
-*Please keep in mind that this uses the demo version of pronote
-and so it can't test every function.*
+*Please keep in mind that this uses the demo version of pronote and so it can't test every function.*
+
 ### Usage
 
-```diff
-- The usage part of this readme is for the latest version,
-- if you're installing from pypi, please see the documentation.
-- It is linked right on the top of this readme.
-```
+> **Warning**
+>
+> The usage part of this readme is for the latest version. If you are installing from pypi, please see the documentation linked at the beginning.
 
 Here is an example script (homework shown in example.py):
 ```python
@@ -105,6 +107,7 @@ client = pronotepy.Client.qrcode_login({"jeton":"<LONG_TOKEN>",
 
 Pronotepy has builtin functions for getting cookies from some ENTs (if you want your ENT to be added make a new issue).
 You can pass those functions to the client like this:
+
 ```python
 import pronotepy
 from pronotepy.ent import occitanie_montpellier
@@ -114,42 +117,36 @@ client = pronotepy.Client('https://0000000a.index-education.net/pronote/eleve.ht
                           username='demonstration',
                           password='pronotevs',
                           ent=occitanie_montpellier)
+
 # check if sucessfully logged in
 if client.logged_in:
     print(len(client.discussions())) # printing number of messages that the user has
 else:
     print('no login')
 ```
+
 All the functions return cookies needed to connect to pronote (use docs to see if your ENT is supported).
-
-### Long Term Usage
-
-Pronotepy will try and reconnect when the old session expires, but it cannot assure that the old objects will still be working. To prevent having problems with expired objects, please make sure that you're requesting new ones when you have long pauses in between requests to pronote.
 
 ## Contributing
 
 Feel free to contribute anything. Any help is appreciated. To contribute, please create a pull request with your changes.
 
 Setting up the development environment is just cloning the repository and making sure you have all the dependencies by
-running pip with the requirements.txt file. Please also install `mypy` and `black` for type checking and formatting respectively
-you can find out how mypy is ran in github actions by looking at its configuration file.
+running pip with the `requirements.txt` file. Please also install `mypy` and `black` for type checking and formatting respectively.
+You can find out how mypy is ran in github actions by looking at its configuration file.
 
 Please run these tools before you submit your PR. Thanks!
 
 ## Adding content
 
-Pronotepy has most of the essential features covered, but if you need anything that is not yet implemented, you can [create an issue](https://github.com/bain3/pronotepy/issues/new) with your request. (or you can contribute by adding it yourself)
+Pronotepy has most of the essential features covered, but if you need anything that is not yet implemented, you 
+can [create an issue](https://github.com/bain3/pronotepy/issues/new) with your request. (or you can contribute by adding it yourself)
 
 ## Funding
 
-This repository is on [issuehunt](https://issuehunt.io/r/bain3/pronotepy). You can put bounties on your issues if you'd like to thank the person, who completes it. There is no project account for recieving tips, but you're welcome to tip contributors directly.
+This repository is on [issuehunt](https://issuehunt.io/r/bain3/pronotepy). You can put bounties on your issues if you'd like 
+to thank the person who completes it. There is no project account for recieving tips, but you're welcome to tip contributors directly.
 
 ## License
 
-Copyright (c) 2020-2021 bain, Xiloe
-
-Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+This project uses the MIT license. (see LICENSE file)
