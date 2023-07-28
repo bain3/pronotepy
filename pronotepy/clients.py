@@ -496,7 +496,9 @@ class Client(ClientBase):
             List[TeachingStaff]: list of teachers and other staff
         """
         # add teacher
-        teachers = self.post("PageEquipePedagogique", 37)["donneesSec"]["donnees"]["liste"]["V"]
+        teachers = self.post("PageEquipePedagogique", 37)["donneesSec"]["donnees"][
+            "liste"
+        ]["V"]
 
         return [dataClasses.TeachingStaff(t) for t in teachers]
 

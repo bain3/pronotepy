@@ -1994,6 +1994,7 @@ class Punishment(Object):
             lambda v: datetime.timedelta(minutes=int(v)), "duree", strict=False
         )
 
+
 class TeachingSubject(Object):
     """
     Represents a subject teached. You shouldn't have to create this class manually.
@@ -2012,15 +2013,23 @@ class TeachingSubject(Object):
         self.id: str = self._resolver(str, "N")
         self.name: str = self._resolver(str, "L")
         self._duration: str = self._resolver(str, "volumeHoraire")
-        self.parent_subject_name: str = self._resolver(str, "servicePere", "V", "L", strict=False)
-        self.parent_subject_id: str = self._resolver(str, "servicePere", "V", "N", strict=False)
+        self.parent_subject_name: str = self._resolver(
+            str, "servicePere", "V", "L", strict=False
+        )
+        self.parent_subject_id: str = self._resolver(
+            str, "servicePere", "V", "N", strict=False
+        )
 
-        if 'h' in self._duration: # duration can be an empty string
-            self.duration = datetime.timedelta(hours=int(self._duration.split('h')[0]), minutes=int(self._duration.split('h')[1]))
+        if "h" in self._duration:  # duration can be an empty string
+            self.duration = datetime.timedelta(
+                hours=int(self._duration.split("h")[0]),
+                minutes=int(self._duration.split("h")[1]),
+            )
         else:
             self.duration = datetime.timedelta()
 
         del self._resolver
+
 
 class TeachingStaff(Object):
     """
@@ -2042,6 +2051,8 @@ class TeachingStaff(Object):
         self.num: int = self._resolver(int, "P")
         self._type: int = self._resolver(int, "G")
         self.type: str = "teacher" if self._type == 3 else "staff"
-        self.subjects: List[TeachingSubject] = self._resolver(lambda x: [TeachingSubject(i) for i in x], "matieres", "V")
+        self.subjects: List[TeachingSubject] = self._resolver(
+            lambda x: [TeachingSubject(i) for i in x], "matieres", "V"
+        )
 
         del self._resolver
