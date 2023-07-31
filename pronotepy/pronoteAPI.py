@@ -36,7 +36,7 @@ error_messages = {
 
 class _Communication(object):
     def __init__(
-        self, site: str, cookies: RequestsCookieJar, client: ClientBase
+        self, site: str, cookies: Optional["RequestsCookieJar"], client: ClientBase
     ) -> None:
         """Handles all communication with the PRONOTE servers"""
         self.root_site, self.html_page = self.get_root_address(site)

@@ -96,7 +96,7 @@ class Util:
     ]
 
     @classmethod
-    def get(cls, iterable: Iterable, **kwargs: Any) -> list:
+    def get(cls, iterable: Iterable[T], **kwargs: Any) -> list[T]:
         """Gets items from the list with the attributes specified.
 
         Args:
@@ -106,9 +106,8 @@ class Util:
         for i in iterable:
             for attr in kwargs:
                 if not hasattr(i, attr) or getattr(i, attr) != kwargs[attr]:
-                    i = False
                     break
-            if i is not False:
+            else:
                 output.append(i)
         return output
 

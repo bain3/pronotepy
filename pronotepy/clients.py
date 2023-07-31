@@ -1,7 +1,7 @@
 import datetime
 import logging
 from time import time
-from typing import List, Callable, Optional, Union, TypeVar, Type
+from typing import List, Callable, Optional, Union, TypeVar, Type, TYPE_CHECKING
 
 from Crypto.Hash import SHA256
 from uuid import uuid4
@@ -17,6 +17,9 @@ from .pronoteAPI import (
     _prepare_onglets,
     log,
 )
+
+if TYPE_CHECKING:
+    from requests.cookies import RequestsCookieJar
 
 __all__ = ("ClientBase", "Client", "ParentClient", "VieScolaireClient")
 
@@ -48,7 +51,7 @@ class ClientBase:
         pronote_url: str,
         username: str = "",
         password: str = "",
-        ent: Optional[Callable] = None,
+        ent: Optional[Callable[[str, str], "RequestsCookieJar"]] = None,
         qr_code: bool = False,
     ) -> None:
         log.info("INIT")
@@ -662,7 +665,7 @@ class ParentClient(Client):
         Args:
             child (Union[str, ClientInfo]): Name or ClientInfo of a child.
         """
-        if type(child) == str:
+        if not isinstance(child, dataClasses.ClientInfo):
             candidates = dataClasses.Util.get(self.children, name=child)
             c = candidates[0] if candidates else None
         else:
