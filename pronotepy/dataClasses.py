@@ -634,6 +634,21 @@ class Grade(Object):
         )
 
 
+class Comment(Object):
+    """
+    Represents a comment (usually found in a report)
+    
+    Attributes:
+        id (str): The id of the comment (used internally)
+        comment (str): The actual comment
+    """
+
+    def __init__(self, json_dict: dict) -> None:
+        super().__init__(json_dict)
+
+        self.id = self._resolver(str, "N")
+        self.comment = self._resolver(str, "L")
+        
 class Attachment(Object):
     """
     Represents a attachment to homework for example
