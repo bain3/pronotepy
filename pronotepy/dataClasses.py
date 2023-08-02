@@ -318,8 +318,34 @@ class Subject(Object):
         self.name: str = self._resolver(str, "L")
         self.groups: bool = self._resolver(bool, "estServiceGroupe", default=False)
 
-        del self._resolver
+class ReportSubject(Subject):
+    """
+    Represents a subject found in a report. You shouldn't have to create this class manually.
 
+    Attributes:
+        color (str): the color of the subject
+        comments (List[Comment]): the list of the subject's comments
+        class_average (str): the average of the class
+        student_average (str): the average of the student
+        min_average (str): the lowest average of the class
+        max_average (str): the highest average of the class
+        coefficient (str): the coefficient of the subject
+        teachers (List[str]): the subject's teachers' names
+    """
+
+    def __init__(self, parsed_json: dict) -> None:
+        super().__init__(parsed_json)
+
+        self.color: str = self._resolver(str, "couleur")
+        self.comments: List[Comment] = self._resolver(lambda l: [Comment(i) for i in l], "ListeAppreciations", "V")
+        self.class_average: str = self._resolver(Util.grade_parse, "MoyenneClasse", "V")
+        self.student_average: str = self._resolver(Util.grade_parse, "MoyenneEleve", "V")
+        self.min_average: str = self._resolver(Util.grade_parse, "MoyenneInf", "V")
+        self.max_average: str = self._resolver(Util.grade_parse, "MoyenneSup", "V")
+        self.coefficient: str = self._resolver(str, "Coefficient", "V")
+        self.teachers: List[str] = self._resolver(lambda l: [i["L"] for i in l], "ListeProfesseurs", "V")
+        
+        del self._resolver
 
 class Absence(Object):
     """
@@ -648,7 +674,7 @@ class Comment(Object):
 
         self.id = self._resolver(str, "N")
         self.comment = self._resolver(str, "L")
-        
+
 class Attachment(Object):
     """
     Represents a attachment to homework for example
