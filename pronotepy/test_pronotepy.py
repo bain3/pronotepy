@@ -84,6 +84,16 @@ class TestClient(unittest.TestCase):
         client.refresh()
         self.assertEqual(client.session_check(), True)
 
+    def test_report(self) -> None:
+        report = client.report(client.periods[0])
+
+        self.assertIsInstance(self, report, pronotepy.Report)
+
+    def test_not_published_report(self) -> None:
+        report = client.report(client.periods[3])
+
+        self.assertFalse(report.published)
+
 
 class TestPeriod(unittest.TestCase):
     period: pronotepy.Period
