@@ -351,15 +351,17 @@ class Report(Object):
     """Represents a student report. You shouldn't have to create this class manually.
     
     Attributes:
+        published (bool): Is the report published ?
         subjects (List[ReportSubject]): the subjects that are present in the report
         comments (List[Comment]): the global report comments
     """
 
     def __init__(self, parsed_json: dict) -> None:
         super().__init__(parsed_json)
-        
-        self.subjects: List[ReportSubject] = self._resolver(lambda l: [ReportSubject(s) for s in l], "ListeServices", "V")
-        self.comments: List[ReportComment] = self._resolver(lambda l: [ReportComment(c) for c in l], "ObjetListeAppreciations", "V", "ListeAppreciations", "V")
+
+        self.subjects: List[ReportSubject] = self._resolver(lambda l: [ReportSubject(s) for s in l], "ListeServices", "V", default=False)
+        self.comments: List[ReportComment] = self._resolver(lambda l: [ReportComment(c) for c in l], "ObjetListeAppreciations", "V", "ListeAppreciations", "V", default=False)
+        self.published: bool = bool(self.comments)
 
 class Absence(Object):
     """
