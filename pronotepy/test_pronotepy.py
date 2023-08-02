@@ -87,7 +87,7 @@ class TestClient(unittest.TestCase):
     def test_report(self) -> None:
         report = client.report(client.periods[0])
 
-        self.assertIsInstance(self, report, pronotepy.Report)
+        self.assertIsInstance(report, pronotepy.Report)
 
     def test_not_published_report(self) -> None:
         report = client.report(client.periods[3])
