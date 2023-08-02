@@ -344,7 +344,7 @@ class ReportSubject(Subject):
         self.min_average: str = self._resolver(Util.grade_parse, "MoyenneInf", "V")
         self.max_average: str = self._resolver(Util.grade_parse, "MoyenneSup", "V")
         self.coefficient: str = self._resolver(str, "Coefficient", "V")
-        self.teachers: List[str] = self._resolver(lambda l: [i["L"] for i in l], "ListeProfesseurs", "V", default=False)
+        self.teachers: List[str] = self._resolver(lambda l: [i["L"] for i in l], "ListeProfesseurs", "V", default=[])
         
         del self._resolver
 
@@ -360,8 +360,8 @@ class Report(Object):
     def __init__(self, parsed_json: dict) -> None:
         super().__init__(parsed_json)
 
-        self.subjects: List[ReportSubject] = self._resolver(lambda l: [ReportSubject(s) for s in l], "ListeServices", "V", default=False)
-        self.comments: List[ReportComment] = self._resolver(lambda l: [ReportComment(c) for c in l], "ObjetListeAppreciations", "V", "ListeAppreciations", "V", default=False)
+        self.subjects: List[ReportSubject] = self._resolver(lambda l: [ReportSubject(s) for s in l], "ListeServices", "V", default=[])
+        self.comments: List[ReportComment] = self._resolver(lambda l: [ReportComment(c) for c in l], "ObjetListeAppreciations", "V", "ListeAppreciations", "V", default=[])
         self.published: bool = bool(self.comments)
 
 class Absence(Object):
@@ -689,8 +689,8 @@ class Comment(Object):
     def __init__(self, json_dict: dict) -> None:
         super().__init__(json_dict)
 
-        self.id = self._resolver(str, "N", default=False)
-        self.comment = self._resolver(str, "L", default=False)
+        self.id: str = self._resolver(str, "N", default="")
+        self.comment: str = self._resolver(str, "L", default="")
 
 class ReportComment(Comment):
     """
@@ -702,7 +702,7 @@ class ReportComment(Comment):
     def __init__(self, json_dict: dict) -> None:
         super().__init__(json_dict)
 
-        self.title: str = self._resolver(str, "Intitule", default=False)
+        self.title: str = self._resolver(str, "Intitule", default="")
 
         del self._resolver
 
