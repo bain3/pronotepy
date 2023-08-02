@@ -343,9 +343,23 @@ class ReportSubject(Subject):
         self.min_average: str = self._resolver(Util.grade_parse, "MoyenneInf", "V")
         self.max_average: str = self._resolver(Util.grade_parse, "MoyenneSup", "V")
         self.coefficient: str = self._resolver(str, "Coefficient", "V")
-        self.teachers: List[str] = self._resolver(lambda l: [i["L"] for i in l], "ListeProfesseurs", "V")
+        self.teachers: List[str] = self._resolver(lambda l: [i["L"] for i in l], "ListeProfesseurs", "V", default=False)
         
         del self._resolver
+
+class Report(Object):
+    """Represents a student report. You shouldn't have to create this class manually.
+    
+    Attributes:
+        subjects (List[ReportSubject]): the subjects that are present in the report
+        comments (List[Comment]): the global report comments
+    """
+
+    def __init__(self, parsed_json: dict) -> None:
+        super().__init__(parsed_json)
+        
+        self.subjects: List[ReportSubject] = self._resolver(lambda l: [ReportSubject(s) for s in l], "ListeServices", "V")
+        self.comments: List[ReportComment] = self._resolver(lambda l: [ReportComment(c) for c in l], "ObjetListeAppreciations", "V", "ListeAppreciations", "V")
 
 class Absence(Object):
     """
@@ -672,8 +686,22 @@ class Comment(Object):
     def __init__(self, json_dict: dict) -> None:
         super().__init__(json_dict)
 
-        self.id = self._resolver(str, "N")
-        self.comment = self._resolver(str, "L")
+        self.id = self._resolver(str, "N", default=False)
+        self.comment = self._resolver(str, "L", default=False)
+
+class ReportComment(Comment):
+    """
+    Represents a report global comment.
+
+    Attributes:
+        title (str): The title of the comment
+    """
+    def __init__(self, json_dict: dict) -> None:
+        super().__init__(json_dict)
+
+        self.title: str = self._resolver(str, "Intitule", default=False)
+
+        del self._resolver
 
 class Attachment(Object):
     """
