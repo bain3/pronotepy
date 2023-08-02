@@ -61,6 +61,7 @@ __all__ = (
     "Menu",
     "Punishment",
     "Delay",
+    "Report"
 )
 
 log = logging.getLogger(__name__)
