@@ -89,6 +89,7 @@ class TestClient(unittest.TestCase):
 
         self.assertIsInstance(report, pronotepy.Report)
 
+
 class TestPeriod(unittest.TestCase):
     period: pronotepy.Period
 
