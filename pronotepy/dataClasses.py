@@ -2032,7 +2032,7 @@ class TeachingStaff(Object):
             )
 
             if "h" in self._duration:  # duration can be an empty string
-                self.duration = datetime.timedelta(
+                self.duration: Optional[datetime.timedelta] = datetime.timedelta(
                     hours=int(self._duration.split("h")[0]),
                     minutes=int(self._duration.split("h")[1]),
                 )
