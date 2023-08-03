@@ -133,6 +133,10 @@ class TestPeriod(unittest.TestCase):
         a = self.period.class_overall_average
         self.assertTrue(type(a) is str or a is None)
 
+    def test_report(self) -> None:
+        report = self.period.report
+        self.assertTrue(report is None or isinstance(report, pronotepy.Report))
+
 
 class TestInformation(unittest.TestCase):
     def test_unread(self) -> None:
