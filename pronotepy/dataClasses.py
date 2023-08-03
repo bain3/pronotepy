@@ -1997,7 +1997,7 @@ class Punishment(Object):
 
 class TeachingSubject(Object):
     """
-    Represents a subject teached. You shouldn't have to create this class manually.
+    Represents a subject taught. You shouldn't have to create this class manually.
 
     Attributes:
         id (str): id of the subject (used internally)
@@ -2033,7 +2033,7 @@ class TeachingSubject(Object):
 
 class TeachingStaff(Object):
     """
-    Represents a teaching staff. You shouldn't have to create this class manually.
+    Represents a teaching staff member. You shouldn't have to create this class manually.
 
     Attributes:
         id (str): id of the teaching staff (used internally)
