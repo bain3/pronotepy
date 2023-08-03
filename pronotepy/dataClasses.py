@@ -61,7 +61,6 @@ __all__ = (
     "Menu",
     "Punishment",
     "Delay",
-    "TeachingSubject",
     "TeachingStaff",
 )
 
@@ -1995,42 +1994,6 @@ class Punishment(Object):
         )
 
 
-class TeachingSubject(Object):
-    """
-    Represents a subject taught. You shouldn't have to create this class manually.
-
-    Attributes:
-        id (str): id of the subject (used internally)
-        name (str): name of the subject
-        duration (datetime.timedelta): the duration of the subject per week
-        parent_subject_name (Optional[str]): name of the parent subject
-        parent_subject_id (Optional[str]): id of the parent subject (used internally)
-    """
-
-    def __init__(self, json_dict: dict) -> None:
-        super().__init__(json_dict)
-
-        self.id: str = self._resolver(str, "N")
-        self.name: str = self._resolver(str, "L")
-        self._duration: str = self._resolver(str, "volumeHoraire")
-        self.parent_subject_name: str = self._resolver(
-            str, "servicePere", "V", "L", strict=False
-        )
-        self.parent_subject_id: str = self._resolver(
-            str, "servicePere", "V", "N", strict=False
-        )
-
-        if "h" in self._duration:  # duration can be an empty string
-            self.duration = datetime.timedelta(
-                hours=int(self._duration.split("h")[0]),
-                minutes=int(self._duration.split("h")[1]),
-            )
-        else:
-            self.duration = datetime.timedelta()
-
-        del self._resolver
-
-
 class TeachingStaff(Object):
     """
     Represents a teaching staff member. You shouldn't have to create this class manually.
@@ -2043,6 +2006,41 @@ class TeachingStaff(Object):
         subjects (List[TeachingSubject]): list of subject the teacher teaches
     """
 
+    class TeachingSubject(Object):
+        """
+        Represents a subject taught. You shouldn't have to create this class manually.
+
+        Attributes:
+            id (str): id of the subject (used internally)
+            name (str): name of the subject
+            duration (Optional[datetime.timedelta]): the duration of the subject per week
+            parent_subject_name (Optional[str]): name of the parent subject
+            parent_subject_id (Optional[str]): id of the parent subject (used internally)
+        """
+
+        def __init__(self, json_dict: dict) -> None:
+            super().__init__(json_dict)
+
+            self.id: str = self._resolver(str, "N")
+            self.name: str = self._resolver(str, "L")
+            self._duration: str = self._resolver(str, "volumeHoraire")
+            self.parent_subject_name: Optional[str] = self._resolver(
+                str, "servicePere", "V", "L", strict=False
+            )
+            self.parent_subject_id: Optional[str] = self._resolver(
+                str, "servicePere", "V", "N", strict=False
+            )
+
+            if "h" in self._duration:  # duration can be an empty string
+                self.duration = datetime.timedelta(
+                    hours=int(self._duration.split("h")[0]),
+                    minutes=int(self._duration.split("h")[1]),
+                )
+            else:
+                self.duration = None
+
+                del self._resolver
+
     def __init__(self, json_dict: dict) -> None:
         super().__init__(json_dict)
 
@@ -2051,8 +2049,8 @@ class TeachingStaff(Object):
         self.num: int = self._resolver(int, "P")
         self._type: int = self._resolver(int, "G")
         self.type: str = "teacher" if self._type == 3 else "staff"
-        self.subjects: List[TeachingSubject] = self._resolver(
-            lambda x: [TeachingSubject(i) for i in x], "matieres", "V"
+        self.subjects: List[TeachingStaff.TeachingSubject] = self._resolver(
+            lambda x: [TeachingStaff.TeachingSubject(i) for i in x], "matieres", "V"
         )
 
         del self._resolver
