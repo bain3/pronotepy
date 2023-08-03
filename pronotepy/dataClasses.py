@@ -319,60 +319,61 @@ class Subject(Object):
         self.name: str = self._resolver(str, "L")
         self.groups: bool = self._resolver(bool, "estServiceGroupe", default=False)
 
-
-class ReportSubject(Subject):
-    """
-    Represents a subject found in a report. You shouldn't have to create this class manually.
-
-    Attributes:
-        color (str): the color of the subject
-        comments (List[Comment]): the list of the subject's comments
-        class_average (str): the average of the class
-        student_average (str): the average of the student
-        min_average (str): the lowest average of the class
-        max_average (str): the highest average of the class
-        coefficient (str): the coefficient of the subject
-        teachers (List[str]): the subject's teachers' names
-    """
-
-    def __init__(self, parsed_json: dict) -> None:
-        super().__init__(parsed_json)
-
-        self.color: str = self._resolver(str, "couleur")
-        self.comments: List[Comment] = self._resolver(
-            lambda l: [Comment(i) for i in l], "ListeAppreciations", "V"
-        )
-        self.class_average: str = self._resolver(Util.grade_parse, "MoyenneClasse", "V")
-        self.student_average: str = self._resolver(
-            Util.grade_parse, "MoyenneEleve", "V"
-        )
-        self.min_average: str = self._resolver(Util.grade_parse, "MoyenneInf", "V")
-        self.max_average: str = self._resolver(Util.grade_parse, "MoyenneSup", "V")
-        self.coefficient: str = self._resolver(str, "Coefficient", "V")
-        self.teachers: List[str] = self._resolver(
-            lambda l: [i["L"] for i in l], "ListeProfesseurs", "V", default=[]
-        )
-
-        del self._resolver
-
-
 class Report(Object):
     """Represents a student report. You shouldn't have to create this class manually.
 
     Attributes:
         published (bool): Is the report published ?
         subjects (List[ReportSubject]): the subjects that are present in the report
-        comments (List[Comment]): the global report comments
+        comments (List[str]): the global report comments
     """
+
+    class ReportSubject(Subject):
+        """
+        Represents a subject found in a report. You shouldn't have to create this class manually.
+
+        Attributes:
+            color (str): the color of the subject
+            comments (List[str]): the list of the subject's comments
+            class_average (str): the average of the class
+            student_average (str): the average of the student
+            min_average (str): the lowest average of the class
+            max_average (str): the highest average of the class
+            coefficient (str): the coefficient of the subject
+            teachers (List[str]): the subject's teachers' names
+        """
+
+        def __init__(self, parsed_json: dict) -> None:
+            super().__init__(parsed_json)
+
+            self.color: str = self._resolver(str, "couleur")
+            self.comments = []
+            
+            for c in parsed_json["ListeAppreciations"]["V"]:
+                if "L" in c:
+                    self.comments.append(c["L"])
+
+            self.class_average: str = self._resolver(Util.grade_parse, "MoyenneClasse", "V")
+            self.student_average: str = self._resolver(
+                Util.grade_parse, "MoyenneEleve", "V"
+            )
+            self.min_average: str = self._resolver(Util.grade_parse, "MoyenneInf", "V")
+            self.max_average: str = self._resolver(Util.grade_parse, "MoyenneSup", "V")
+            self.coefficient: str = self._resolver(str, "Coefficient", "V")
+            self.teachers: List[str] = self._resolver(
+                lambda l: [i["L"] for i in l], "ListeProfesseurs", "V", default=[]
+            )
+
+            del self._resolver
 
     def __init__(self, parsed_json: dict) -> None:
         super().__init__(parsed_json)
 
-        self.subjects: List[ReportSubject] = self._resolver(
-            lambda l: [ReportSubject(s) for s in l], "ListeServices", "V", default=[]
+        self.subjects: List[self.ReportSubject] = self._resolver(
+            lambda l: [self.ReportSubject(s) for s in l], "ListeServices", "V", default=[]
         )
-        self.comments: List[ReportComment] = self._resolver(
-            lambda l: [ReportComment(c) for c in l],
+        self.comments: List[str] = self._resolver(
+            lambda l: [c["L"] for c in l],
             "ObjetListeAppreciations",
             "V",
             "ListeAppreciations",
@@ -700,39 +701,6 @@ class Grade(Object):
             }.union(exclude),
             include_properties=include_properties,
         )
-
-
-class Comment(Object):
-    """
-    Represents a comment (usually found in a report)
-
-    Attributes:
-        id (str): The id of the comment (used internally)
-        comment (str): The actual comment
-    """
-
-    def __init__(self, json_dict: dict) -> None:
-        super().__init__(json_dict)
-
-        self.id: str = self._resolver(str, "N", default="")
-        self.comment: str = self._resolver(str, "L", default="")
-
-
-class ReportComment(Comment):
-    """
-    Represents a report global comment.
-
-    Attributes:
-        title (str): The title of the comment
-    """
-
-    def __init__(self, json_dict: dict) -> None:
-        super().__init__(json_dict)
-
-        self.title: str = self._resolver(str, "Intitule", default="")
-
-        del self._resolver
-
 
 class Attachment(Object):
     """
