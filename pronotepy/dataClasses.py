@@ -319,6 +319,7 @@ class Subject(Object):
         self.name: str = self._resolver(str, "L")
         self.groups: bool = self._resolver(bool, "estServiceGroupe", default=False)
 
+
 class Report(Object):
     """Represents a student report. You shouldn't have to create this class manually.
 
@@ -347,13 +348,12 @@ class Report(Object):
             super().__init__(parsed_json)
 
             self.color: str = self._resolver(str, "couleur")
-            self.comments = []
-            
-            for c in parsed_json["ListeAppreciations"]["V"]:
-                if "L" in c:
-                    self.comments.append(c["L"])
-
-            self.class_average: str = self._resolver(Util.grade_parse, "MoyenneClasse", "V")
+            self.comments: List[str] = self._resolver(
+                lambda l: [c["L"] for c in l if "L" in c], "ListeAppreciations", "V"
+            )
+            self.class_average: str = self._resolver(
+                Util.grade_parse, "MoyenneClasse", "V"
+            )
             self.student_average: str = self._resolver(
                 Util.grade_parse, "MoyenneEleve", "V"
             )
@@ -369,8 +369,11 @@ class Report(Object):
     def __init__(self, parsed_json: dict) -> None:
         super().__init__(parsed_json)
 
-        self.subjects: List[self.ReportSubject] = self._resolver(
-            lambda l: [self.ReportSubject(s) for s in l], "ListeServices", "V", default=[]
+        self.subjects: List[Report.ReportSubject] = self._resolver(
+            lambda l: [Report.ReportSubject(s) for s in l],
+            "ListeServices",
+            "V",
+            default=[],
         )
         self.comments: List[str] = self._resolver(
             lambda l: [c["L"] for c in l],
@@ -380,7 +383,6 @@ class Report(Object):
             "V",
             default=[],
         )
-        self.published: bool = bool(self.comments)
 
 
 class Absence(Object):
@@ -483,7 +485,7 @@ class Period(Object):
         json_data = {"periode": {"G": 2, "N": self.id, "L": self.name}}
         response = self._client.post("PageBulletins", 13, json_data)
         return Report(response["donneesSec"]["donnees"])
-    
+
     @property
     def grades(self) -> List["Grade"]:
         """Get grades from the period."""
@@ -701,6 +703,7 @@ class Grade(Object):
             }.union(exclude),
             include_properties=include_properties,
         )
+
 
 class Attachment(Object):
     """
