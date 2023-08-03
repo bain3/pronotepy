@@ -477,6 +477,13 @@ class Period(Object):
         del self._resolver
 
     @property
+    def report(self) -> Report:
+        """Gets a report from a period"""
+        json_data = {"periode": {"G": 2, "N": self.id, "L": self.name}}
+        response = self._client.post("PageBulletins", 13, json_data)
+        return Report(response["donneesSec"]["donnees"])
+    
+    @property
     def grades(self) -> List["Grade"]:
         """Get grades from the period."""
         json_data = {"Periode": {"N": self.id, "L": self.name}}

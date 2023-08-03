@@ -354,22 +354,6 @@ class Client(ClientBase):
     ) -> None:
         super().__init__(pronote_url, username, password, ent, qr_code)
 
-    def report(self, period: dataClasses.Period) -> dataClasses.Report:
-        """Gets a report from a period
-
-        Args:
-            period (Period): the report period
-
-        Returns:
-            Report: the report of the given period
-        """
-
-        json_data = {"periode": {"G": 2, "N": period.id, "L": period.name}}
-
-        response = self.post("PageBulletins", 13, json_data)
-
-        return dataClasses.Report(response["donneesSec"]["donnees"])
-
     def lessons(
         self,
         date_from: Union[datetime.date, datetime.datetime],
