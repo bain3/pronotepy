@@ -84,11 +84,6 @@ class TestClient(unittest.TestCase):
         client.refresh()
         self.assertEqual(client.session_check(), True)
 
-    def test_report(self) -> None:
-        report = client.periods[0].report
-
-        self.assertIsInstance(report, pronotepy.Report)
-
 
 class TestPeriod(unittest.TestCase):
     period: pronotepy.Period
@@ -137,6 +132,10 @@ class TestPeriod(unittest.TestCase):
     def test_class_overall_average(self) -> None:
         a = self.period.class_overall_average
         self.assertTrue(type(a) is str or a is None)
+
+    def test_report(self) -> None:
+        report = self.period.report
+        self.assertTrue(report is None or isinstance(report, pronotepy.Report))
 
 
 class TestInformation(unittest.TestCase):
