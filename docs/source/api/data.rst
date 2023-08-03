@@ -82,5 +82,8 @@ from PRONOTE. It also includes a useful :class:`.Util` class.
 .. autoclass:: Punishment
    :members:
 
+.. autoclass:: TeachingStaff
+   :members:
+
 .. autoclass:: Report
    :members:

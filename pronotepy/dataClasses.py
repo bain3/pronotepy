@@ -61,6 +61,7 @@ __all__ = (
     "Menu",
     "Punishment",
     "Delay",
+    "TeachingStaff",
     "Report",
 )
 
@@ -209,7 +210,7 @@ class Object(Slots):
                 converter (Callable[[Any], R]): the final value will be passed to this converter, it can be any callable with a single argument
                 path (str): arguments describing the path through the dictionary to the value
                 default (Union[MissingType, R]): default value if the actual one cannot be found, works with strict as False
-                strict (bool): if True, the resolver will return None when it can't find the correct value
+                strict (bool): if False, the resolver will return None when it can't find the correct value
             Returns:
                 the resolved value
             """
@@ -2083,3 +2084,65 @@ class Punishment(Object):
         self.duration: Optional[datetime.timedelta] = self._resolver(
             lambda v: datetime.timedelta(minutes=int(v)), "duree", strict=False
         )
+
+
+class TeachingStaff(Object):
+    """
+    Represents a teaching staff member. You shouldn't have to create this class manually.
+
+    Attributes:
+        id (str): id of the teaching staff (used internally)
+        name (str): name of the teaching staff
+        type (str): teacher or staff
+        num (int): the teaching staff number used for sorting
+        subjects (List[TeachingSubject]): list of subject the teacher teaches
+    """
+
+    class TeachingSubject(Object):
+        """
+        Represents a subject taught. You shouldn't have to create this class manually.
+
+        Attributes:
+            id (str): id of the subject (used internally)
+            name (str): name of the subject
+            duration (Optional[datetime.timedelta]): the duration of the subject per week
+            parent_subject_name (Optional[str]): name of the parent subject
+            parent_subject_id (Optional[str]): id of the parent subject (used internally)
+        """
+
+        def __init__(self, json_dict: dict) -> None:
+            super().__init__(json_dict)
+
+            self.id: str = self._resolver(str, "N")
+            self.name: str = self._resolver(str, "L")
+            self._duration: str = self._resolver(str, "volumeHoraire")
+            self.parent_subject_name: Optional[str] = self._resolver(
+                str, "servicePere", "V", "L", strict=False
+            )
+            self.parent_subject_id: Optional[str] = self._resolver(
+                str, "servicePere", "V", "N", strict=False
+            )
+
+            if "h" in self._duration:  # duration can be an empty string
+                self.duration: Optional[datetime.timedelta] = datetime.timedelta(
+                    hours=int(self._duration.split("h")[0]),
+                    minutes=int(self._duration.split("h")[1]),
+                )
+            else:
+                self.duration = None
+
+                del self._resolver
+
+    def __init__(self, json_dict: dict) -> None:
+        super().__init__(json_dict)
+
+        self.id: str = self._resolver(str, "N")
+        self.name: str = self._resolver(str, "L")
+        self.num: int = self._resolver(int, "P")
+        self._type: int = self._resolver(int, "G")
+        self.type: str = "teacher" if self._type == 3 else "staff"
+        self.subjects: List[TeachingStaff.TeachingSubject] = self._resolver(
+            lambda x: [TeachingStaff.TeachingSubject(i) for i in x], "matieres", "V"
+        )
+
+        del self._resolver

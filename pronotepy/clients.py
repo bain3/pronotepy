@@ -492,6 +492,19 @@ class Client(ClientBase):
 
         return [dataClasses.Recipient(self, r) for r in recipients]
 
+    def get_teaching_staff(self) -> List[dataClasses.TeachingStaff]:
+        """Get the teacher list
+
+        Returns:
+            List[TeachingStaff]: list of teachers and other staff
+        """
+        # add teacher
+        teachers = self.post("PageEquipePedagogique", 37)["donneesSec"]["donnees"][
+            "liste"
+        ]["V"]
+
+        return [dataClasses.TeachingStaff(t) for t in teachers]
+
     # TODO: change to "subject"
     def new_discussion(
         self, subjet: str, message: str, recipients: List[dataClasses.Recipient]
