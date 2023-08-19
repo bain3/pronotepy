@@ -14,21 +14,6 @@ from .generic_func import (  # type: ignore
 
 """CAS"""
 
-ac_clermont_ferrand = partial(
-    _cas,
-    url="https://cas.ent.auvergnerhonealpes.fr/login?selection=CLERMONT-ATS_parent_eleve",
-)
-
-ac_grenoble = partial(
-    _cas,
-    url="https://cas.ent.auvergnerhonealpes.fr/login?selection=GRE-ATS_parent_eleve",
-)
-
-ac_lyon = partial(
-    _cas,
-    url="https://cas.ent.auvergnerhonealpes.fr/login?selection=LYON-ATS_parent_eleve",
-)
-
 cas_arsene76 = partial(
     _cas, url="https://cas.arsene76.fr/login?selection=ATS_parent_eleve"
 )
