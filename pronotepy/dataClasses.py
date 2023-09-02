@@ -218,25 +218,37 @@ class Object(Slots):
             try:
                 for p in path:  # walk through the json dict according to the path
                     json_value = json_value[p]
-            except KeyError:
+            except KeyError as e:
                 # we have failed to get the correct value, try to return a default
                 if default is not self._missing:
                     log.debug(
-                        f"Could not get value for (path: {','.join(path)}), setting to default."
+                        f"Could not get value for (path: %s), setting to default.",
+                        ",".join(path),
                     )
                     json_value = default
                 elif strict:
                     # in strict mode we do not want to give unpredictable output
-                    raise ParsingError("Could not follow path", self.json_dict, path)
+                    log.debug("Could not follow path in:")
+                    log.debug(json.dumps(self.json_dict))
+                    log.debug(path)
+                    raise ParsingError(
+                        "Could not follow path", self.json_dict, path
+                    ) from e
                 else:
                     json_value = None
             else:
                 try:
                     json_value = converter(json_value)
                 except Exception as e:
+                    log.debug(
+                        "Could not convert value %s(%s) with %s",
+                        type(json_value),
+                        json_value,
+                        converter,
+                    )
                     raise ParsingError(
                         f"Error while converting value: {e}", self.json_dict, path
-                    )
+                    ) from e
 
             return json_value
 
