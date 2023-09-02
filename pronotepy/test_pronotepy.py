@@ -220,6 +220,11 @@ class TestDiscussion(unittest.TestCase):
     def test_delete(self) -> None:
         self.discussion.delete()
 
+    def test_participants(self) -> None:
+        self.assertGreater(
+            len(self.discussion.participants()), 0, "discussion has no participants"
+        )
+
 
 class TestMenu(unittest.TestCase):
     menu: pronotepy.Menu

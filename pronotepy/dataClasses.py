@@ -1279,7 +1279,6 @@ class Discussion(Object):
         id (str): the id of the discussion (used internally)
         subject (str): the subject of the discussion, can be an empty string
         creator (Optional[str]): person that created the discussion, if ``None``, then we are the creator
-        recipients (List[str]): recipients of the discussion
         unread (int): number of unread messages
         closed (bool): if the discussion is closed
         labels (List[str]): labels on the discussion, usually can be ``["Trash"]``, or ``["Drafts"]``
@@ -1290,13 +1289,6 @@ class Discussion(Object):
             .. deprecated:: 2.10
 
                Always ``True``
-
-        participants (List[str]):
-            participants of the discussion
-
-            .. deprecated:: 2.10
-
-               Use :attr:`.recipients` instead
 
         close (bool):
             if the discussion is closed
@@ -1316,17 +1308,13 @@ class Discussion(Object):
         self.subject: str = self._resolver(str, "objet")
         self.creator: Optional[str] = self._resolver(str, "initiateur", strict=False)
 
-        self.recipients: List[str] = self._resolver(
-            lambda l: [d["L"] for d in l],
-            "destinatairesMessage",
-            "V",
+        self._participants_message_id = self._resolver(
+            str, "messagePourParticipants", "V", "N"
         )
 
         self.unread: int = self._resolver(int, "nbNonLus", default=0)
         self.closed: bool = self._resolver(bool, "ferme", default=False)
 
-        # TODO: DEPRECATED
-        self.participants: List[str] = self.recipients
         self.close: bool = self.closed
 
         labels_str = {4: "Drafts", 5: "Trash"}
@@ -1338,6 +1326,26 @@ class Discussion(Object):
         )
 
         del self._resolver
+
+    def participants(self) -> List[str]:
+        """
+        Get participants in the discussion. A participant does not have to send
+        a message to the discussion to be included.
+
+        The names may be in the format ``NAME - KID'S NAME ...``.
+        Ex: ``M. PARENT F. - PARENT Fanny (3A) PARENT Manon (6D)``
+        """
+        resp = self._client.post(
+            "SaisiePublicMessage",
+            131,
+            {
+                "estDestinatairesReponse": False,
+                "estPublicParticipant": True,
+                "message": {"N": self._participants_message_id},
+            },
+        )
+        # the names are often in the format "NAME - KID'S NAME"
+        return [i["L"] for i in resp["donneesSec"]["donnees"]["listeDest"]["V"]]
 
     @property
     def messages(self) -> List[Message]:
