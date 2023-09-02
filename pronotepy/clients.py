@@ -52,7 +52,8 @@ class ClientBase:
         username: str = "",
         password: str = "",
         ent: Optional[Callable[[str, str], "RequestsCookieJar"]] = None,
-        qr_code: bool = False,
+        mode: str = "normal",
+        uuid: str = "",
     ) -> None:
         log.info("INIT")
         # start communication session
@@ -68,8 +69,10 @@ class ClientBase:
         else:
             cookies = None
 
-        self.uuid = str(uuid4())
-        self.mobile = qr_code
+        if mode != "normal" and not uuid:
+            raise PronoteAPIError("UUID must not be empty")
+        self.uuid = uuid
+        self.login_mode = mode
 
         self.username = username
         self.password = password
@@ -102,12 +105,17 @@ class ClientBase:
         self._expired = False
 
     @classmethod
-    def qrcode_login(cls: Type[T], qr_code: dict, pin: str) -> T:
+    def qrcode_login(cls: Type[T], qr_code: dict, pin: str, uuid: str) -> T:
         """Login with QR code
 
+        The created client instance will have its username and password
+        attributes set to the credentials for the next login using
+        :meth:`.token_login`.
+
         Args:
-            qr_code (dict): JSON store in the QR code
+            qr_code (dict): JSON contained in the QR code. Must have ``login``, ``jeton`` and ``url`` keys.
             pin (str): 4-digit confirmation code created during QR code setup
+            uuid (str): Unique ID for your application. Must not change between logins.
         """
         encryption = _Encryption()
         encryption.aes_set_key(pin.encode())
@@ -119,15 +127,31 @@ class ClientBase:
             login = encryption.aes_decrypt(short_token).decode()
             jeton = encryption.aes_decrypt(long_token).decode()
         except CryptoError as ex:
-            ex.args += (
-                "exception happened during login -> probably the confirmation code is not valid",
-            )
-            raise
+            raise QRCodeDecryptError("invalid confirmation code") from ex
 
         # add ?login=true at the end of the url
         url = re.sub(r"(\?.*)|( *)$", "?login=true", qr_code["url"], 0)
 
-        return cls(url, login, jeton, qr_code=True)
+        return cls(url, login, jeton, mode="qr_code", uuid=uuid)
+
+    @classmethod
+    def token_login(
+        cls: Type[T], pronote_url: str, username: str, password: str, uuid: str
+    ) -> T:
+        """
+        Login with a password token. Used for logins after :meth:`.qrcode_login`.
+
+        The created client instance will have its username and password
+        attributes set to the credentials for the next login using
+        :meth:`.token_login`.
+
+        Args:
+            pronote_url (str): URL of the server
+            username (str)
+            password (str): Password token received from the previous login
+            uuid (str): Unique ID for your application. Must not change between logins.
+        """
+        return cls(pronote_url, username, password, mode="token", uuid=uuid)
 
     def _login(self) -> bool:
         """Logs in the user.
@@ -146,9 +170,12 @@ class ClientBase:
             "pourENT": True if self.ent else False,
             "enConnexionAuto": False,
             "demandeConnexionAuto": False,
-            "demandeConnexionAppliMobile": self.mobile,
-            "demandeConnexionAppliMobileJeton": self.mobile,
-            "uuidAppliMobile": self.uuid if self.mobile else "",
+            "demandeConnexionAppliMobile": self.login_mode == "qr_code",
+            "demandeConnexionAppliMobileJeton": self.login_mode == "qr_code",
+            "enConnexionAppliMobile": self.login_mode == "token",
+            "uuidAppliMobile": self.uuid
+            if self.login_mode in ("qr_code", "token")
+            else "",
             "loginTokenSAV": "",
         }
         idr = self.post("Identification", data=ident_json)
@@ -164,15 +191,6 @@ class ClientBase:
         if self.ent:
             motdepasse = SHA256.new(str(self.password).encode()).hexdigest().upper()
             e.aes_set_key(motdepasse.encode())
-        elif self.mobile:
-            u = self.username
-            p = self.password
-            if idr["donneesSec"]["donnees"]["modeCompLog"]:
-                u = u.lower()
-            if idr["donneesSec"]["donnees"]["modeCompMdp"]:
-                p = p.lower()
-            motdepasse = SHA256.new(p.encode()).hexdigest().upper()
-            e.aes_set_key((u + motdepasse).encode())
         else:
             u = self.username
             p = self.password
@@ -180,7 +198,7 @@ class ClientBase:
                 u = u.lower()
             if idr["donneesSec"]["donnees"]["modeCompMdp"]:
                 p = p.lower()
-            alea = idr["donneesSec"]["donnees"]["alea"]
+            alea = idr["donneesSec"]["donnees"].get("alea", "")
             motdepasse = SHA256.new((alea + p).encode()).hexdigest().upper()
             e.aes_set_key((u + motdepasse).encode())
 
@@ -190,7 +208,7 @@ class ClientBase:
             dec_no_alea = _enleverAlea(dec.decode())
             ch = e.aes_encrypt(dec_no_alea.encode()).hex()
         except CryptoError as ex:
-            if self.mobile:
+            if self.login_mode == "qr_code":
                 ex.args += (
                     "exception happened during login -> probably the qr code has expired (qr code is valid during 10 minutes)",
                 )
@@ -212,9 +230,9 @@ class ClientBase:
             self.encryption.aes_key = e.aes_key
             log.info(f"successfully logged in as {self.username}")
 
-            if self.mobile and auth_response["donneesSec"]["donnees"].get(
-                "jetonConnexionAppliMobile"
-            ):
+            if self.login_mode in ("qr_code", "token") and auth_response["donneesSec"][
+                "donnees"
+            ].get("jetonConnexionAppliMobile"):
                 self.password = auth_response["donneesSec"]["donnees"][
                     "jetonConnexionAppliMobile"
                 ]
@@ -332,6 +350,22 @@ class ClientBase:
 
             return self.communication.post(function_name, post_data)
 
+    def request_qr_code_data(self, pin: str) -> dict:
+        """
+        Requests data for a new login QR code. This data can be then used with :meth:`.qrcode_login`.
+
+        Args:
+            pin (str): Four digit pin to use for the QR code
+        """
+        req = self.post("JetonAppliMobile", 7, {"code": pin})
+        return {
+            # ugly way to add the mobile prefix to the url
+            "url": re.sub(
+                r"/(?:mobile.){,1}(\w+).html$", r"/mobile.\1.html", self.pronote_url
+            ),
+            **req["donneesSec"]["donnees"],
+        }
+
 
 class Client(ClientBase):
     """
@@ -350,9 +384,10 @@ class Client(ClientBase):
         username: str = "",
         password: str = "",
         ent: Optional[Callable] = None,
-        qr_code: bool = False,
+        mode: str = "normal",
+        uuid: str = "",
     ) -> None:
-        super().__init__(pronote_url, username, password, ent, qr_code)
+        super().__init__(pronote_url, username, password, ent, mode, uuid)
 
     def lessons(
         self,
@@ -654,9 +689,10 @@ class ParentClient(Client):
         username: str = "",
         password: str = "",
         ent: Optional[Callable] = None,
-        qr_code: bool = False,
+        mode: str = "normal",
+        uuid: str = "",
     ) -> None:
-        super().__init__(pronote_url, username, password, ent, qr_code)
+        super().__init__(pronote_url, username, password, ent, mode, uuid)
 
         self.children: List[dataClasses.ClientInfo] = []
         for c in self.parametres_utilisateur["donneesSec"]["donnees"]["ressource"][
@@ -751,9 +787,10 @@ class VieScolaireClient(ClientBase):
         username: str = "",
         password: str = "",
         ent: Optional[Callable] = None,
-        qr_code: bool = False,
+        mode: str = "normal",
+        uuid: str = "",
     ) -> None:
-        super().__init__(pronote_url, username, password, ent, qr_code)
+        super().__init__(pronote_url, username, password, ent, mode, uuid)
         self.classes = [
             dataClasses.StudentClass(self, json)
             for json in self.parametres_utilisateur["donneesSec"]["donnees"][
