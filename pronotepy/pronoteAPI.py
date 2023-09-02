@@ -86,13 +86,10 @@ class _Communication(object):
                 "Unable to connect to pronote, please try again later"
             )
 
-        # uuid
-        self.encryption.rsa_keys = {
-            "MR": self.attributes["MR"],
-            "ER": self.attributes["ER"],
-        }
         uuid = base64.b64encode(
-            self.encryption.rsa_encrypt(self.encryption.aes_iv_temp)
+            self.encryption.aes_iv_temp
+            if self.root_site.startswith("https")
+            else self.encryption.rsa_encrypt(self.encryption.aes_iv_temp)
         ).decode()
         # post
         json_post = {"Uuid": uuid, "identifiantNav": None}
@@ -271,7 +268,7 @@ class _Communication(object):
             key, value = attr.split(":")
             attributes[key] = value.replace("'", "")
 
-        if "MR" not in attributes or "ER" not in attributes:
+        if "h" not in attributes:
             raise ValueError("internal exception to retry -> cannot prase html")
 
         return attributes
@@ -306,6 +303,10 @@ def _prepare_onglets(list_of_onglets):  # type: ignore
 
 
 class _Encryption(object):
+    # taken from eleve.js
+    RSA_1024_MODULO = 130337874517286041778445012253514395801341480334668979416920989365464528904618150245388048105865059387076357492684573172203245221386376405947824377827224846860699130638566643129067735803555082190977267155957271492183684665050351182476506458843580431717209261903043895605014125081521285387341454154194253026277
+    RSA_1024_EXPONENT = 65537
+
     def __init__(self) -> None:
         """The encryption part of the API. You shouldn't have to use this normally."""
         # aes
@@ -337,9 +338,7 @@ class _Encryption(object):
             self.aes_key = MD5.new(key).digest()
 
     def rsa_encrypt(self, data: bytes) -> bytes:
-        key = RSA.construct(
-            (int(self.rsa_keys["MR"], 16), int(self.rsa_keys["ER"], 16))
-        )
+        key = RSA.construct((self.RSA_1024_MODULO, self.RSA_1024_EXPONENT))
         # noinspection PyTypeChecker
         pkcs = PKCS1_v1_5.new(key)
         return pkcs.encrypt(data)
