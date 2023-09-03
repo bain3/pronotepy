@@ -27,7 +27,6 @@ from .ent import (
     occitanie_montpellier_educonnect,
     occitanie_toulouse,
     occitanie_toulouse_edu,
-    ozecollege_yvelines,
     paris_classe_numerique,
     val_doise,
     extranet_colleges_somme,
