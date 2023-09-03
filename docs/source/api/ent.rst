@@ -26,43 +26,13 @@ An example of client initialisation with the ac_reunion ENT:
 
 .. currentmodule:: pronotepy.ent
 
-.. autofunction:: ac_clermont_ferrand
-
-.. autofunction:: ac_grenoble
-
-.. autofunction:: ac_lyon
-
-.. autofunction:: ac_orleans_tours
-
-.. autofunction:: ac_poitiers
-
-.. autofunction:: ac_reims
-
-.. autofunction:: ac_rennes
-
-.. autofunction:: ac_reunion
-
-.. autofunction:: atrium_sud
-
-.. autofunction:: cas_agora06
-
-.. autofunction:: cas_arsene76
-
 .. autofunction:: cas_arsene76_edu
 
-.. autofunction:: cas_cybercolleges42
-
 .. autofunction:: cas_cybercolleges42_edu
-
-.. autofunction:: cas_ent27
-
-.. autofunction:: cas_kosmos
 
 .. autofunction:: cas_seinesaintdenis_edu
 
 .. autofunction:: eclat_bfc
-
-.. autofunction:: ecollege_haute_garonne
 
 .. autofunction:: ecollege_haute_garonne_edu
 
@@ -89,8 +59,6 @@ An example of client initialisation with the ac_reunion ENT:
 .. autofunction:: ent_somme
 
 .. autofunction:: ent_var
-
-.. autofunction:: extranet_colleges_somme
 
 .. autofunction:: ile_de_france
 
