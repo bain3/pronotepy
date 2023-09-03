@@ -168,8 +168,6 @@ ent2d_bordeaux = partial(
 
 enc_hauts_de_seine = partial(_oze_ent, url="https://enc.hauts-de-seine.fr/")
 
-ozecollege_yvelines = partial(_oze_ent, url="https://ozecollege.yvelines.fr/")
-
 """Simple Auth"""
 
 atrium_sud = partial(
