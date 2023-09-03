@@ -26,6 +26,8 @@ An example of client initialisation with the ac_reunion ENT:
 
 .. currentmodule:: pronotepy.ent
 
+.. autofunction:: ac_reims
+
 .. autofunction:: cas_arsene76_edu
 
 .. autofunction:: cas_cybercolleges42_edu
