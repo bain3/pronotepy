@@ -12,7 +12,10 @@ def main():
         qr_code = json.loads(raw_json)
         pin = input("QR code PIN: ")
     else:
-        url = input("URL of your pronote login page: ")
+        print()
+        print("Please input the full url ending with eleve/parent.html")
+        url = input("URL of your pronote instance: ")
+
         ent_name = input("Your ENT (name of an ENT function, or leave empty): ")
 
         ent = getattr(ent_module, ent_name, None)
@@ -20,6 +23,7 @@ def main():
             print(
                 f'Could not find ENT "{ent_name}". Pick one from https://pronotepy.rtfd.io/en/stable/api/ent.html'
             )
+            return 1
 
         username = input("Your login username: ")
         password = getpass.getpass("Your login password: ")
@@ -49,4 +53,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    exit(main() or 0)
