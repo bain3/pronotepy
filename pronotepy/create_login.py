@@ -5,7 +5,7 @@ import secrets
 import json
 
 
-def main():
+def main() -> int:
     raw_json = input("JSON QR code contents (leave blank for user/pass login): ")
 
     if raw_json:
@@ -51,6 +51,8 @@ def main():
         "Log in using Client.token_login and do not forget to keep the new client.password after each login"
     )
 
+    return 0
+
 
 if __name__ == "__main__":
-    exit(main() or 0)
+    exit(main())
