@@ -12,6 +12,7 @@ __all__ = (
     "ENTLoginError",
     "UnsupportedOperation",
     "DiscussionClosed",
+    "QRCodeDecryptError",
 )
 
 
@@ -33,6 +34,12 @@ class PronoteAPIError(Exception):
 
 class CryptoError(PronoteAPIError):
     """Exception for known errors in the cryptography."""
+
+    pass
+
+
+class QRCodeDecryptError(CryptoError):
+    """Raised when the QR code cannot be decrypted."""
 
     pass
 

@@ -22,9 +22,58 @@ Usage
 
 Client initialisation
 ^^^^^^^^^^^^^^^^^^^^^
-To create a new client you need to create an instance and pass your pronote
-address, username and password. This will initialise the connection and log the
-user in. You can check if the client is logged with the logged_in attribute.
+The client can be created in multiple ways. They differ only by login method.
+
+Logging in with QR code (recommended)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+1. (one time setup) Obtain credentials by using ``python3 -m pronotepy.create_login``. You can either:
+
+   1. Generate a QR code in PRONOTE and scan its contents so that you can paste them into the script, or
+
+   2. log in using username and password. You may have to find an appropriate
+      ENT function in :doc:`api/ent`. (see logging in with username and
+      password below)
+
+   The script uses :meth:`.ClientBase.qrcode_login` internally. You can generate
+   new QR codes using :meth:`.ClientBase.request_qr_code_data`.
+
+2. Create a :class:`.Client` using :meth:`.ClientBase.token_login`, passing in the credentials generated in the first step.
+
+   .. code-block:: python
+    
+    import pronotepy
+
+    client = pronotepy.Client.token_login(
+        "https://demo.index-education.net/pronote/mobile.eleve.html?login=true",
+        "demonstration",
+        "SUPER_LONG_TOKEN_ABCDEFG",
+        "RandomGeneratedUuid",
+    )
+    # save new credentials
+    credentials = {
+        "url": client.pronote_url,
+        "username": client.username,
+        "password": client.password,
+        "uuid": client.uuid,
+    }
+    ...
+
+   .. warning:: Save your new credentials somewhere safe. PRONOTE generates a
+      new password token after each login.
+
+
+Logging in with username and password
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+You can also create a new client by passing in your username and password. This
+needs to go through your ENT everytime you login. Consider logging in using the
+QR code method.
+
+Use an ENT function from :doc:`api/ent` if you are logging in through an ENT.
+
+.. note:: The URL passed into the client must be a direct one to your pronote
+   instance. It usually ends with ``eleve.html``, ``parent.html``, or something
+   similar. Do not include any query parameters.
 
 .. code-block:: python
 
@@ -38,9 +87,6 @@ user in. You can check if the client is logged with the logged_in attribute.
                           ent=ac_reunion) # ent specific
     if not client.logged_in:
         exit(1)  # the client has failed to log in
-
-.. note:: Make sure that the url is directly pointing to the html file (usually schools have their pronote 
-   hosted by index-education so the url will be similar to the one in the example above).
 
 Homework
 ^^^^^^^^
