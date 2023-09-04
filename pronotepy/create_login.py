@@ -6,11 +6,10 @@ import json
 
 
 def main():
-    qr_code = json.loads(
-        input("JSON QR code contents (leave blank for user/pass login): ")
-    )
+    raw_json = input("JSON QR code contents (leave blank for user/pass login): ")
 
-    if qr_code:
+    if raw_json:
+        qr_code = json.loads(raw_json)
         pin = input("QR code PIN: ")
     else:
         url = input("URL of your pronote login page: ")
