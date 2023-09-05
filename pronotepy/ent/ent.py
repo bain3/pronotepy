@@ -16,7 +16,7 @@ from .generic_func import (  # type: ignore
 
 cas_arsene76 = partial(
     _cas, url="https://cas.arsene76.fr/login?selection=ATS_parent_eleve"
-) # à supprimer aux vacances d'automne
+)  # à supprimer aux vacances d'automne
 
 cas_ent27 = partial(_cas, url="https://cas.ent27.fr/login?selection=ATS_parent_eleve")
 # à supprimer aux vacances d'automne
