@@ -135,6 +135,8 @@ Setting up the development environment is just cloning the repository and making
 running pip with the `requirements.txt` file. Please also install `mypy` and `black` for type checking and formatting respectively.
 You can find out how mypy is ran in github actions by looking at its configuration file.
 
+If you have any questions about ENTs and their authentification function, please contact [Bapt5](https://github.com/Bapt5)
+
 Please run these tools before you submit your PR. Thanks!
 
 ## Adding content
