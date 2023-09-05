@@ -1,11 +1,9 @@
-.. _ent:
-
 ENT / CAS
 =========
 
-All ENT functions that you can use while initialising the client.
+All ENT functions that you can use while initializing the client.
 
-An example of client initialisation with the ac_reunion ENT:
+An example of client initialization with the ac_reunion ENT:
 
 .. code-block:: python
 
@@ -23,38 +21,25 @@ An example of client initialisation with the ac_reunion ENT:
 
 -----------------------------------------------------------------
 
-
 .. currentmodule:: pronotepy.ent
-
-.. autofunction:: ac_clermont_ferrand
-
-.. autofunction:: ac_grenoble
-
-.. autofunction:: ac_lyon
 
 .. autofunction:: ac_orleans_tours
 
 .. autofunction:: ac_poitiers
 
+.. autofunction:: ac_reunion
+
 .. autofunction:: ac_reims
 
 .. autofunction:: ac_rennes
-
-.. autofunction:: ac_reunion
 
 .. autofunction:: atrium_sud
 
 .. autofunction:: cas_agora06
 
-.. autofunction:: cas_arsene76
-
 .. autofunction:: cas_arsene76_edu
 
-.. autofunction:: cas_cybercolleges42
-
 .. autofunction:: cas_cybercolleges42_edu
-
-.. autofunction:: cas_ent27
 
 .. autofunction:: cas_kosmos
 
@@ -62,21 +47,15 @@ An example of client initialisation with the ac_reunion ENT:
 
 .. autofunction:: eclat_bfc
 
-.. autofunction:: ecollege_haute_garonne
-
 .. autofunction:: ecollege_haute_garonne_edu
-
-.. autofunction:: enc_hauts_de_seine
-
-.. autofunction:: ent2d_bordeaux
-
-.. autofunction:: ent77
 
 .. autofunction:: ent_94
 
 .. autofunction:: ent_auvergnerhonealpe
 
 .. autofunction:: ent_creuse
+
+.. autofunction:: ent_creuse_educonnect
 
 .. autofunction:: ent_elyco
 
@@ -90,15 +69,19 @@ An example of client initialisation with the ac_reunion ENT:
 
 .. autofunction:: ent_var
 
+.. autofunction:: ent77
+
+.. autofunction:: ent_ecollege78
+
 .. autofunction:: extranet_colleges_somme
 
 .. autofunction:: ile_de_france
 
-.. autofunction:: l_normandie
-
 .. autofunction:: laclasse_educonnect
 
 .. autofunction:: laclasse_lyon
+
+.. autofunction:: l_normandie
 
 .. autofunction:: lyceeconnecte_aquitaine
 

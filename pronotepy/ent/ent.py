@@ -14,38 +14,18 @@ from .generic_func import (  # type: ignore
 
 """CAS"""
 
-ac_clermont_ferrand = partial(
-    _cas,
-    url="https://cas.ent.auvergnerhonealpes.fr/login?selection=CLERMONT-ATS_parent_eleve",
-)
-
-ac_grenoble = partial(
-    _cas,
-    url="https://cas.ent.auvergnerhonealpes.fr/login?selection=GRE-ATS_parent_eleve",
-)
-
-ac_lyon = partial(
-    _cas,
-    url="https://cas.ent.auvergnerhonealpes.fr/login?selection=LYON-ATS_parent_eleve",
-)
-
 cas_arsene76 = partial(
     _cas, url="https://cas.arsene76.fr/login?selection=ATS_parent_eleve"
-)
-
-cas_cybercolleges42 = partial(
-    _cas, url="https://cas.cybercolleges42.fr/login?selection=ATS_parent_eleve"
-)
+)  # à supprimer aux vacances d'automne
 
 cas_ent27 = partial(_cas, url="https://cas.ent27.fr/login?selection=ATS_parent_eleve")
+# à supprimer aux vacances d'automne
 
 cas_kosmos = partial(_cas, url="https://cas.kosmoseducation.com/login")
 
-ecollege_haute_garonne = partial(
-    _cas, url="https://cas.ecollege.haute-garonne.fr/login?selection=ATS_parent_eleve"
+ent_creuse = partial(
+    _cas, url="https://cas.entcreuse.fr/login?selection=ATS_parent_eleve"
 )
-
-ent_creuse = partial(_cas, url="https://cas.entcreuse.fr/login")
 
 occitanie_toulouse = partial(
     _cas, url="https://cas.mon-ent-occitanie.fr/login?selection=TOULO-ENT_parent_eleve"
@@ -134,9 +114,15 @@ occitanie_toulouse_edu = partial(
     url="https://cas.mon-ent-occitanie.fr/login?selection=TOULO-EDU_parent_eleve&service=https://example.com/",
 )
 
+ent_creuse_educonnect = partial(
+    _cas_edu, url="https://cas.entcreuse.fr/login?selection=EDU"
+)
+
 """Open ENT NG"""
 
 ent77 = partial(_open_ent_ng, url="https://ent77.seine-et-marne.fr/auth/login")
+
+ent_ecollege78 = partial(_open_ent_ng, url="https://ent.ecollege78.fr/auth/login")
 
 ent_essonne = partial(
     _open_ent_ng, url="https://www.moncollege-ent.essonne.fr/auth/login"
@@ -195,9 +181,7 @@ ent2d_bordeaux = partial(
 
 """OZE ENT"""
 
-enc_hauts_de_seine = partial(_oze_ent, url="https://enc.hauts-de-seine.fr/")
-
-ozecollege_yvelines = partial(_oze_ent, url="https://ozecollege.yvelines.fr/")
+# enc_hauts_de_seine = partial(_oze_ent, url="https://enc.hauts-de-seine.fr/")
 
 """Simple Auth"""
 
