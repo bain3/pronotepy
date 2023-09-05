@@ -84,6 +84,9 @@ class TestClient(unittest.TestCase):
         client.refresh()
         self.assertEqual(client.session_check(), True)
 
+    def test_get_teaching_staff(self) -> None:
+        self.assertGreater(len(client.get_teaching_staff()), 0)
+
 
 class TestPeriod(unittest.TestCase):
     period: pronotepy.Period
