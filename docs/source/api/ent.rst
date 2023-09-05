@@ -1,5 +1,3 @@
-.. _ent:
-
 ENT / CAS
 =========
 
@@ -67,7 +65,7 @@ An example of client initialization with the ac_reunion ENT:
 
 .. autofunction:: ent77
 
-.. autofunction:: extranet_colleges_somme  # Extrémité du tri par ordre alphabétique
+.. autofunction:: extranet_colleges_somme
 
 .. autofunction:: ile_de_france
 
