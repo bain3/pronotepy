@@ -372,7 +372,7 @@ def _oze_ent(
             username = f"{username}@{domain}"
 
         soup = BeautifulSoup(response.text, "html.parser")
-        form = soup.find("form", {"id": "auth_form"})
+        form = soup.find("form", {"id": "kc-form-login"})
         payload = {}
         for input_ in form.findAll("input"):
             payload[input_["name"]] = input_.get("value")
