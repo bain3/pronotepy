@@ -1,4 +1,6 @@
 from .ent import (
+    cas_arsene76,
+    cas_ent27,
     cas_kosmos,
     ent_creuse,
     occitanie_toulouse,
@@ -16,6 +18,7 @@ from .ent import (
     ent_auvergnerhonealpe,
     laclasse_educonnect,
     monbureaunumerique,
+    ac_reims,
     occitanie_montpellier_educonnect,
     occitanie_toulouse_edu,
     ent77,
@@ -32,6 +35,8 @@ from .ent import (
     l_normandie,
     lyceeconnecte_edu,
     ent_elyco,
+    ent2d_bordeaux,
+    enc_hauts_de_seine,
     atrium_sud,
     laclasse_lyon,
     extranet_colleges_somme,
