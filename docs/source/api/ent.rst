@@ -55,6 +55,8 @@ An example of client initialization with the ac_reunion ENT:
 
 .. autofunction:: ent_creuse
 
+.. autofunction:: ent_creuse_educonnect
+
 .. autofunction:: ent_elyco
 
 .. autofunction:: ent_essonne

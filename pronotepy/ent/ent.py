@@ -23,7 +23,9 @@ cas_ent27 = partial(_cas, url="https://cas.ent27.fr/login?selection=ATS_parent_e
 
 cas_kosmos = partial(_cas, url="https://cas.kosmoseducation.com/login")
 
-ent_creuse = partial(_cas, url="https://cas.entcreuse.fr/login?selection=ATS_parent_eleve")
+ent_creuse = partial(
+    _cas, url="https://cas.entcreuse.fr/login?selection=ATS_parent_eleve"
+)
 
 occitanie_toulouse = partial(
     _cas, url="https://cas.mon-ent-occitanie.fr/login?selection=TOULO-ENT_parent_eleve"
@@ -112,6 +114,10 @@ occitanie_toulouse_edu = partial(
     url="https://cas.mon-ent-occitanie.fr/login?selection=TOULO-EDU_parent_eleve&service=https://example.com/",
 )
 
+ent_creuse_educonnect = partial(
+    _cas_edu, url="https://cas.entcreuse.fr/login?selection=EDU"
+)
+
 """Open ENT NG"""
 
 ent77 = partial(_open_ent_ng, url="https://ent77.seine-et-marne.fr/auth/login")
@@ -175,7 +181,7 @@ ent2d_bordeaux = partial(
 
 """OZE ENT"""
 
-enc_hauts_de_seine = partial(_oze_ent, url="https://enc.hauts-de-seine.fr/")
+# enc_hauts_de_seine = partial(_oze_ent, url="https://enc.hauts-de-seine.fr/")
 
 """Simple Auth"""
 
