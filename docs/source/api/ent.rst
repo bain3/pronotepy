@@ -25,74 +25,78 @@ An example of client initialization with the ac_reunion ENT:
 
 .. currentmodule:: pronotepy.ent
 
-.. autofunction:: cas_kosmos
-
-.. autofunction:: ent_creuse
-
-.. autofunction:: occitanie_toulouse
-
-.. autofunction:: occitanie_montpellier
-
-.. autofunction:: val_doise
-
-.. autofunction:: cas_cybercolleges42_edu
-
-.. autofunction:: ecollege_haute_garonne_edu
-
 .. autofunction:: ac_orleans_tours
 
 .. autofunction:: ac_poitiers
 
 .. autofunction:: ac_reunion
 
-.. autofunction:: cas_agora06
+.. autofunction:: atrium_sud
 
-.. autofunction:: cas_seinesaintdenis_edu
+.. autofunction:: cas_agora06
 
 .. autofunction:: cas_arsene76_edu
 
+.. autofunction:: cas_cybercolleges42_edu
+
+.. autofunction:: cas_kosmos
+
+.. autofunction:: cas_seinesaintdenis_edu
+
 .. autofunction:: eclat_bfc
 
-.. autofunction:: ent_auvergnerhonealpe
-
-.. autofunction:: laclasse_educonnect
-
-.. autofunction:: monbureaunumerique
-
-.. autofunction:: occitanie_montpellier_educonnect
-
-.. autofunction:: occitanie_toulouse_edu
-
-.. autofunction:: ent77
-
-.. autofunction:: ent_essonne
-
-.. autofunction:: ent_mayotte
-
-.. autofunction:: ile_de_france
-
-.. autofunction:: neoconnect_guadeloupe
-
-.. autofunction:: paris_classe_numerique
-
-.. autofunction:: lyceeconnecte_aquitaine
+.. autofunction:: ecollege_haute_garonne_edu
 
 .. autofunction:: ent_94
 
+.. autofunction:: ent_auvergnerhonealpe
+
+.. autofunction:: ent_creuse
+
+.. autofunction:: ent_elyco
+
+.. autofunction:: ent_essonne
+
 .. autofunction:: ent_hdf
+
+.. autofunction:: ent_mayotte
 
 .. autofunction:: ent_somme
 
 .. autofunction:: ent_var
 
-.. autofunction:: l_normandie
+.. autofunction:: ent77
 
-.. autofunction:: lyceeconnecte_edu
+.. autofunction:: extranet_colleges_somme  # Extrémité du tri par ordre alphabétique
 
-.. autofunction:: ent_elyco
+.. autofunction:: ile_de_france
 
-.. autofunction:: atrium_sud
+.. autofunction:: laclasse_educonnect
 
 .. autofunction:: laclasse_lyon
 
-.. autofunction:: extranet_colleges_somme
+.. autofunction:: l_normandie
+
+.. autofunction:: lyceeconnecte_aquitaine
+
+.. autofunction:: lyceeconnecte_edu
+
+.. autofunction:: monbureaunumerique
+
+.. autofunction:: neoconnect_guadeloupe
+
+.. autofunction:: occitanie_montpellier
+
+.. autofunction:: occitanie_montpellier_educonnect
+
+.. autofunction:: occitanie_toulouse
+
+.. autofunction:: occitanie_toulouse_edu
+
+.. autofunction:: ozecollege_yvelines
+
+.. autofunction:: paris_classe_numerique
+
+.. autofunction:: pronote_hubeduconnect
+
+.. autofunction:: val_doise
