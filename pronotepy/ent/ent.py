@@ -23,7 +23,7 @@ cas_ent27 = partial(_cas, url="https://cas.ent27.fr/login?selection=ATS_parent_e
 
 cas_kosmos = partial(_cas, url="https://cas.kosmoseducation.com/login")
 
-ent_creuse = partial(_cas, url="https://cas.entcreuse.fr/login")
+ent_creuse = partial(_cas, url="https://cas.entcreuse.fr/login?selection=ATS_parent_eleve")
 
 occitanie_toulouse = partial(
     _cas, url="https://cas.mon-ent-occitanie.fr/login?selection=TOULO-ENT_parent_eleve"
