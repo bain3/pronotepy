@@ -65,6 +65,8 @@ An example of client initialization with the ac_reunion ENT:
 
 .. autofunction:: ent77
 
+.. autofunction:: ent_ecollege78
+
 .. autofunction:: extranet_colleges_somme
 
 .. autofunction:: ile_de_france
