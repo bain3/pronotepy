@@ -22,6 +22,7 @@ from .ent import (
     occitanie_montpellier_educonnect,
     occitanie_toulouse_edu,
     ent77,
+    ent_ecollege78,
     ent_essonne,
     ent_mayotte,
     ile_de_france,
