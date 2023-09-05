@@ -116,6 +116,8 @@ occitanie_toulouse_edu = partial(
 
 ent77 = partial(_open_ent_ng, url="https://ent77.seine-et-marne.fr/auth/login")
 
+ent_ecollege78 = partial(_open_ent_ng, url="https://ent.ecollege78.fr/auth/login")
+
 ent_essonne = partial(
     _open_ent_ng, url="https://www.moncollege-ent.essonne.fr/auth/login"
 )
