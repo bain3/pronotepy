@@ -29,6 +29,10 @@ An example of client initialization with the ac_reunion ENT:
 
 .. autofunction:: ac_reunion
 
+.. autofunction:: ac_reims
+
+.. autofunction:: ac_rennes
+
 .. autofunction:: atrium_sud
 
 .. autofunction:: cas_agora06
