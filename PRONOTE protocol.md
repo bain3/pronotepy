@@ -96,7 +96,7 @@ A `numeroOrdre` is created by encrypting the message number (as a string) (start
 
 ##### AES default parameters
 
-- mode: CBC, 256 bit
+- mode: CBC, 256 bit, using PKCS7 style padding (probably default)
 
 - key: empty MD5 hash (`d41d8cd98f00b204e9800998ecf8427e`)
 - iv: all zeroes
@@ -216,7 +216,7 @@ The client now needs to solve the challenge by:
 
 1. Decoding the `challenge_string` from hex to bytes, and decrypting it with AES with the following parameters:
 
-   - mode: CBC, 256-bit
+   - mode: CBC, 256-bit, using PKCS7 style padding (probably default)
 
    - key: An MD5 hash of the username, and `mtp` concatenated into a single string.
 
@@ -332,7 +332,7 @@ keys: `e` and `f`. `e` is used as a replacement for the username, and `f` for th
 
 When solving the login challenge when connecting through an ENT, decrypt with AES parameters like this:
 
-- mode: CBC, 256-bit
+- mode: CBC, 256-bit, using PKCS7 style padding (probably default)
 
 - key: An MD5 hash of the hex of a SHA256 hash of the password
 
