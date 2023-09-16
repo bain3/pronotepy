@@ -127,7 +127,7 @@ class TestPeriod(unittest.TestCase):
         all_punishments = []
         for period in client.periods:
             all_punishments.extend(period.punishments)
-        self.assertGreater(len(all_punishments), 0, "there are no punishments")
+        self.assertGreater(len(all_punishments), 0)
 
     def test_class_overall_average(self) -> None:
         a = self.period.class_overall_average
