@@ -507,6 +507,57 @@ class Client(ClientBase):
             if date_from <= hw.date <= date_to:
                 out.append(hw)
         return out
+    
+    def get_calendar(self) -> str:
+        user = self.parametres_utilisateur["donneesSec"]["donnees"]["ressource"]
+        data = {
+    "options": {
+        "portrait": False,
+        "taillePolice": 8,
+        "taillePoliceMin": 3,
+        "couleur": 1,
+        "renvoi": 0,
+        "uneGrilleParSemaine": False,
+        "inversionGrille": False,
+        "ignorerLesPlagesSansCours": False,
+        "estEDTAnnuel": True
+    },
+    "genreGenerationPDF": 0,
+    "estPlanning": False,
+    "estPlanningParRessource": False,
+    "estPlanningOngletParJour": False,
+    "estPlanningParJour": False,
+    "indiceJour": 0,
+    "ressource": user,
+    "ressources": [
+        user
+    ],
+    "domaine": {
+        "_T": 8,
+        "V": f"[{self.get_week(datetime.date.today())}]"
+    },
+    "avecCoursAnnules": True,
+    "grilleInverse": False,
+    "prefsGrille": {
+        "placeDebut": 0,
+        "placeFin": 39,
+        "nbPas": 1,
+        "joursOuvres": {
+            "_T": 26,
+            "V": "[0..5]"
+        }
+    },
+    "PARAMETRE_FENETRE": {
+        "choixRenvois": [0, 1, 2],
+        "avecChoixEDTAnnuel": True
+    }
+}
+
+        response = self.post("GenerationPDF", 16, data)
+
+        V = response["donneesSec"]["donnees"]["url"]["V"]
+        return V
+
 
     def get_recipients(self) -> List[dataClasses.Recipient]:
         """Get recipients for new discussion
