@@ -229,6 +229,7 @@ class ClientBase:
             self.communication.after_auth(auth_response, e.aes_key)
             self.encryption.aes_key = e.aes_key
             log.info(f"successfully logged in as {self.username}")
+            self.last_connection = auth_response["donneesSec"]["donnees"]["derniereConnexion"]["V"]
 
             if self.login_mode in ("qr_code", "token") and auth_response["donneesSec"][
                 "donnees"
@@ -508,56 +509,60 @@ class Client(ClientBase):
                 out.append(hw)
         return out
     
+    @property
     def get_calendar(self) -> str:
         user = self.parametres_utilisateur["donneesSec"]["donnees"]["ressource"]
         data = {
-    "options": {
-        "portrait": False,
-        "taillePolice": 8,
-        "taillePoliceMin": 3,
-        "couleur": 1,
-        "renvoi": 0,
-        "uneGrilleParSemaine": False,
-        "inversionGrille": False,
-        "ignorerLesPlagesSansCours": False,
-        "estEDTAnnuel": True
-    },
-    "genreGenerationPDF": 0,
-    "estPlanning": False,
-    "estPlanningParRessource": False,
-    "estPlanningOngletParJour": False,
-    "estPlanningParJour": False,
-    "indiceJour": 0,
-    "ressource": user,
-    "ressources": [
-        user
-    ],
-    "domaine": {
-        "_T": 8,
-        "V": f"[{self.get_week(datetime.date.today())}]"
-    },
-    "avecCoursAnnules": True,
-    "grilleInverse": False,
-    "prefsGrille": {
-        "placeDebut": 0,
-        "placeFin": 39,
-        "nbPas": 1,
-        "joursOuvres": {
-            "_T": 26,
-            "V": "[0..5]"
+            "options": {
+                "portrait": False,
+                "taillePolice": 8,
+                "taillePoliceMin": 3,
+                "couleur": 1,
+                "renvoi": 0,
+                "uneGrilleParSemaine": False,
+                "inversionGrille": False,
+                "ignorerLesPlagesSansCours": False,
+                "estEDTAnnuel": True
+            },
+            "genreGenerationPDF": 0,
+            "estPlanning": False,
+            "estPlanningParRessource": False,
+            "estPlanningOngletParJour": False,
+            "estPlanningParJour": False,
+            "indiceJour": 0,
+            "ressource": user,
+            "ressources": [
+                user
+            ],
+            "domaine": {
+                "_T": 8,
+                "V": f"[{self.get_week(datetime.date.today())}]"
+            },
+            "avecCoursAnnules": True,
+            "grilleInverse": False,
+            "prefsGrille": {
+                "placeDebut": 0,
+                "placeFin": 39,
+                "nbPas": 1,
+                "joursOuvres": {
+                    "_T": 26,
+                    "V": "[0..5]"
+                }
+            },
+            "PARAMETRE_FENETRE": {
+                "choixRenvois": [0, 1, 2],
+                "avecChoixEDTAnnuel": True
+            }
         }
-    },
-    "PARAMETRE_FENETRE": {
-        "choixRenvois": [0, 1, 2],
-        "avecChoixEDTAnnuel": True
-    }
-}
 
         response = self.post("GenerationPDF", 16, data)
+        return response["donneesSec"]["donnees"]["url"]["V"]
 
-        V = response["donneesSec"]["donnees"]["url"]["V"]
-        return V
 
+    @property
+    def get_last_connection(self) -> datetime.datetime:
+        return datetime.datetime.strptime(self.last_connection, "%d/%m/%Y %H:%M:%S")
+        
 
     def get_recipients(self) -> List[dataClasses.Recipient]:
         """Get recipients for new discussion
