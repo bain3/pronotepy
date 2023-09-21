@@ -6,6 +6,7 @@ from typing import List, Callable, Optional, Union, TypeVar, Type, TYPE_CHECKING
 from Crypto.Hash import SHA256
 from uuid import uuid4
 import re
+import urllib
 
 from . import dataClasses
 from .exceptions import *
@@ -229,7 +230,7 @@ class ClientBase:
             self.communication.after_auth(auth_response, e.aes_key)
             self.encryption.aes_key = e.aes_key
             log.info(f"successfully logged in as {self.username}")
-            self.last_connection = auth_response["donneesSec"]["donnees"]["derniereConnexion"]["V"]
+            # self.last_connection = auth_response["donneesSec"]["donnees"]["derniereConnexion"]["V"]
 
             if self.login_mode in ("qr_code", "token") and auth_response["donneesSec"][
                 "donnees"
@@ -556,12 +557,13 @@ class Client(ClientBase):
         }
 
         response = self.post("GenerationPDF", 16, data)
-        return response["donneesSec"]["donnees"]["url"]["V"]
+        return self.pronote_url.replace("?login=true", "").replace("eleve.html", "").replace("parent.html", "") + urllib.parse.quote(response["donneesSec"]["donnees"]["url"]["V"])
 
 
-    @property
-    def get_last_connection(self) -> datetime.datetime:
-        return datetime.datetime.strptime(self.last_connection, "%d/%m/%Y %H:%M:%S")
+
+    # @property
+    # def get_last_connection(self) -> datetime.datetime:
+    #     return datetime.datetime.strptime(self.last_connection, "%d/%m/%Y %H:%M:%S")
         
 
     def get_recipients(self) -> List[dataClasses.Recipient]:
