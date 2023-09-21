@@ -326,6 +326,11 @@ class TestClientInfo(unittest.TestCase):
             "email did not match regex",
         )
 
+    def test_get_calendar(self) -> None:
+        import requests
+
+        resp = requests.get(client.get_calendar)
+        self.assertEqual(resp.status_code, 200)
 
 if __name__ == "__main__":
     unittest.main()
