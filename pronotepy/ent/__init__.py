@@ -7,6 +7,7 @@ from .ent import (
     occitanie_toulouse,
     occitanie_montpellier,
     val_doise,
+    val_de_marne,
     cas_cybercolleges42_edu,
     ecollege_haute_garonne_edu,
     ac_orleans_tours,
