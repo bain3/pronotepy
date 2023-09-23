@@ -86,6 +86,17 @@ class TestClient(unittest.TestCase):
 
     def test_get_teaching_staff(self) -> None:
         self.assertGreater(len(client.get_teaching_staff()), 0)
+        
+    def test_last_connection(self) -> None: 
+        # return datetime.datetime
+        date = client.get_last_connection
+        self.assertIsInstance(date, datetime.datetime)
+        
+    def test_get_calendar(self) -> None:
+        import requests
+
+        resp = requests.get(client.get_calendar)
+        self.assertEqual(resp.status_code, 200)
 
 
 class TestPeriod(unittest.TestCase):
@@ -325,12 +336,6 @@ class TestClientInfo(unittest.TestCase):
             r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$",
             "email did not match regex",
         )
-
-    def test_get_calendar(self) -> None:
-        import requests
-
-        resp = requests.get(client.get_calendar)
-        self.assertEqual(resp.status_code, 200)
 
 if __name__ == "__main__":
     unittest.main()
