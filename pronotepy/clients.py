@@ -558,8 +558,8 @@ class Client(ClientBase):
         }
 
         response = self.post("GenerationPDF", 16, data)
-        return self.pronote_url.replace("?login=true", "").replace("eleve.html", "").replace("parent.html", "") + urllib.parse.quote(response["donneesSec"]["donnees"]["url"]["V"])
-
+        return self.communication.root_site + "/" + urllib.parse.quote(response["donneesSec"]["donnees"]["url"]["V"])
+        
     @property
     def get_last_connection(self) -> datetime.datetime:
         return datetime.datetime.strptime(self.last_connection["V"], "%d/%m/%Y %H:%M:%S")
