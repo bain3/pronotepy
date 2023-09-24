@@ -63,6 +63,7 @@ __all__ = (
     "Delay",
     "TeachingStaff",
     "Report",
+    "Notification"
 )
 
 log = logging.getLogger(__name__)
@@ -2166,3 +2167,37 @@ class TeachingStaff(Object):
         )
 
         del self._resolver
+
+
+class Notification(Object):
+
+    instances: Set[Any] = set()
+
+    def __init__(self, client: ClientBase, json_dict: dict) -> None:
+        super().__init__(json_dict)
+        self.__class__.instances.add(self)
+        self._client = client
+        self.type_info: int = self._resolver(int, "type")
+        self.id_info: str = self._resolver(str, "id")
+        self.message_info: str = self._resolver(str, "message", "V")
+        self.part_info: str = self._resolver(str, "L")
+
+        del self._resolver
+
+
+    @property
+    def type(self) -> int:
+        return self.type_info   
+
+    @property
+    def identifier(self) -> str:
+        return self.id_info
+
+    @property
+    def message(self) -> str:
+        return self.message_info  
+
+    @property
+    def part(self) -> str:
+        return self.part_info
+
