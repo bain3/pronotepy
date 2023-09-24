@@ -563,7 +563,25 @@ class Client(ClientBase):
     @property
     def get_last_connection(self) -> datetime.datetime:
         return datetime.datetime.strptime(self.last_connection["V"], "%d/%m/%Y %H:%M:%S")
-        
+
+    def notification(self) -> List[dataClasses.Notification]:
+        """the notification"""
+
+        response = self.post("CentraleNotifications", 7)
+        n_list = response["donneesSec"]["donnees"]["liste"]["V"]
+        out = []
+        for n in n_list:
+
+            no = dataClasses.Notification(self, n)
+            out.append(n)
+        return out
+    
+    @property
+    def notification_number(self) -> int:
+        response = self.post("CentraleNotifications", 7)
+        notif_number = response["donneesSec"]["donnees"].get("nbNotifs")
+        return notif_number 
+
     def get_recipients(self) -> List[dataClasses.Recipient]:
         """Get recipients for new discussion
 
