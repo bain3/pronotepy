@@ -107,16 +107,18 @@ The server responds with another `numeroOrdre`. It is recommended to check this 
 You must increment the message number by 2 every request, since responses to requests are counted, too.
 
 #### POST data
+- `Uuid` - new IV for AES encryption.
+  1. **HTTPS connections**: base-64 encoded raw bytes of the IV (`b64encode(new_iv_bytes)`)
+  2. **HTTP connections**: RSA encrypted and base-64 encoded raw bytes of a new *cryptographically random* IV for AES encryption (`b64encode(pcks1_v1.5(new_iv_bytes))`).
 
-- `Uuid` - RSA encrypted and base-64 encoded raw bytes of a new *cryptographically random* IV for AES encryption (`b64encode(pcks1_v1.5(new_iv_bytes))`). The RSA standard used is `PCKS #1 v1.5`.
-
-  The keys for RSA encryption are hard-coded inside the client-side javascript, and do not change between PRONOTE instances. As of the 9th of September 2023 the keys are (in decimal / base-10):
-  ```
-  MODULO: 130337874517286041778445012253514395801341480334668979416920989365464528904618150245388048105865059387076357492684573172203245221386376405947824377827224846860699130638566643129067735803555082190977267155957271492183684665050351182476506458843580431717209261903043895605014125081521285387341454154194253026277
-  EXPONENT: 65537
-  key size: 1024 bits
-  ```
-  You can find new keys inside `eleve.js` by searching for `c_rsaPub_modulo_1024`.
+     The RSA standard used is `PCKS #1 v1.5`.
+     The keys for RSA encryption are hard-coded inside the client-side javascript, and do not change between PRONOTE instances. As of the 9th of September 2023 the keys are (in decimal / base-10):
+     ```
+     MODULO: 130337874517286041778445012253514395801341480334668979416920989365464528904618150245388048105865059387076357492684573172203245221386376405947824377827224846860699130638566643129067735803555082190977267155957271492183684665050351182476506458843580431717209261903043895605014125081521285387341454154194253026277
+     EXPONENT: 65537
+     key size: 1024 bits
+     ```
+     You can find new keys inside `eleve.js` by searching for `c_rsaPub_modulo_1024`.
 
   This new IV will be used immediately by the server, including the response to this request. All new cipher texts (like `numeroOrdre`) must be created using this new IV.
 
