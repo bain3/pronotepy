@@ -63,7 +63,7 @@ __all__ = (
     "Delay",
     "TeachingStaff",
     "Report",
-    "Notification"
+    "Notifications"
 )
 
 log = logging.getLogger(__name__)
@@ -2169,35 +2169,44 @@ class TeachingStaff(Object):
         del self._resolver
 
 
-class Notification(Object):
+class Notifications(Object):
 
-    instances: Set[Any] = set()
+    """
+    Represents the notifications. You shouldn't have to create this class manually.
 
-    def __init__(self, client: ClientBase, json_dict: dict) -> None:
+    Attributes:
+        part (str): part of the notification
+        ident (str): ident of the notification
+    """
+
+    def __init__(self, json_dict: dict) -> None:
         super().__init__(json_dict)
-        self.__class__.instances.add(self)
-        self._client = client
-        self.type_info: int = self._resolver(int, "type")
-        self.id_info: str = self._resolver(str, "id")
-        self.message_info: str = self._resolver(str, "message", "V")
-        self.part_info: str = self._resolver(str, "L")
+
+        self.part: str = self._resolver(str, "L")
+        self.ident: str = self._resolver(str, "ident")
+
+        self.notifications: List[Notifications.Notification] = self._resolver(
+            lambda x: [Notifications.Notification(i) for i in x], "liste", "V"
+        )
+
 
         del self._resolver
 
+    class Notification(Object):
+        """
+        Represents the notification. You shouldn't have to create this class manually.
 
-    @property
-    def type(self) -> int:
-        return self.type_info   
+        Attributes:
+            id (str): id of the notification
+            message (str): message of the notification
+            type (int): type of the notification
+            action (int): action of the notification
+        """
+        def __init__(self, json_dict: dict) -> None:
+            super().__init__(json_dict)
 
-    @property
-    def identifier(self) -> str:
-        return self.id_info
-
-    @property
-    def message(self) -> str:
-        return self.message_info  
-
-    @property
-    def part(self) -> str:
-        return self.part_info
-
+            self.id: str = self._resolver(str, "id")
+            self.message: str = self._resolver(str, "message", "V")
+            self.type: int = self._resolver(int, "type")
+            self.action: int = self._resolver(int, "action")
+            
