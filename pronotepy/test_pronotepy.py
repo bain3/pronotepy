@@ -89,7 +89,7 @@ class TestClient(unittest.TestCase):
         
     def test_last_connection(self) -> None: 
         # return datetime.datetime
-        date = client.get_last_connection
+        date = client.info.last_connection
         self.assertIsInstance(date, datetime.datetime)
         
     def test_get_calendar(self) -> None:
