@@ -231,7 +231,7 @@ class ClientBase:
             self.encryption.aes_key = e.aes_key
             log.info(f"successfully logged in as {self.username}")
 
-            self.last_connection = auth_response["donneesSec"]["donnees"].get("derniereConnexion")
+            self._last_connection = auth_response["donneesSec"]["donnees"].get("derniereConnexion")
 
             if self.login_mode in ("qr_code", "token") and auth_response["donneesSec"][
                 "donnees"
@@ -559,10 +559,6 @@ class Client(ClientBase):
 
         response = self.post("GenerationPDF", 16, data)
         return self.communication.root_site + "/" + urllib.parse.quote(response["donneesSec"]["donnees"]["url"]["V"])
-        
-    @property
-    def get_last_connection(self) -> datetime.datetime:
-        return datetime.datetime.strptime(self.last_connection["V"], "%d/%m/%Y %H:%M:%S")
         
     def get_recipients(self) -> List[dataClasses.Recipient]:
         """Get recipients for new discussion
