@@ -1,7 +1,7 @@
 import datetime
 import logging
 from time import time
-from typing import List, Callable, Optional, Union, TypeVar, Type, TYPE_CHECKING
+from typing import List, Callable, Optional, Union, TypeVar, Type, TYPE_CHECKING, Tuple
 
 from Crypto.Hash import SHA256
 from uuid import uuid4
@@ -522,7 +522,7 @@ class Client(ClientBase):
         day: Optional[datetime.date] = None,
         portrait: bool = False,
         overflow: int = 0,
-        font_size: tuple[int, int] = (8, 3),
+        font_size: Tuple[int, int] = (8, 3),
     ) -> str:
         """Generate a PDF timetable.
 
@@ -535,7 +535,7 @@ class Client(ClientBase):
                 * ``1``: overflow to the same page, long names printed on the bottom
                 * ``2``: overflow to a separate page
 
-            font_size (tuple[int, int]): font size restrictions, first element is the *preferred* font size, and second is the *minimum*
+            font_size (Tuple[int, int]): font size restrictions, first element is the *preferred* font size, and second is the *minimum*
         """
         user = {
             "G": 4,
