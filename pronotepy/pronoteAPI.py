@@ -173,7 +173,7 @@ class _Communication(object):
 
         # error protection
         if not response.ok:
-            raise requests.HTTPError(f"Status code: {response.status_code}")
+            raise PronoteAPIError(f"Bad request (http status: {response.status_code})")
         if "Erreur" in response.json():
             r_json = response.json()
             if r_json["Erreur"]["G"] == 22:
