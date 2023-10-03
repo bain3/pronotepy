@@ -1482,10 +1482,12 @@ class ClientInfo(Slots):
             )
         else:
             return None
-            
+
     @property
     def last_connection(self) -> datetime.datetime:
-        return datetime.datetime.strptime(self._client._last_connection["V"], "%d/%m/%Y %H:%M:%S")
+        return datetime.datetime.strptime(
+            self._client._last_connection["V"], "%d/%m/%Y %H:%M:%S"
+        )
 
     @property
     def delegue(self) -> List[str]:

@@ -231,7 +231,9 @@ class ClientBase:
             self.encryption.aes_key = e.aes_key
             log.info(f"successfully logged in as {self.username}")
 
-            self._last_connection = auth_response["donneesSec"]["donnees"].get("derniereConnexion")
+            self._last_connection = auth_response["donneesSec"]["donnees"].get(
+                "derniereConnexion"
+            )
 
             if self.login_mode in ("qr_code", "token") and auth_response["donneesSec"][
                 "donnees"
@@ -510,21 +512,43 @@ class Client(ClientBase):
             if date_from <= hw.date <= date_to:
                 out.append(hw)
         return out
-    
-    @property
-    def get_calendar(self) -> str:
-        user = self.parametres_utilisateur["donneesSec"]["donnees"]["ressource"]
+
+    def generate_timetable_pdf(
+        self,
+        day: Optional[datetime.date] = None,
+        portrait: bool = False,
+        overflow: int = 0,
+        font_size: tuple[int, int] = (8, 3),
+    ) -> str:
+        """Generate a PDF timetable.
+
+        Args:
+            day (Optional[datetime.date]): the day for which to create the timetable, the whole week is always generated
+            portrait (bool): switches the timetable to portrait mode
+            overflow (int): Controls overflow / formatting of lesson names.
+
+                * ``0``: no overflow
+                * ``1``: overflow to the same page, long names printed on the bottom
+                * ``2``: overflow to a separate page
+
+            font_size (tuple[int, int]): font size restrictions, first element is the *preferred* font size, and second is the *minimum*
+        """
+        user = {
+            "G": 4,
+            "N": self.parametres_utilisateur["donneesSec"]["donnees"]["ressource"]["N"],
+        }
+
         data = {
             "options": {
-                "portrait": False,
-                "taillePolice": 8,
-                "taillePoliceMin": 3,
+                "portrait": portrait,
+                "taillePolice": font_size[0],
+                "taillePoliceMin": font_size[1],
                 "couleur": 1,
-                "renvoi": 0,
+                "renvoi": overflow,
                 "uneGrilleParSemaine": False,
                 "inversionGrille": False,
                 "ignorerLesPlagesSansCours": False,
-                "estEDTAnnuel": True
+                "estEDTAnnuel": day is None,
             },
             "genreGenerationPDF": 0,
             "estPlanning": False,
@@ -533,33 +557,19 @@ class Client(ClientBase):
             "estPlanningParJour": False,
             "indiceJour": 0,
             "ressource": user,
-            "ressources": [
-                user
-            ],
-            "domaine": {
-                "_T": 8,
-                "V": f"[{self.get_week(datetime.date.today())}]"
-            },
+            "ressources": [user],
+            "domaine": {"_T": 8, "V": f"[{self.get_week(day) if day else 0}]"},
             "avecCoursAnnules": True,
             "grilleInverse": False,
-            "prefsGrille": {
-                "placeDebut": 0,
-                "placeFin": 39,
-                "nbPas": 1,
-                "joursOuvres": {
-                    "_T": 26,
-                    "V": "[0..5]"
-                }
-            },
-            "PARAMETRE_FENETRE": {
-                "choixRenvois": [0, 1, 2],
-                "avecChoixEDTAnnuel": True
-            }
         }
 
         response = self.post("GenerationPDF", 16, data)
-        return self.communication.root_site + "/" + urllib.parse.quote(response["donneesSec"]["donnees"]["url"]["V"])
-        
+        return (
+            self.communication.root_site
+            + "/"
+            + response["donneesSec"]["donnees"]["url"]["V"]
+        )
+
     def get_recipients(self) -> List[dataClasses.Recipient]:
         """Get recipients for new discussion
 
