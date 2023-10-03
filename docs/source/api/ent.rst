@@ -95,8 +95,6 @@ An example of client initialization with the ac_reunion ENT:
 
 .. autofunction:: occitanie_montpellier_educonnect
 
-.. autofunction:: occitanie_toulouse
-
 .. autofunction:: occitanie_toulouse_edu
 
 .. autofunction:: ozecollege_yvelines
