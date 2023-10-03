@@ -87,6 +87,12 @@ class TestClient(unittest.TestCase):
     def test_get_teaching_staff(self) -> None:
         self.assertGreater(len(client.get_teaching_staff()), 0)
 
+    def test_get_calendar(self) -> None:
+        import requests
+
+        resp = requests.get(client.generate_timetable_pdf())
+        self.assertEqual(resp.status_code, 200)
+
 
 class TestPeriod(unittest.TestCase):
     period: pronotepy.Period

@@ -1,11 +1,12 @@
 import datetime
 import logging
 from time import time
-from typing import List, Callable, Optional, Union, TypeVar, Type, TYPE_CHECKING
+from typing import List, Callable, Optional, Union, TypeVar, Type, TYPE_CHECKING, Tuple
 
 from Crypto.Hash import SHA256
 from uuid import uuid4
 import re
+import urllib
 
 from . import dataClasses
 from .exceptions import *
@@ -44,6 +45,7 @@ class ClientBase:
         password (str)
         pronote_url (str)
         info (ClientInfo): Provides information about the current client. Name etc...
+        last_connection (datetime.datetime)
     """
 
     def __init__(
@@ -103,6 +105,8 @@ class ClientBase:
         self.periods_ = self.periods
         self.logged_in = self._login()
         self._expired = False
+
+        self.last_connection: Optional[datetime.datetime]
 
     @classmethod
     def qrcode_login(cls: Type[T], qr_code: dict, pin: str, uuid: str) -> T:
@@ -229,6 +233,11 @@ class ClientBase:
             self.communication.after_auth(auth_response, e.aes_key)
             self.encryption.aes_key = e.aes_key
             log.info(f"successfully logged in as {self.username}")
+
+            last_conn = auth_response["donneesSec"]["donnees"].get("derniereConnexion")
+            self.last_connection = (
+                dataClasses.Util.datetime_parse(last_conn["V"]) if last_conn else None
+            )
 
             if self.login_mode in ("qr_code", "token") and auth_response["donneesSec"][
                 "donnees"
@@ -507,6 +516,63 @@ class Client(ClientBase):
             if date_from <= hw.date <= date_to:
                 out.append(hw)
         return out
+
+    def generate_timetable_pdf(
+        self,
+        day: Optional[datetime.date] = None,
+        portrait: bool = False,
+        overflow: int = 0,
+        font_size: Tuple[int, int] = (8, 3),
+    ) -> str:
+        """Generate a PDF timetable.
+
+        Args:
+            day (Optional[datetime.date]): the day for which to create the timetable, the whole week is always generated
+            portrait (bool): switches the timetable to portrait mode
+            overflow (int): Controls overflow / formatting of lesson names.
+
+                * ``0``: no overflow
+                * ``1``: overflow to the same page, long names printed on the bottom
+                * ``2``: overflow to a separate page
+
+            font_size (Tuple[int, int]): font size restrictions, first element is the *preferred* font size, and second is the *minimum*
+        """
+        user = {
+            "G": 4,
+            "N": self.parametres_utilisateur["donneesSec"]["donnees"]["ressource"]["N"],
+        }
+
+        data = {
+            "options": {
+                "portrait": portrait,
+                "taillePolice": font_size[0],
+                "taillePoliceMin": font_size[1],
+                "couleur": 1,
+                "renvoi": overflow,
+                "uneGrilleParSemaine": False,
+                "inversionGrille": False,
+                "ignorerLesPlagesSansCours": False,
+                "estEDTAnnuel": day is None,
+            },
+            "genreGenerationPDF": 0,
+            "estPlanning": False,
+            "estPlanningParRessource": False,
+            "estPlanningOngletParJour": False,
+            "estPlanningParJour": False,
+            "indiceJour": 0,
+            "ressource": user,
+            "ressources": [user],
+            "domaine": {"_T": 8, "V": f"[{self.get_week(day) if day else 0}]"},
+            "avecCoursAnnules": True,
+            "grilleInverse": False,
+        }
+
+        response = self.post("GenerationPDF", 16, data)
+        return (
+            self.communication.root_site
+            + "/"
+            + response["donneesSec"]["donnees"]["url"]["V"]
+        )
 
     def get_recipients(self) -> List[dataClasses.Recipient]:
         """Get recipients for new discussion
