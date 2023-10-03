@@ -45,6 +45,7 @@ class ClientBase:
         password (str)
         pronote_url (str)
         info (ClientInfo): Provides information about the current client. Name etc...
+        last_connection (datetime.datetime)
     """
 
     def __init__(
@@ -104,6 +105,8 @@ class ClientBase:
         self.periods_ = self.periods
         self.logged_in = self._login()
         self._expired = False
+
+        self.last_connection: Optional[datetime.datetime]
 
     @classmethod
     def qrcode_login(cls: Type[T], qr_code: dict, pin: str, uuid: str) -> T:
@@ -231,8 +234,9 @@ class ClientBase:
             self.encryption.aes_key = e.aes_key
             log.info(f"successfully logged in as {self.username}")
 
-            self._last_connection = auth_response["donneesSec"]["donnees"].get(
-                "derniereConnexion"
+            last_conn = auth_response["donneesSec"]["donnees"].get("derniereConnexion")
+            self.last_connection = (
+                dataClasses.Util.datetime_parse(last_conn["V"]) if last_conn else None
             )
 
             if self.login_mode in ("qr_code", "token") and auth_response["donneesSec"][
