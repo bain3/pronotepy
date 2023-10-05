@@ -27,10 +27,6 @@ ent_creuse = partial(
     _cas, url="https://cas.entcreuse.fr/login?selection=ATS_parent_eleve"
 )
 
-occitanie_toulouse = partial(
-    _cas, url="https://cas.mon-ent-occitanie.fr/login?selection=TOULO-ENT_parent_eleve"
-)
-
 occitanie_montpellier = partial(
     _cas, url="https://cas.mon-ent-occitanie.fr/login?selection=CSES-ENT_parent_eleve"
 )

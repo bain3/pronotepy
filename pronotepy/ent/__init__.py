@@ -4,7 +4,6 @@ from .ent import (
     cas_kosmos,
     ent_creuse,
     ent_creuse_educonnect,
-    occitanie_toulouse,
     occitanie_montpellier,
     val_doise,
     val_de_marne,
