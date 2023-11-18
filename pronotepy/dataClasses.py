@@ -63,6 +63,7 @@ __all__ = (
     "Delay",
     "TeachingStaff",
     "Report",
+    "Notifications"
 )
 
 log = logging.getLogger(__name__)
