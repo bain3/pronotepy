@@ -574,6 +574,23 @@ class Client(ClientBase):
             + response["donneesSec"]["donnees"]["url"]["V"]
         )
 
+    def notifications(self) -> List[dataClasses.Notifications]:
+        """the notification"""
+
+        response = self.post("CentraleNotifications", 7)
+        n_list = response["donneesSec"]["donnees"]["liste"]["V"]
+        out = []
+        for n_test in n_list:
+            no = dataClasses.Notifications(n_test)
+            out.append(no)
+        return out
+    
+    @property
+    def notification_number(self) -> int:
+        response = self.post("CentraleNotifications", 7)
+        notif_number = response["donneesSec"]["donnees"].get("nbNotifs")
+        return notif_number
+
     def get_recipients(self) -> List[dataClasses.Recipient]:
         """Get recipients for new discussion
 
