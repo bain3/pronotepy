@@ -2,6 +2,8 @@ beautifulsoup4 >= 4.8.2
 pycryptodome >= 3.9.4
 requests >= 2.22.0
 autoslot >= 2022.12.1
+pillow >= 7.0.0
+pyzbar >= 0.1.8
 # -- dev --
 mypy
 types-requests

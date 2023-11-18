@@ -7,6 +7,9 @@ from Crypto.Hash import SHA256
 from uuid import uuid4
 import re
 import urllib
+from pyzbar.pyzbar import decode
+from PIL import Image
+import json
 
 from . import dataClasses
 from .exceptions import *
@@ -109,20 +112,31 @@ class ClientBase:
         self.last_connection: Optional[datetime.datetime]
 
     @classmethod
-    def qrcode_login(cls: Type[T], qr_code: dict, pin: str, uuid: str) -> T:
+    def qrcode_login(cls: Type[T], image_path: str, pin: str, uuid: str) -> T:
         """Login with QR code
 
-        The created client instance will have its username and password
-        attributes set to the credentials for the next login using
-        :meth:`.token_login`.
-
         Args:
-            qr_code (dict): JSON contained in the QR code. Must have ``login``, ``jeton`` and ``url`` keys.
+            image_path (str): Path to the image containing the QR code.
             pin (str): 4-digit confirmation code created during QR code setup
             uuid (str): Unique ID for your application. Must not change between logins.
         """
         encryption = _Encryption()
         encryption.aes_set_key(pin.encode())
+
+        # Open the image and decode the QR code
+        image = Image.open(image_path)
+        qr_codes = decode(image)
+
+        if not qr_codes:
+            raise ValueError("No QR code found in the image")
+
+        # Assume the first QR code is the one we want
+        qr_code_data = qr_codes[0].data.decode()
+
+        try:
+            qr_code = json.loads(qr_code_data)
+        except json.JSONDecodeError:
+            raise ValueError("QR code does not contain valid JSON")
 
         short_token = bytes.fromhex(qr_code["login"])
         long_token = bytes.fromhex(qr_code["jeton"])
@@ -137,6 +151,7 @@ class ClientBase:
         url = re.sub(r"(\?.*)|( *)$", "?login=true", qr_code["url"], 0)
 
         return cls(url, login, jeton, mode="qr_code", uuid=uuid)
+        
 
     @classmethod
     def token_login(

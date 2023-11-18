@@ -97,10 +97,7 @@ Pronotepy allows you to connect with the Pronote QR code. Pass in the function t
 import pronotepy
 
 # creating the client from qrcode_login
-client = pronotepy.Client.qrcode_login({"jeton":"<LONG_TOKEN>",
-                                        "login":"<SHORT_TOKEN>",
-                                        "url":"https://0000000a.index-education.net/pronote/mobile.eleve.html"},
-                                        "1234")
+client = pronotepy.Client.qrcode_login("image.png", "1234")
 ```
 
 ### ENT
