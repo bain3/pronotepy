@@ -39,8 +39,8 @@ This project does **not** use the official HYPERPLANNING API provided by PRONOTE
 
 Install directly from pypi using pip: `pip install -U pronotepy`
 
-> **Note**
-> If you are on Windows and have trouble with this command, use `py -3 -m pip install pronotepy`. You must have Python 3 installed on your machine.
+> [!NOTE]
+If you are on Windows and have trouble with this command, use `py -3 -m pip install pronotepy`. You must have Python 3 installed on your machine.
 
 #### Latest
 
@@ -59,9 +59,8 @@ To self test pronotepy run this command:
 
 ### Usage
 
-> **Warning**
->
-> The usage part of this readme is for the latest version. If you are installing from pypi, please see the documentation linked at the beginning.
+> [!WARNING]
+The usage part of this readme is for the latest version. If you are installing from pypi, please see the documentation linked at the beginning.
 
 Here is an example script (homework shown in example.py):
 ```python
