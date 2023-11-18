@@ -87,9 +87,9 @@ class _Communication(object):
             )
 
         uuid = base64.b64encode(
-            self.encryption.aes_iv_temp
-            if self.root_site.startswith("https")
-            else self.encryption.rsa_encrypt(self.encryption.aes_iv_temp)
+            self.encryption.rsa_encrypt(self.encryption.aes_iv_temp)
+            if self.attributes.get("http", False)
+            else self.encryption.aes_iv_temp
         ).decode()
         # post
         json_post = {"Uuid": uuid, "identifiantNav": None}
