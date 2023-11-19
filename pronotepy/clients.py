@@ -133,8 +133,15 @@ class ClientBase:
         except CryptoError as ex:
             raise QRCodeDecryptError("invalid confirmation code") from ex
 
-        # add ?login=true at the end of the url
-        url = re.sub(r"(\?.*)|( *)$", "?login=true", qr_code["url"], 0)
+        # Add magic parameters at the end of the URL. You can find them in a
+        # file called "ObjetCommMessage.js" in the connection method when you
+        # decompile the mobile APK.
+        url = re.sub(
+            r"(\?.*)|( *)$",
+            "?bydlg=A6ABB224-12DD-4E31-AD3E-8A39A1C2C335&login=true",
+            qr_code["url"],
+            0,
+        )
 
         return cls(url, login, jeton, mode="qr_code", uuid=uuid)
 
