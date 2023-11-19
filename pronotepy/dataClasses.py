@@ -761,8 +761,8 @@ class Attachment(Object):
         self.type: int = self._resolver(int, "G")  # 0 link, 1 file
 
         if self.type == 0:
-            url: str | None = self._resolver(str, "url", default=None)
-            self.url = self.name if url is None else url
+            url = self._resolver(str, "url", default=None)
+            self.url: str = self.name if url is None else url
         else:
             padd = Padding.pad(
                 json.dumps({"N": self.id, "Actif": True}).replace(" ", "").encode(), 16
