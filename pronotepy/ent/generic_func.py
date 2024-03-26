@@ -22,6 +22,7 @@ def _educonnect(
     password: str,
     url: str,
     exceptions: bool = True,
+    **opts,
 ) -> typing.Optional[requests.Response]:
     """
     Generic function for EduConnect
@@ -76,7 +77,7 @@ def _educonnect(
 
 @typing.no_type_check
 def _cas_edu(
-    username: str, password: str, url: str = "", redirect_form: bool = True
+    username: str, password: str, url: str = "", redirect_form: bool = True, **opts
 ) -> requests.cookies.RequestsCookieJar:
     """
     Generic function for CAS with Educonnect
@@ -129,7 +130,7 @@ def _cas_edu(
 
 @typing.no_type_check
 def _cas(
-    username: str, password: str, url: str = ""
+    username: str, password: str, url: str = "", **opts
 ) -> requests.cookies.RequestsCookieJar:
     """
     Generic function for CAS
@@ -177,7 +178,7 @@ def _cas(
 
 
 def _open_ent_ng(
-    username: str, password: str, url: str = ""
+    username: str, password: str, url: str = "", **opts
 ) -> requests.cookies.RequestsCookieJar:
     """
     ENT which has an authentication like https://ent.iledefrance.fr/auth/login
@@ -215,7 +216,7 @@ def _open_ent_ng(
 
 
 def _open_ent_ng_edu(
-    username: str, password: str, domain: str = "", providerId: str = ""
+    username: str, password: str, domain: str = "", providerId: str = "", **opts
 ) -> requests.cookies.RequestsCookieJar:
     """
     ENT which has an authentication like https://connexion.l-educdenormandie.fr/
@@ -273,6 +274,7 @@ def _wayf(
     entityID: str = "",
     returnX: str = "",
     redirect_form: bool = True,
+    **opts,
 ) -> requests.cookies.RequestsCookieJar:
     """
     Generic function for WAYF
@@ -338,7 +340,7 @@ def _wayf(
 
 @typing.no_type_check
 def _oze_ent(
-    username: str, password: str, url: str = ""
+    username: str, password: str, url: str = "", **opts
 ) -> requests.cookies.RequestsCookieJar:
     """
     Generic function for Oze ENT
@@ -430,7 +432,7 @@ def _oze_ent(
 
 @typing.no_type_check
 def _simple_auth(
-    username: str, password: str, url: str = "", form_attr: dict = {}
+    username: str, password: str, url: str = "", form_attr: dict = {}, **opts
 ) -> requests.cookies.RequestsCookieJar:
     """
     Generic function for ENT with simple login form

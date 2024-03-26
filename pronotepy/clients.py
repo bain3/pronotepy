@@ -67,7 +67,7 @@ class ClientBase:
         self.ent = ent
         if ent:
             pronote_url = pronote_url.replace("login=true", "")
-            cookies = ent(username, password)
+            cookies = ent(username, password, pronote_url=pronote_url)
         else:
             cookies = None
 
@@ -300,7 +300,9 @@ class ClientBase:
         self.communication.session.close()
 
         if self.ent:
-            cookies = self.ent(self.username, self.password)
+            cookies = self.ent(
+                self.username, self.password, pronote_url=self.pronote_url
+            )
         else:
             cookies = None
 
