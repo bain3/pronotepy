@@ -15,6 +15,30 @@ HEADERS = {
 }
 
 
+def _sso_redirect(
+    session: requests.Session,
+    response: requests.Response,
+    saml_type: str,  # SAMLRequest or SAMLResponse
+    request_url: str = "",
+    request_payload: dict = {},
+) -> requests.Response:
+    soup = BeautifulSoup(response.text, "html.parser")
+    saml = soup.find("input", {"name": saml_type})
+    if not saml and response.status_code == 200 and request_url != response.url:
+        # manual redirect
+        response = session.post(response.url, headers=HEADERS, data=request_payload)
+        soup = BeautifulSoup(response.text, "html.parser")
+        saml = soup.find("input", {"name": saml_type})
+    if not saml:
+        return None
+    payload = {saml_type: saml["value"]}
+    relay_state = soup.find("input", {"name": "RelayState"})
+    if relay_state:
+        payload["RelayState"] = relay_state["value"]
+    url = soup.find("form")["action"]
+    return session.post(url, headers=HEADERS, data=payload)
+
+
 @typing.no_type_check
 def _educonnect(
     session: requests.Session,
@@ -48,31 +72,15 @@ def _educonnect(
 
     payload = {"j_username": username, "j_password": password, "_eventId_proceed": ""}
     response = session.post(url, headers=HEADERS, data=payload)
-    # 2nd SAML Authentication
-    soup = BeautifulSoup(response.text, "html.parser")
-    input_SAMLResponse = soup.find("input", {"name": "SAMLResponse"})
-    if not input_SAMLResponse and response.status_code == 200 and url != response.url:
-        # manual redirect
-        response = session.post(response.url, headers=HEADERS, data=payload)
-        soup = BeautifulSoup(response.text, "html.parser")
-        input_SAMLResponse = soup.find("input", {"name": "SAMLResponse"})
-    if not input_SAMLResponse:
+    response = _sso_redirect(session, response, "SAMLResponse", url, payload)
+    if not response:
         if exceptions:
             raise ENTLoginError(
                 "Fail to connect with EduConnect : probably wrong login information"
             )
         else:
             return None
-
-    payload = {
-        "SAMLResponse": input_SAMLResponse["value"],
-    }
-
-    input_relayState = soup.find("input", {"name": "RelayState"})
-    if input_relayState:
-        payload["RelayState"] = input_relayState["value"]
-
-    return session.post(soup.find("form")["action"], headers=HEADERS, data=payload)
+    return response
 
 
 @typing.no_type_check
@@ -108,20 +116,9 @@ def _cas_edu(
         response = session.get(url, headers=HEADERS)
 
         if redirect_form:
-            soup = BeautifulSoup(response.text, "html.parser")
-            input_SAMLRequest = soup.find("input", {"name": "SAMLRequest"})
-            if input_SAMLRequest:
-                payload = {
-                    "SAMLRequest": input_SAMLRequest["value"],
-                }
-
-                input_relayState = soup.find("input", {"name": "RelayState"})
-                if input_relayState:
-                    payload["RelayState"] = input_relayState["value"]
-
-                response = session.post(
-                    soup.find("form")["action"], data=payload, headers=HEADERS
-                )
+            response = _sso_redirect(session, response, "SAMLResponse", url)
+        if not response:
+            raise ENTLoginError("Connection failure")
 
         _educonnect(session, username, password, response.url)
 
@@ -323,15 +320,9 @@ def _wayf(
         response = session.get(ent_login_page, params=params, headers=HEADERS)
 
         if redirect_form:
-            soup = BeautifulSoup(response.text, "html.parser")
-            payload = {
-                "RelayState": soup.find("input", {"name": "RelayState"})["value"],
-                "SAMLRequest": soup.find("input", {"name": "SAMLRequest"})["value"],
-            }
-
-            response = session.post(
-                soup.find("form")["action"], data=payload, headers=HEADERS
-            )
+            response = _sso_redirect(session, response, "SAMLRequest", ent_login_page)
+        if not response:
+            raise ENTLoginError("Connection failure")
 
         _educonnect(session, username, password, response.url)
 
@@ -508,20 +499,9 @@ def _hubeduconnect(
     with requests.Session() as session:
         response = session.get(url, headers=HEADERS)
 
-        soup = BeautifulSoup(response.text, "html.parser")
-        input_SAMLRequest = soup.find("input", {"name": "SAMLRequest"})
-        if input_SAMLRequest:
-            payload = {
-                "SAMLRequest": input_SAMLRequest["value"],
-            }
-
-            input_relayState = soup.find("input", {"name": "RelayState"})
-            if input_relayState:
-                payload["RelayState"] = input_relayState["value"]
-
-            response = session.post(
-                soup.find("form")["action"], data=payload, headers=HEADERS
-            )
+        response = _sso_redirect(session, response, "SAMLRequest", url)
+        if not response:
+            raise ENTLoginError("Connection failure")
 
         if response.content.__contains__(
             b'<label id="zone_msgDetail">L&#x27;url de service est vide</label>'
