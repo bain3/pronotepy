@@ -8,6 +8,7 @@ from .generic_func import (  # type: ignore
     _open_ent_ng_edu,
     _open_ent_ng,
     _wayf,
+    _hubeduconnect,
     _oze_ent,
     _simple_auth,
 )

@@ -479,3 +479,61 @@ def _simple_auth(
             )
 
         return session.cookies
+
+
+@typing.no_type_check
+def _hubeduconnect(
+    username: str, password: str, pronote_url: str = "", **opts
+) -> requests.cookies.RequestsCookieJar:
+    """
+    Pronote EduConnect connection (with HubEduConnect.index-education.net)
+
+    Parameters
+    ----------
+    username : str
+        username
+    password : str
+        password
+    pronote_url: str
+        URL of Pronote instance
+
+    Returns
+    -------
+    cookies : cookies
+        returns the ent session cookies
+    """
+    hubeduconnect_url = "https://hubeduconnect.index-education.net/EduConnect/cas/login"
+    url = f"{hubeduconnect_url}?service={pronote_url}"
+
+    with requests.Session() as session:
+        response = session.get(url, headers=HEADERS)
+
+        soup = BeautifulSoup(response.text, "html.parser")
+        input_SAMLRequest = soup.find("input", {"name": "SAMLRequest"})
+        if input_SAMLRequest:
+            payload = {
+                "SAMLRequest": input_SAMLRequest["value"],
+            }
+
+            input_relayState = soup.find("input", {"name": "RelayState"})
+            if input_relayState:
+                payload["RelayState"] = input_relayState["value"]
+
+            response = session.post(
+                soup.find("form")["action"], data=payload, headers=HEADERS
+            )
+
+        if response.content.__contains__(
+            b'<label id="zone_msgDetail">L&#x27;url de service est vide</label>'
+        ):
+            raise ENTLoginError(
+                "Fail to connect with HubEduConnect : Service URL not provided."
+            )
+        elif response.content.__contains__(b"n&#x27;est pas une url de confiance."):
+            raise ENTLoginError(
+                "Fail to connect with HubEduConnect : Service URL not trusted. Is Pronote instance supported?"
+            )
+
+        _educonnect(session, username, password, response.url)
+
+    return session.cookies

@@ -43,4 +43,4 @@ from .ent import (
     laclasse_lyon,
     extranet_colleges_somme,
 )
-from .complex_ent import ac_rennes, pronote_hubeduconnect
+from .complex_ent import ac_rennes

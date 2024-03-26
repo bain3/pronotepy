@@ -101,8 +101,6 @@ An example of client initialization with the ac_reunion ENT:
 
 .. autofunction:: paris_classe_numerique
 
-.. autofunction:: pronote_hubeduconnect
-
 .. autofunction:: val_de_marne
 
 .. autofunction:: val_doise
