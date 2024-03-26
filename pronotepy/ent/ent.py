@@ -174,12 +174,9 @@ lyceeconnecte_edu = partial(_open_ent_ng_edu, domain="https://mon.lyceeconnecte.
 
 ent_elyco = partial(_wayf, domain="https://cas3.e-lyco.fr", redirect_form=False)
 
-ent2d_bordeaux = partial(
-    _wayf,
-    domain="https://ds.ac-bordeaux.fr",
-    entityID="https://ent2d.ac-bordeaux.fr/shibboleth",
-    returnX="https://ent2d.ac-bordeaux.fr/Shibboleth.sso/Login?SAMLDS=1&target=https%3A%2F%2Fent2d.ac-bordeaux.fr%2Fargos%2Fpr%2Findex%2Findex",
-)
+"""HubEduConnect"""
+
+bordeaux = partial(_hubeduconnect)
 
 """OZE ENT"""
 

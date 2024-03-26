@@ -37,7 +37,7 @@ from .ent import (
     l_normandie,
     lyceeconnecte_edu,
     ent_elyco,
-    ent2d_bordeaux,
+    bordeaux,
     # enc_hauts_de_seine,
     atrium_sud,
     laclasse_lyon,
