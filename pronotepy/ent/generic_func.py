@@ -2,7 +2,7 @@ from logging import getLogger, DEBUG
 import typing
 
 import requests
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 from urllib.parse import urljoin, urlparse, urlunparse
 
 from ..exceptions import *
@@ -21,21 +21,30 @@ def _sso_redirect(
     saml_type: str,  # SAMLRequest or SAMLResponse
     request_url: str = "",
     request_payload: dict = {},
-) -> requests.Response:
+) -> typing.Optional[requests.Response]:
     soup = BeautifulSoup(response.text, "html.parser")
+
     saml = soup.find("input", {"name": saml_type})
     if not saml and response.status_code == 200 and request_url != response.url:
         # manual redirect
         response = session.post(response.url, headers=HEADERS, data=request_payload)
         soup = BeautifulSoup(response.text, "html.parser")
         saml = soup.find("input", {"name": saml_type})
+
+    assert isinstance(saml, Tag)
+
     if not saml:
         return None
-    payload = {saml_type: saml["value"]}
+
+    payload = {saml_type: saml.get("value")}
+
     relay_state = soup.find("input", {"name": "RelayState"})
+    assert isinstance(relay_state, Tag)
     if relay_state:
         payload["RelayState"] = relay_state["value"]
-    url = soup.find("form")["action"]
+
+    url: str = soup.find("form")["action"]  # type: ignore
+
     return session.post(url, headers=HEADERS, data=payload)
 
 
@@ -46,7 +55,7 @@ def _educonnect(
     password: str,
     url: str,
     exceptions: bool = True,
-    **opts,
+    **opts: str,
 ) -> typing.Optional[requests.Response]:
     """
     Generic function for EduConnect
@@ -85,7 +94,11 @@ def _educonnect(
 
 @typing.no_type_check
 def _cas_edu(
-    username: str, password: str, url: str = "", redirect_form: bool = True, **opts
+    username: str,
+    password: str,
+    url: str = "",
+    redirect_form: bool = True,
+    **opts: str,
 ) -> requests.cookies.RequestsCookieJar:
     """
     Generic function for CAS with Educonnect
@@ -127,7 +140,7 @@ def _cas_edu(
 
 @typing.no_type_check
 def _cas(
-    username: str, password: str, url: str = "", **opts
+    username: str, password: str, url: str = "", **opts: str
 ) -> requests.cookies.RequestsCookieJar:
     """
     Generic function for CAS
@@ -175,7 +188,7 @@ def _cas(
 
 
 def _open_ent_ng(
-    username: str, password: str, url: str = "", **opts
+    username: str, password: str, url: str = "", **opts: str
 ) -> requests.cookies.RequestsCookieJar:
     """
     ENT which has an authentication like https://ent.iledefrance.fr/auth/login
@@ -213,7 +226,11 @@ def _open_ent_ng(
 
 
 def _open_ent_ng_edu(
-    username: str, password: str, domain: str = "", providerId: str = "", **opts
+    username: str,
+    password: str,
+    domain: str = "",
+    providerId: str = "",
+    **opts: str,
 ) -> requests.cookies.RequestsCookieJar:
     """
     ENT which has an authentication like https://connexion.l-educdenormandie.fr/
@@ -271,7 +288,7 @@ def _wayf(
     entityID: str = "",
     returnX: str = "",
     redirect_form: bool = True,
-    **opts,
+    **opts: str,
 ) -> requests.cookies.RequestsCookieJar:
     """
     Generic function for WAYF
@@ -331,7 +348,7 @@ def _wayf(
 
 @typing.no_type_check
 def _oze_ent(
-    username: str, password: str, url: str = "", **opts
+    username: str, password: str, url: str = "", **opts: str
 ) -> requests.cookies.RequestsCookieJar:
     """
     Generic function for Oze ENT
@@ -423,7 +440,11 @@ def _oze_ent(
 
 @typing.no_type_check
 def _simple_auth(
-    username: str, password: str, url: str = "", form_attr: dict = {}, **opts
+    username: str,
+    password: str,
+    url: str = "",
+    form_attr: dict = {},
+    **opts: str,
 ) -> requests.cookies.RequestsCookieJar:
     """
     Generic function for ENT with simple login form
@@ -474,7 +495,7 @@ def _simple_auth(
 
 @typing.no_type_check
 def _hubeduconnect(
-    username: str, password: str, pronote_url: str = "", **opts
+    username: str, password: str, pronote_url: str = "", **opts: str
 ) -> requests.cookies.RequestsCookieJar:
     """
     Pronote EduConnect connection (with HubEduConnect.index-education.net)

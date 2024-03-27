@@ -1,7 +1,16 @@
 import datetime
 import logging
 from time import time
-from typing import List, Callable, Optional, Union, TypeVar, Type, TYPE_CHECKING, Tuple
+from typing import (
+    List,
+    Callable,
+    Optional,
+    Union,
+    TypeVar,
+    Type,
+    TYPE_CHECKING,
+    Tuple,
+)
 
 from Crypto.Hash import SHA256
 from uuid import uuid4
@@ -21,6 +30,12 @@ from .pronoteAPI import (
 
 if TYPE_CHECKING:
     from requests.cookies import RequestsCookieJar
+    from typing_extensions import Protocol
+
+    class ENTFunction(Protocol):
+        def __call__(self, u: str, p: str, **kwargs: str) -> RequestsCookieJar:
+            ...
+
 
 __all__ = ("ClientBase", "Client", "ParentClient", "VieScolaireClient")
 
@@ -53,7 +68,7 @@ class ClientBase:
         pronote_url: str,
         username: str = "",
         password: str = "",
-        ent: Optional[Callable[[str, str], "RequestsCookieJar"]] = None,
+        ent: Optional["ENTFunction"] = None,
         mode: str = "normal",
         uuid: str = "",
     ) -> None:
