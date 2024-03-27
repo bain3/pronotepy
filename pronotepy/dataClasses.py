@@ -475,6 +475,21 @@ class Delay(Object):
 
         del self._resolver
 
+class OtherAbsence(Object):
+    """
+    Represents a absence with a given period. You shouldn't have to create this class manually.
+
+    Attributes:
+        id (str): the id of the absence (used internally)
+        name (str): the justification for the absence
+    """
+
+    def __init__(self, json_dict: dict) -> None:
+        super().__init__(json_dict)
+        self.id: str = self._resolver(str, "N")
+        self.name: str = self._resolver(str, "L")
+
+        del self._resolver
 
 class Period(Object):
     """
@@ -639,6 +654,21 @@ class Period(Object):
         response = self._client.post("PagePresence", 19, json_data)
         absences = response["donneesSec"]["donnees"]["listeAbsences"]["V"]
         return [Punishment(self._client, a) for a in absences if a["G"] == 41]
+
+    @property
+    def otherabsences(self) -> List[OtherAbsence]:
+        """
+        All "Other Absences" from a given period, not yet classified. I found type 46 for a forgotten notebook.
+        """
+        json_data = {
+            "periode": {"N": self.id, "L": self.name, "G": 2},
+            "DateDebut": {"_T": 7, "V": self.start.strftime("%d/%m/%Y %H:%M:%S")},
+            "DateFin": {"_T": 7, "V": self.end.strftime("%d/%m/%Y %H:%M:%S")},
+        }
+
+        response = self._client.post("PagePresence", 19, json_data)
+        absences = response["donneesSec"]["donnees"]["listeAbsences"]["V"]
+        return [OtherAbsence(a) for a in absences if a["G"] == 46 ]
 
 
 class Average(Object):
