@@ -1,3 +1,11 @@
+> [!WARNING]
+>**Maintenance mode**
+>
+> Pronotepy is currently in maintenance mode. **We will continue to fix bugs** and adapt to PRONOTE changes, but will not be adding
+> new features. **Please do NOT create PRs with new features.** They will not get merged.
+>
+> If you are looking for an alternative that is under active developement, consider using [Pawnote](https://github.com/LiterateInk/Pawnote) (JavaScript/TS) instead.
+
 <br />
 <p align="center">
   <a href="https://github.com/bain3/pronotepy">
