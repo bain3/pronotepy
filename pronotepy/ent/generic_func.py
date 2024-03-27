@@ -31,10 +31,10 @@ def _sso_redirect(
         soup = BeautifulSoup(response.text, "html.parser")
         saml = soup.find("input", {"name": saml_type})
 
-    assert isinstance(saml, Tag)
-
     if not saml:
         return None
+
+    assert isinstance(saml, Tag)
 
     payload = {saml_type: saml.get("value")}
 
