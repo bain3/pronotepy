@@ -13,9 +13,8 @@ from typing import (
 )
 
 from Crypto.Hash import SHA256
-from uuid import uuid4
 import re
-import urllib
+from urllib.parse import urlparse, urlunparse
 
 from . import dataClasses
 from .exceptions import *
@@ -33,8 +32,7 @@ if TYPE_CHECKING:
     from typing_extensions import Protocol
 
     class ENTFunction(Protocol):
-        def __call__(self, u: str, p: str, **kwargs: str) -> RequestsCookieJar:
-            ...
+        def __call__(self, u: str, p: str, **kwargs: str) -> RequestsCookieJar: ...
 
 
 __all__ = ("ClientBase", "Client", "ParentClient", "VieScolaireClient")
@@ -151,11 +149,10 @@ class ClientBase:
         # Add magic parameters at the end of the URL. You can find them in a
         # file called "ObjetCommMessage.js" in the connection method when you
         # decompile the mobile APK.
-        url = re.sub(
-            r"(\?.*)|( *)$",
-            "?bydlg=A6ABB224-12DD-4E31-AD3E-8A39A1C2C335&login=true",
-            qr_code["url"],
-            0,
+        url: str = urlunparse(
+            urlparse(qr_code["url"])._replace(
+                query="fd=1&bydlg=A6ABB224-12DD-4E31-AD3E-8A39A1C2C335&login=true"
+            )
         )
 
         return cls(url, login, jeton, mode="qr_code", uuid=uuid)
@@ -199,9 +196,9 @@ class ClientBase:
             "demandeConnexionAppliMobile": self.login_mode == "qr_code",
             "demandeConnexionAppliMobileJeton": self.login_mode == "qr_code",
             "enConnexionAppliMobile": self.login_mode == "token",
-            "uuidAppliMobile": self.uuid
-            if self.login_mode in ("qr_code", "token")
-            else "",
+            "uuidAppliMobile": (
+                self.uuid if self.login_mode in ("qr_code", "token") else ""
+            ),
             "loginTokenSAV": "",
         }
         idr = self.post("Identification", data=ident_json)
