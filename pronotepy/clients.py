@@ -146,16 +146,28 @@ class ClientBase:
         except CryptoError as ex:
             raise QRCodeDecryptError("invalid confirmation code") from ex
 
-        # Add magic parameters at the end of the URL. You can find them in a
-        # file called "ObjetCommMessage.js" in the connection method when you
-        # decompile the mobile APK.
-        url: str = urlunparse(
-            urlparse(qr_code["url"])._replace(
-                query="fd=1&bydlg=A6ABB224-12DD-4E31-AD3E-8A39A1C2C335&login=true"
-            )
+        url = urlparse(qr_code["url"])
+
+        # The app would query the server for all the available spaces and find
+        # a space by checking if the last part of the URL matches one of the
+        # space URLs. eg. "/pronote/parent.html" would match "mobile.parent.html"
+        # (info url: <pronote root>/InfoMobileApp.json?id=0D264427-EEFC-4810-A9E9-346942A862A4)
+
+        # We're gonna try the shorter route of just prepending "mobile." if it
+        # isn't there already
+        parts = url.path.split("/")
+        if not parts[-1].startswith("mobile."):
+            parts[-1] = "mobile." + parts[-1]
+
+        # Reconstruct the url and add magic parameters at the end of the URL.
+        # You can find them in a file called "ObjetCommMessage.js" in the
+        # connection method when you decompile the mobile APK.
+        fixed_url = url._replace(
+            path="/".join(parts),
+            query="fd=1&bydlg=A6ABB224-12DD-4E31-AD3E-8A39A1C2C335&login=true",
         )
 
-        return cls(url, login, jeton, mode="qr_code", uuid=uuid)
+        return cls(urlunparse(fixed_url), login, jeton, mode="qr_code", uuid=uuid)
 
     @classmethod
     def token_login(
