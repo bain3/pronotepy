@@ -165,6 +165,7 @@ class ClientBase:
         fixed_url = url._replace(
             path="/".join(parts),
             query="fd=1&bydlg=A6ABB224-12DD-4E31-AD3E-8A39A1C2C335&login=true",
+            fragment="",
         )
 
         return cls(urlunparse(fixed_url), login, jeton, mode="qr_code", uuid=uuid)
