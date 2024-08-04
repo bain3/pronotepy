@@ -63,6 +63,7 @@ __all__ = (
     "Delay",
     "TeachingStaff",
     "Report",
+    "Notifications"
 )
 
 log = logging.getLogger(__name__)
@@ -2167,3 +2168,44 @@ class TeachingStaff(Object):
         )
 
         del self._resolver
+
+
+
+class Notifications(Object):
+
+    """
+    Represents the notifications. You shouldn't have to create this class manually.
+
+    Attributes:
+        part (str): part of the notification
+        ident (str): ident of the notification
+    """
+
+    def __init__(self, json_dict: dict) -> None:
+        super().__init__(json_dict)
+
+        self.part: str = self._resolver(str, "L")
+        self.ident: str = self._resolver(str, "ident")
+
+        self.notifications: List[Notifications.Notification] = self._resolver(
+            lambda x: [Notifications.Notification(i) for i in x], "liste", "V"
+        )
+        del self._resolver
+
+    class Notification(Object):
+        """
+        Represents the notification. You shouldn't have to create this class manually.
+
+        Attributes:
+            id (str): id of the notification
+            message (str): message of the notification
+            type (int): type of the notification
+            action (int): action of the notification
+        """
+        def __init__(self, json_dict: dict) -> None:
+            super().__init__(json_dict)
+
+            self.id: str = self._resolver(str, "id")
+            self.message: str = self._resolver(str, "message", "V")
+            self.type: int = self._resolver(int, "type")
+            self.action: int = self._resolver(int, "action")
