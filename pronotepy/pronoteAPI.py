@@ -33,6 +33,10 @@ error_messages = {
     25: "[ERROR 25] Exceeded max authorization requests. Please wait before retrying...",
 }
 
+HEADERS = {
+    "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:73.0) Gecko/20100101 Firefox/73.0",
+}
+
 
 class _Communication(object):
     def __init__(
@@ -40,7 +44,10 @@ class _Communication(object):
     ) -> None:
         """Handles all communication with the PRONOTE servers"""
         self.root_site, self.html_page = self.get_root_address(site)
+
         self.session = requests.Session()
+        self.session.headers.update(HEADERS)
+
         self.encryption = _Encryption()
         self.attributes: dict = {}
         self.request_number = 1
@@ -57,11 +64,6 @@ class _Communication(object):
         Initialisation of the communication. Sets up the encryption and sends the IV for AES to PRONOTE.
         From this point, everything is encrypted with the communicated IV.
         """
-        # some headers to be real
-        headers = {
-            "connection": "keep-alive",
-            "User-Agent": "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:73.0) Gecko/20100101 Firefox/73.0",
-        }
 
         # get rsa keys and session id, retry 3 times
         for _ in range(3):
@@ -70,7 +72,6 @@ class _Communication(object):
                 get_response = self.session.request(
                     "GET",
                     f"{self.root_site}/{self.html_page}",
-                    headers=headers,
                     cookies=self.cookies,
                 )
                 self.attributes = self._parse_html(get_response.content)
