@@ -195,14 +195,19 @@ class ClientBase:
         Returns:
             bool: True if logged in, False if not
         """
+
         if self.ent:
-            self.username = self.attributes["e"]
-            self.password = self.attributes["f"]
+            username = self.attributes["e"]
+            password = self.attributes["f"]
+        else:
+            username = self.username
+            password = self.password
+
         # identification phase
         ident_json = {
             "genreConnexion": 0,
             "genreEspace": int(self.attributes["a"]),
-            "identifiant": self.username,
+            "identifiant": username,
             "pourENT": True if self.ent else False,
             "enConnexionAuto": False,
             "demandeConnexionAuto": False,
@@ -225,18 +230,16 @@ class ClientBase:
 
         # key gen
         if self.ent:
-            motdepasse = SHA256.new(str(self.password).encode()).hexdigest().upper()
+            motdepasse = SHA256.new(str(password).encode()).hexdigest().upper()
             e.aes_set_key(motdepasse.encode())
         else:
-            u = self.username
-            p = self.password
             if idr["donneesSec"]["donnees"]["modeCompLog"]:
-                u = u.lower()
+                username = username.lower()
             if idr["donneesSec"]["donnees"]["modeCompMdp"]:
-                p = p.lower()
+                password = password.lower()
             alea = idr["donneesSec"]["donnees"].get("alea", "")
-            motdepasse = SHA256.new((alea + p).encode()).hexdigest().upper()
-            e.aes_set_key((u + motdepasse).encode())
+            motdepasse = SHA256.new((alea + password).encode()).hexdigest().upper()
+            e.aes_set_key((username + motdepasse).encode())
 
         # challenge
         try:
