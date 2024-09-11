@@ -1,21 +1,26 @@
 import pronotepy
+
 import datetime
-# initialise the client
-# Note: the address should be a direct one (like the one below) usually the address shown by your school just redirects
-# you to the real one.
-# Ex.: https://your-school.com/pronote/students <-- BAD
-#      https://0000000a.index-education.net/pronote/eleve.html <-- GOOD
-#      https://0000000a.index-education.net/pronote/eleve.html?login=true <-- ONLY IF YOU HAVE AN ENT AND YOU KNOW YOUR IDS, ELSE REFER TO ENT PART OF README
-client = pronotepy.Client('https://demo.index-education.net/pronote/eleve.html',
-                          username='demonstration',
-                          password='pronotevs')
+from pathlib import Path
+import json
+
+# load login from `python3 -m pronotepy.create_login` command
+# See quickstart in documentation for other login methods.
+credentials = json.loads(Path("credentials.json").read_text())
+
+client = pronotepy.Client.token_login(**credentials)
 
 if client.logged_in: # check if client successfully logged in
-    # get the all the periods (may return multiple types like trimesters and semesters but it doesn't really matter
-    # the api will get it anyway)
+
+    # save new credentials - IMPORTANT
+    credentials = client.export_credentials()
+    Path("credentials.json").write_text(json.dumps(credentials))
+
     nom_utilisateur = client.info.name # get users name
     print(f'Logged in as {nom_utilisateur}')
     
+    # get the all the periods (may return multiple types like trimesters and
+    # semesters but it doesn't really matter the api will get it anyway)
     periods = client.periods
 
     for period in periods:
@@ -31,4 +36,3 @@ if client.logged_in: # check if client successfully logged in
 else: 
     print("Failed to log in")
     exit()
-    

@@ -27,18 +27,21 @@ The client can be created in multiple ways. They differ only by login method.
 Logging in with QR code (recommended)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-1. (one time setup) Obtain credentials by using ``python3 -m pronotepy.create_login``. You can either:
+1. (one time setup) Obtain credentials by using ``python3 -m pronotepy.create_login``.
+   You can either:
 
-   1. Generate a QR code in PRONOTE and scan its contents so that you can paste them into the script, or
+   1. Generate a QR code in PRONOTE and scan its contents so that you can paste
+      them into the script, or
 
    2. log in using username and password. You may have to find an appropriate
       ENT function in :doc:`api/ent`. (see logging in with username and
       password below)
 
-   The script uses :meth:`.ClientBase.qrcode_login` internally. You can generate
-   new QR codes using :meth:`.ClientBase.request_qr_code_data`.
+   The script uses :meth:`.ClientBase.qrcode_login` internally. You can
+   generate new QR codes using :meth:`.ClientBase.request_qr_code_data`.
 
-2. Create a :class:`.Client` using :meth:`.ClientBase.token_login`, passing in the credentials generated in the first step.
+2. Create a :class:`.Client` using :meth:`.ClientBase.token_login`, passing in
+   the credentials generated in the first step.
 
    .. code-block:: python
     
@@ -49,15 +52,22 @@ Logging in with QR code (recommended)
         "demonstration",
         "SUPER_LONG_TOKEN_ABCDEFG",
         "RandomGeneratedUuid",
+        client_identifier="ABCDEF_LONG_ID", # required only if account has higher security
     )
-    # save new credentials
-    credentials = {
-        "url": client.pronote_url,
-        "username": client.username,
-        "password": client.password,
-        "uuid": client.uuid,
-    }
+
+    # get new credentials
+    credentials = client.export_credentials()
+
+    # use new credentials
+    client = pronotepy.Client.token_login(**credentials)
+
+    do_stuff(client)
+
+    # get new credentials
+    credentials = client.export_credentials()
+
     ...
+
 
    .. warning:: Save your new credentials somewhere safe. PRONOTE generates a
       new password token after each login.
@@ -66,10 +76,10 @@ Logging in with QR code (recommended)
 Logging in with username and password
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 You can also create a new client by passing in your username and password. This
-needs to go through your ENT everytime you login. Consider logging in using the
-QR code method.
+needs to go through your ENT everytime you login. **Consider logging in using
+the QR code method.**
 
-Use an ENT function from :doc:`api/ent` if you are logging in through an ENT.
+Use an ENT function from :doc:`api/ent` **if** you are logging in through an ENT.
 
 .. note:: The URL passed into the client must be a direct one to your pronote
    instance. It usually ends with ``eleve.html``, ``parent.html``, or something
@@ -84,9 +94,28 @@ Use an ENT function from :doc:`api/ent` if you are logging in through an ENT.
     client = pronotepy.Client('https://demo.index-education.net/pronote/eleve.html',
                           username='demonstration',
                           password='pronotevs',
-                          ent=ac_reunion) # ent specific
+                          ent=ac_reunion) # ent specific - fetches cookies from ENT
     if not client.logged_in:
         exit(1)  # the client has failed to log in
+
+Accounts with higher security enabled (unrecognized devices, or PIN codes) need
+additional parameters:
+
+.. code-block:: python
+
+    client = pronotepy.Client('https://demo.index-education.net/pronote/eleve.html',
+                          username='demonstration',
+                          password='pronotevs',
+                          account_pin="1111",
+                          device_name="pronotepy",
+                          client_identifier=None)
+
+    # keep client identifier from pronote
+    identifier = client.client_identifier
+
+When you pass 2FA, Pronotepy will register itself as a recognized device. The
+:attr:`.ClientBase.client_identifier` must be passed in when logging in again, so
+PRONOTE recognizes the device.
 
 Homework
 ^^^^^^^^

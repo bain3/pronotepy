@@ -74,20 +74,27 @@ Here is an example script (homework shown in example.py):
 ```python
 import pronotepy
 
-# initialise the client
-# Note: the address should be a direct one (like the one below) usually the address shown by your school just redirects
-# you to the real one.
-# Ex.: https://your-school.com/pronote/students <-- BAD
-#      https://0000000a.index-education.net/pronote/eleve.html <-- GOOD
-#      https://0000000a.index-education.net/pronote/eleve.html?login=true <-- ONLY IF YOU HAVE AN ENT AND YOU KNOW YOUR IDS, ELSE REFER TO ENT PART OF README
+import datetime
+from pathlib import Path
+import json
 
-client = pronotepy.Client('https://demo.index-education.net/pronote/eleve.html',
-                          username='demonstration',
-                          password='pronotevs')
+# load login from `python3 -m pronotepy.create_login` command.
+# See quickstart in documentation for other login methods.
+credentials = json.loads(Path("credentials.json").read_text())
+
+client = pronotepy.Client.token_login(**credentials)
 
 if client.logged_in: # check if client successfully logged in
-    # get the all the periods (may return multiple types like trimesters and semesters but it doesn't really matter
-    # the api will get it anyway)
+
+    # save new credentials - IMPORTANT
+    credentials = client.export_credentials()
+    Path("credentials.json").write_text(json.dumps(credentials))
+
+    nom_utilisateur = client.info.name # get users name
+    print(f'Logged in as {nom_utilisateur}')
+
+    # get the all the periods (may return multiple types like trimesters and
+    # semesters but it doesn't really matter the api will get it anyway)
     periods = client.periods
 
     for period in periods:
@@ -96,43 +103,6 @@ if client.logged_in: # check if client successfully logged in
 ```
 
 For any extra details, please see the documentation linked above.
-
-### QR Code
-
-Pronotepy allows you to connect with the Pronote QR code. Pass in the function the contents of the QR code and the confirmation code
-```python
-import pronotepy
-
-# creating the client from qrcode_login
-client = pronotepy.Client.qrcode_login({"jeton":"<LONG_TOKEN>",
-                                        "login":"<SHORT_TOKEN>",
-                                        "url":"https://0000000a.index-education.net/pronote/mobile.eleve.html"},
-                                        "1234")
-```
-
-### ENT
-
-Pronotepy has builtin functions for getting cookies from some ENTs (if you want your ENT to be added make a new issue).
-You can pass those functions to the client like this:
-
-```python
-import pronotepy
-from pronotepy.ent import occitanie_montpellier
-
-# creating the client and passing the occitanie_montpellier function to automatically get cookies from ENT
-client = pronotepy.Client('https://0000000a.index-education.net/pronote/eleve.html',
-                          username='demonstration',
-                          password='pronotevs',
-                          ent=occitanie_montpellier)
-
-# check if sucessfully logged in
-if client.logged_in:
-    print(len(client.discussions())) # printing number of messages that the user has
-else:
-    print('no login')
-```
-
-All the functions return cookies needed to connect to pronote (use docs to see if your ENT is supported).
 
 ## Contributing
 
