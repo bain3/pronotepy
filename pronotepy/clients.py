@@ -92,7 +92,7 @@ class ClientBase:
         self.username = username
         self.password = password
         self.pronote_url = pronote_url
-        self.communication = _Communication(pronote_url, cookies, self)
+        self.communication = _Communication(pronote_url, cookies)
         self.attributes, self.func_options = self.communication.initialise()
 
         # set up encryption
@@ -334,7 +334,7 @@ class ClientBase:
         else:
             cookies = None
 
-        self.communication = _Communication(self.pronote_url, cookies, self)
+        self.communication = _Communication(self.pronote_url, cookies)
         self.attributes, self.func_options = self.communication.initialise()
 
         # set up encryption

@@ -39,9 +39,7 @@ HEADERS = {
 
 
 class _Communication(object):
-    def __init__(
-        self, site: str, cookies: Optional["RequestsCookieJar"], client: ClientBase
-    ) -> None:
+    def __init__(self, site: str, cookies: Optional["RequestsCookieJar"]) -> None:
         """Handles all communication with the PRONOTE servers"""
         self.root_site, self.html_page = self.get_root_address(site)
 
@@ -54,7 +52,6 @@ class _Communication(object):
         self.cookies = cookies
         self.last_ping = 0
         self.authorized_onglets: List[int] = []
-        self.client = client
         self.compress_requests = False
         self.encrypt_requests = False
         self.last_response: Response
