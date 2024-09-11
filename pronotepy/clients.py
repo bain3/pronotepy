@@ -177,7 +177,7 @@ class ClientBase:
             account_pin (Optional[str]): 2FA PIN to the account
             client_identifier (Optional[str]): Identificator of this client provided by PRONOTE
             device_name (Optional[str]): A name for registering this client as a device.
-            skip_2fa (bool): Skip 2FA. PRONOTE will require it when connecting using the generated token (:meth:`.token_login).
+            skip_2fa (bool): Skip 2FA. PRONOTE will require it when connecting using the generated token (:meth:`.token_login`).
         """
         encryption = _Encryption()
         encryption.aes_set_key(pin.encode())
