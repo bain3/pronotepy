@@ -76,8 +76,6 @@ def main() -> int:
 
             client = client_class(url, username, password, ent, **mfa)
 
-        print(client.periods)
-
         # lol
         pin = "".join([str(random.choice(tuple(range(1, 10)))) for _ in range(4)])
 
