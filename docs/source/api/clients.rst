@@ -39,7 +39,7 @@ Example of client initialisation:
     if not client.logged_in:
         exit(1)  # the client has failed to log in
 
-.. note:: See :ref:`ent` for an example with an ENT / CAS.
+.. note:: See :doc:`ent` for an example with an ENT / CAS.
 
 -----------------------------------------------------------------------
 
