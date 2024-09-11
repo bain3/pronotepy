@@ -56,7 +56,7 @@ class _Communication(object):
         self.encrypt_requests = False
         self.last_response: Response
 
-    def initialise(self) -> Tuple[Any, Any]:
+    def initialise(self, client_identifier: Optional[str] = None) -> Tuple[Any, Any]:
         """
         Initialisation of the communication. Sets up the encryption and sends the IV for AES to PRONOTE.
         From this point, everything is encrypted with the communicated IV.
@@ -90,7 +90,7 @@ class _Communication(object):
             else self.encryption.aes_iv_temp
         ).decode()
         # post
-        json_post = {"Uuid": uuid, "identifiantNav": None}
+        json_post = {"Uuid": uuid, "identifiantNav": client_identifier}
         self.encrypt_requests = not self.attributes.get("sCrA", False)
         self.compress_requests = not self.attributes.get("sCoA", False)
 

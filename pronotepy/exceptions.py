@@ -13,6 +13,7 @@ __all__ = (
     "UnsupportedOperation",
     "DiscussionClosed",
     "QRCodeDecryptError",
+    "MFAError",
 )
 
 
@@ -101,5 +102,11 @@ class UnsupportedOperation(PronoteAPIError):
 
 class DiscussionClosed(PronoteAPIError):
     """The discussion is closed"""
+
+    pass
+
+
+class MFAError(PronoteAPIError):
+    """Error while processing 2FA (MFA)"""
 
     pass

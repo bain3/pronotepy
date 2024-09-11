@@ -18,6 +18,7 @@ from urllib.parse import urlparse, urlunparse
 
 from . import dataClasses
 from .exceptions import *
+from .exceptions import MFAError
 from .pronoteAPI import (
     _Communication,
     _Encryption,
@@ -26,6 +27,7 @@ from .pronoteAPI import (
     _prepare_onglets,
     log,
 )
+import json
 
 if TYPE_CHECKING:
     from requests.cookies import RequestsCookieJar
@@ -47,8 +49,22 @@ class ClientBase:
         pronote_url (str): URL of the server
         username (str)
         password (str)
-        ent (Callable): Cookies for ENT connections
-        qr_code (bool): internal option
+        ent (Optional[Callable]): Cookies for ENT connections
+        mode (bool): internal option
+        uuid (str): Your application UUID (any unique string)
+        account_pin (Optional[str]): 2FA PIN to the account.
+
+            Consider deleting it after logging in.
+
+            .. code-block:: python
+
+                del client.account_pin
+
+        client_identifier (Optional[str]):
+            Identificator of this client provided by PRONOTE. PRONOTE uses this
+            to remember a browser / client.
+
+        device_name (Optional[str]): A name for registering this client as a device.
 
     Attributes:
         start_day (datetime.datetime): The first day of the school year
@@ -59,6 +75,7 @@ class ClientBase:
         pronote_url (str)
         info (ClientInfo): Provides information about the current client. Name etc...
         last_connection (datetime.datetime)
+        client_identifier (str): Identificator of this client provided by PRONOTE
     """
 
     def __init__(
@@ -69,6 +86,9 @@ class ClientBase:
         ent: Optional["ENTFunction"] = None,
         mode: str = "normal",
         uuid: str = "",
+        account_pin: Optional[str] = None,
+        client_identifier: Optional[str] = None,
+        device_name: Optional[str] = None,
     ) -> None:
         log.info("INIT")
         # start communication session
@@ -93,7 +113,19 @@ class ClientBase:
         self.password = password
         self.pronote_url = pronote_url
         self.communication = _Communication(pronote_url, cookies)
-        self.attributes, self.func_options = self.communication.initialise()
+
+        self.account_pin = account_pin
+        self.client_identifier = client_identifier
+        self.device_name = device_name
+
+        self.attributes, self.func_options = self.communication.initialise(
+            self.client_identifier
+        )
+
+        if not self.client_identifier:
+            self.client_identifier = self.func_options["donneesSec"]["donnees"][
+                "identifiantNav"
+            ]
 
         # set up encryption
         self.encryption = _Encryption()
@@ -122,7 +154,16 @@ class ClientBase:
         self.last_connection: Optional[datetime.datetime]
 
     @classmethod
-    def qrcode_login(cls: Type[T], qr_code: dict, pin: str, uuid: str) -> T:
+    def qrcode_login(
+        cls: Type[T],
+        qr_code: dict,
+        pin: str,
+        uuid: str,
+        account_pin: Optional[str] = None,
+        client_identifier: Optional[str] = None,
+        device_name: Optional[str] = None,
+        skip_2fa: bool = False,
+    ) -> T:
         """Login with QR code
 
         The created client instance will have its username and password
@@ -133,6 +174,10 @@ class ClientBase:
             qr_code (dict): JSON contained in the QR code. Must have ``login``, ``jeton`` and ``url`` keys.
             pin (str): 4-digit confirmation code created during QR code setup
             uuid (str): Unique ID for your application. Must not change between logins.
+            account_pin (Optional[str]): 2FA PIN to the account
+            client_identifier (Optional[str]): Identificator of this client provided by PRONOTE
+            device_name (Optional[str]): A name for registering this client as a device.
+            skip_2fa (bool): Skip 2FA. PRONOTE will require it when connecting using the generated token (:meth:`.token_login).
         """
         encryption = _Encryption()
         encryption.aes_set_key(pin.encode())
@@ -168,11 +213,40 @@ class ClientBase:
             fragment="",
         )
 
-        return cls(urlunparse(fixed_url), login, jeton, mode="qr_code", uuid=uuid)
+        client = cls(
+            urlunparse(fixed_url),
+            login,
+            jeton,
+            mode="qr_code",
+            uuid=uuid,
+            account_pin=account_pin,
+            client_identifier=client_identifier,
+            device_name=device_name,
+        )
+
+        if not skip_2fa:
+            # check if the account has 2FA enabled
+            resp = client.post("PageInfosPerso", onglet=49)
+
+            mode = resp["donneesSec"]["donnees"]["securisation"].get("mode", 0)
+            if mode == 0:
+                log.warning("couldn't get account security mode, ignoring...")
+                return client
+
+            client._do_2fa(False, mode > 1, account_pin, device_name)
+
+        return client
 
     @classmethod
     def token_login(
-        cls: Type[T], pronote_url: str, username: str, password: str, uuid: str
+        cls: Type[T],
+        pronote_url: str,
+        username: str,
+        password: str,
+        uuid: str,
+        account_pin: Optional[str] = None,
+        client_identifier: Optional[str] = None,
+        device_name: Optional[str] = None,
     ) -> T:
         """
         Login with a password token. Used for logins after :meth:`.qrcode_login`.
@@ -186,8 +260,20 @@ class ClientBase:
             username (str)
             password (str): Password token received from the previous login
             uuid (str): Unique ID for your application. Must not change between logins.
+            account_pin (Optional[str]): 2FA PIN to the account
+            client_identifier (str): Identificator of this client provided by PRONOTE
+            device_name (str): Identificator of this client provided by PRONOTE
         """
-        return cls(pronote_url, username, password, mode="token", uuid=uuid)
+        return cls(
+            pronote_url,
+            username,
+            password,
+            mode="token",
+            uuid=uuid,
+            account_pin=account_pin,
+            client_identifier=client_identifier,
+            device_name=device_name,
+        )
 
     def _login(self) -> bool:
         """Logs in the user.
@@ -267,6 +353,23 @@ class ClientBase:
         if "cle" in auth_response["donneesSec"]["donnees"]:
             self.communication.after_auth(auth_response, e.aes_key)
             self.encryption.aes_key = e.aes_key
+
+            actionsDoubleAuth = auth_response["donneesSec"]["donnees"].get(
+                "actionsDoubleAuth"
+            )
+            if actionsDoubleAuth:
+                actions = json.loads(actionsDoubleAuth["V"])
+
+                doRegisterDevice = 5 in actions or 3 in actions
+                doVerifyPin = 3 in actions
+
+                self._do_2fa(
+                    doVerifyPin,
+                    doRegisterDevice,
+                    self.account_pin,
+                    self.device_name,
+                )
+
             log.info(f"successfully logged in as {self.username}")
 
             last_conn = auth_response["donneesSec"]["donnees"].get("derniereConnexion")
@@ -294,6 +397,67 @@ class ClientBase:
         else:
             log.info("login failed")
             return False
+
+    def _do_2fa(
+        self,
+        doVerifyPin: bool = False,
+        doRegisterDevice: bool = False,
+        pin: Optional[str] = None,
+        identifier: Optional[str] = None,
+    ) -> None:
+        log.debug(
+            "doing 2fa doPin=%s, doRegister=%s, pin=%s (redacted), identifier=%s",
+            doVerifyPin,
+            doRegisterDevice,
+            bool(pin),
+            identifier,
+        )
+
+        encryptedPin = None
+
+        if doVerifyPin:
+            log.debug("verifying pin")
+
+            if pin is None:
+                raise MFAError("PIN is required for this account")
+
+            encryptedPin = self.communication.encryption.aes_encrypt(pin.encode()).hex()
+
+            resp = self.post(
+                "SecurisationCompteDoubleAuth",
+                data={
+                    "action": 0,
+                    "codePin": encryptedPin,
+                },
+            )
+
+            if not resp["donneesSec"]["donnees"].get("result", False):
+                raise MFAError("Invalid PIN")
+
+        if doRegisterDevice:
+            log.debug("registering device")
+
+            if identifier is None:
+                raise MFAError("A device identifier is required for this account")
+
+            data = {
+                "action": 3,
+                "avecIdentification": True,
+                "strIdentification": identifier,
+            }
+            if encryptedPin:
+                data["codePin"] = encryptedPin
+
+            self.post("SecurisationCompteDoubleAuth", data=data)
+
+    def export_credentials(self) -> dict:
+        return {
+            "pronote_url": self.pronote_url,
+            "username": self.username,
+            "password": self.password,
+            "client_identifier": self.client_identifier,
+            "uuid": self.uuid,
+        }
 
     def get_week(self, date: Union[datetime.date, datetime.datetime]) -> int:
         if isinstance(date, datetime.datetime):
@@ -335,7 +499,9 @@ class ClientBase:
             cookies = None
 
         self.communication = _Communication(self.pronote_url, cookies)
-        self.attributes, self.func_options = self.communication.initialise()
+        self.attributes, self.func_options = self.communication.initialise(
+            self.client_identifier
+        )
 
         # set up encryption
 
@@ -421,19 +587,23 @@ class Client(ClientBase):
         pronote_url (str): URL of the server
         username (str)
         password (str)
-        ent (Callable): Cookies for ENT connections
-    """
+        ent (Optional[Callable]): Cookies for ENT connections
+        mode (bool): internal option
+        uuid (str): Your application UUID (any unique string)
+        account_pin (Optional[str]): 2FA PIN to the account.
 
-    def __init__(
-        self,
-        pronote_url: str,
-        username: str = "",
-        password: str = "",
-        ent: Optional[Callable] = None,
-        mode: str = "normal",
-        uuid: str = "",
-    ) -> None:
-        super().__init__(pronote_url, username, password, ent, mode, uuid)
+            Consider deleting it after logging in.
+
+            .. code-block:: python
+
+                del client.account_pin
+
+        client_identifier (Optional[str]):
+            Identificator of this client provided by PRONOTE. PRONOTE uses this
+            to remember a browser / client.
+
+        device_name (Optional[str]): A name for registering this client as a device.
+    """
 
     def lessons(
         self,
@@ -779,7 +949,22 @@ class ParentClient(Client):
         pronote_url (str): URL of the server
         username (str)
         password (str)
-        ent (Callable): Cookies for ENT connections
+        ent (Optional[Callable]): Cookies for ENT connections
+        mode (bool): internal option
+        uuid (str): Your application UUID (any unique string)
+        account_pin (Optional[str]): 2FA PIN to the account.
+
+            Consider deleting it after logging in.
+
+            .. code-block:: python
+
+                del client.account_pin
+
+        client_identifier (Optional[str]):
+            Identificator of this client provided by PRONOTE. PRONOTE uses this
+            to remember a browser / client.
+
+        device_name (Optional[str]): A name for registering this client as a device.
 
     Attributes:
         children (List[ClientInfo]): List of sub-clients representing all the
@@ -794,8 +979,21 @@ class ParentClient(Client):
         ent: Optional[Callable] = None,
         mode: str = "normal",
         uuid: str = "",
+        account_pin: Optional[str] = None,
+        client_identifier: Optional[str] = None,
+        device_name: Optional[str] = None,
     ) -> None:
-        super().__init__(pronote_url, username, password, ent, mode, uuid)
+        super().__init__(
+            pronote_url,
+            username,
+            password,
+            ent,
+            mode,
+            uuid,
+            account_pin,
+            client_identifier,
+            device_name,
+        )
 
         self.children: List[dataClasses.ClientInfo] = []
         for c in self.parametres_utilisateur["donneesSec"]["donnees"]["ressource"][
@@ -878,7 +1076,22 @@ class VieScolaireClient(ClientBase):
         pronote_url (str): URL of the server
         username (str)
         password (str)
-        ent (Callable): Cookies for ENT connections
+        ent (Optional[Callable]): Cookies for ENT connections
+        mode (bool): internal option
+        uuid (str): Your application UUID (any unique string)
+        account_pin (Optional[str]): 2FA PIN to the account.
+
+            Consider deleting it after logging in.
+
+            .. code-block:: python
+
+                del client.account_pin
+
+        client_identifier (Optional[str]):
+            Identificator of this client provided by PRONOTE. PRONOTE uses this
+            to remember a browser / client.
+
+        device_name (Optional[str]): A name for registering this client as a device.
 
     Attributes:
         classes (List[StudentClass]): List of all classes this account has access to.
@@ -892,8 +1105,21 @@ class VieScolaireClient(ClientBase):
         ent: Optional[Callable] = None,
         mode: str = "normal",
         uuid: str = "",
+        account_pin: Optional[str] = None,
+        client_identifier: Optional[str] = None,
+        device_name: Optional[str] = None,
     ) -> None:
-        super().__init__(pronote_url, username, password, ent, mode, uuid)
+        super().__init__(
+            pronote_url,
+            username,
+            password,
+            ent,
+            mode,
+            uuid,
+            account_pin,
+            client_identifier,
+            device_name,
+        )
         self.classes = [
             dataClasses.StudentClass(self, json)
             for json in self.parametres_utilisateur["donneesSec"]["donnees"][
