@@ -129,7 +129,7 @@ def _cas_edu(
         response = session.get(url, headers=HEADERS)
 
         if redirect_form:
-            response = _sso_redirect(session, response, "SAMLResponse", url)
+            response = _sso_redirect(session, response, "SAMLRequest", url)
         if not response:
             raise ENTLoginError("Connection failure")
 
