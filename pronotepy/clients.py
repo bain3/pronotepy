@@ -223,6 +223,7 @@ class ClientBase:
             client_identifier=client_identifier,
             device_name=device_name,
         )
+        client.login_mode = "token"  # for subsequent refreshes
 
         if not skip_2fa:
             # check if the account has 2FA enabled
