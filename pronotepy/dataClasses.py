@@ -2071,9 +2071,9 @@ class Punishment(Object):
 
         self.exclusion: bool = self._resolver(bool, "estUneExclusion")
 
-        self.homework: str = self._resolver(str, "travailAFaire")
+        self.homework: str = self._resolver(str, "travailAFaire", strict=False)
         self.homework_documents: List[Attachment] = self._resolver(
-            lambda x: [Attachment(client, a) for a in x], "documentsTAF", "V"
+            lambda x: [Attachment(client, a) for a in x], "documentsTAF", "V", strict=False
         )
 
         self.circumstances: str = self._resolver(str, "circonstances")
