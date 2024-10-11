@@ -892,7 +892,7 @@ class Lesson(Object):
             bool, "cahierDeTextes", "V", "estDevoir", default=False
         )
         lesson_g: int = self._resolver(int, "G", default=0)
-        self.room_change: bool = True \
+        self.modified: bool = True \
             if lesson_g in [2, 3] \
             else False
         self.end: datetime.datetime = self._resolver(
