@@ -1996,7 +1996,7 @@ class Punishment(Object):
         exclusion (bool): If the punishment is an exclusion from class
         during_lesson (bool): If the punishment was given during a lesson.
             `self.during_lesson is True => self.given is datetime.datetime`
-        homework (str): Text description of the homework that was given as the punishment
+        homework (Optional[str]): Text description of the homework that was given as the punishment
         homework_documents (List[Attachment]): Attached documents for homework
         circumstances (str)
         circumstance_documents (List[Attachment])
@@ -2071,9 +2071,12 @@ class Punishment(Object):
 
         self.exclusion: bool = self._resolver(bool, "estUneExclusion")
 
-        self.homework: str = self._resolver(str, "travailAFaire")
+        self.homework: str = self._resolver(str, "travailAFaire", strict=False)
         self.homework_documents: List[Attachment] = self._resolver(
-            lambda x: [Attachment(client, a) for a in x], "documentsTAF", "V"
+            lambda x: [Attachment(client, a) for a in x],
+            "documentsTAF",
+            "V",
+            default=[],
         )
 
         self.circumstances: str = self._resolver(str, "circonstances")
