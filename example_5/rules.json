@@ -33,19 +33,19 @@
             "Pole": "Pole littéraire",
             "min": 15.0,
             "max": 20.0,
-            "gain": 90
+            "gain": 60
         },
         {
             "Pole": "Pole scientifique",
             "min": 15.0,
             "max": 20.0,
-            "gain": 60
+            "gain": 30
         },
         {
             "Pole": "Retards",
             "min": 0,
             "max": 0,
-            "gain": 60
+            "gain": 30
         }
     ],
     "Marathon": [
