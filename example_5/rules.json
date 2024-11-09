@@ -1,32 +1,30 @@
 {
     "Banco": [
-        [
-            {
-                "Pole": "Pole artistique",
-                "min": 15.0,
-                "max": 20.0
-            },
-            {
-                "Pole": "Pole littéraire",
-                "min": 15.0,
-                "max": 20.0
-            },
-            {
-                "Pole": "Pole scientifique",
-                "min": 15.0,
-                "max": 20.0
-            },
-            {
-                "Pole": "Pole sportif",
-                "min": 15.0,
-                "max": 20.0
-            },
-            {
-                "Pole": "Retards",
-                "min": 0,
-                "max": 5
-            }
-        ]
+        {
+            "Pole": "Pole artistique",
+            "min": 15.0,
+            "max": 20.0
+        },
+        {
+            "Pole": "Pole littéraire",
+            "min": 15.0,
+            "max": 20.0
+        },
+        {
+            "Pole": "Pole scientifique",
+            "min": 15.0,
+            "max": 20.0
+        },
+        {
+            "Pole": "Pole sportif",
+            "min": 15.0,
+            "max": 20.0
+        },
+        {
+            "Pole": "Retards",
+            "min": 0.0,
+            "max": 5.0
+        }
     ],
     "Boost": [
         {
@@ -43,8 +41,8 @@
         },
         {
             "Pole": "Retards",
-            "min": 0,
-            "max": 0,
+            "min": 0.0,
+            "max": 0.0,
             "gain": 30
         }
     ],
@@ -75,8 +73,8 @@
         },
         {
             "Pole": "Retards",
-            "min": 0,
-            "max": 8,
+            "min": 0.0,
+            "max": 8.0,
             "gain": 30
         }
     ]

@@ -112,34 +112,7 @@ class Bulletin():
                 self.pole['average'] = average
 
         return [Pole(pole)
-                for pole in self.configuration['bulletin']['averages']]
-
-    def delays(self):
-        "Retourne le nombre de retards"
-        class Retards():
-            """
-            Interface pour manipuler les retards
-            """
-
-            def __init__(self, retards):
-                self.retards = retards
-
-            def __str__(self):
-                return f"{self.name()} : {self.count()}"
-
-            def name(self):
-                "Retourne le nom"
-                return 'Retards'
-
-            def average(self):
-                "Retourne le décompte comme une moyenne"
-                return self.count()
-
-            def count(self):
-                "Retourne le décompte"
-                return self.retards
-
-        return Retards(self.configuration['delays'])
+                for pole in self.configuration['bulletin']]
 
     def __get_pronote_average(self, averages, pronote_subject):
         for average in averages:  # iterate over all the averages
@@ -173,6 +146,17 @@ conversion 'pronote' <=> 'bulletin' (corriger le fichier '{self.path_configurati
                 # print(pole)
 
     def compute_pole_delays(self, delays):
-        "Calcule et enregistre les données de retards à partir des données pronote en parametre"
+        """
+        Calcule et enregistre les données de retards à partir des données pronote en parametre.
+        Les retards sont intégrés au bulletin comme une moyenne pour uniformiser les traitements
+        """
         if delays:
-            self.configuration['delays'] = len(delays)
+            for pole in self.poles():
+                # print(pole)
+                for bulletin_subject in pole.subjects():
+                    if bulletin_subject.name() == 'Retards':
+                        average = float(len(delays))
+                        pole.write_subject_average(
+                            bulletin_subject.name(), average)
+                        pole.write_average(average)
+                # print(pole)

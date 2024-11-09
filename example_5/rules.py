@@ -19,6 +19,9 @@ class Rules():
         with open(path_configuration_json, 'r', encoding='utf-8') as json_file:
             self.configuration = json.load(json_file)
         # print(f"Rules - Configuration : {self.configuration}")
+        self.banco = {}
+        for condition in self.configuration['Banco']:
+            self.banco[condition['Pole']] = copy.deepcopy(condition)
         self.boost = {}
         for condition in self.configuration['Boost']:
             self.boost[condition['Pole']] = copy.deepcopy(condition)
@@ -26,22 +29,11 @@ class Rules():
         for condition in self.configuration['Marathon']:
             self.marathon[condition['Pole']] = copy.deepcopy(condition)
 
-    def is_banco(self, bulletin):
-        "Indique si le bulletin remplit la gratification BANCO"
-        # TODO : Optimiser en le recodant à l'intialisation (cf boost et
-        # marathon)
-        for conditions_banco in self.configuration['Banco']:
-            for condition in conditions_banco:
-                pole, average_min, average_max = condition['Pole'], float(
-                    condition['min']), float(condition['max'])
-                if pole == 'Retards':
-                    if not average_min <= bulletin.delays() <= average_max:
-                        return False
-                else:
-                    if not bulletin.pole(pole).average() or not average_min <= bulletin.pole(
-                            pole).average() <= average_max:
-                        return False
-        return True
+    def __get_banco_rule(self, pole_bulletin):
+        "Retourne la regle de BANCO du pole de discipline"
+        if pole_bulletin.name() in self.banco:
+            return self.banco[pole_bulletin.name()]
+        return None
 
     def __get_boost_rule(self, pole_bulletin):
         "Retourne la regle de BOOST du pole de discipline"
@@ -55,14 +47,30 @@ class Rules():
             return self.marathon[pole_bulletin.name()]
         return None
 
+    def bulletin_is_banco(self, bulletin):
+        "Indique si le bulletin remplit la gratification BANCO"
+        for pole in self.banco:
+            if not self.pole_is_bancoed(bulletin.pole(pole)):
+                return False
+        return True
+
     def pole_has_boost(self, pole_bulletin):
         "Indique si le pole a une option de BOOST"
         return self.__get_boost_rule(pole_bulletin) is not None
 
+    def pole_is_bancoed(self, pole_bulletin):
+        "Indique si le pole fourni en paramètre est BANCOé"
+        pole_banco = self.__get_banco_rule(pole_bulletin)
+        if pole_banco and pole_bulletin.average():
+            if pole_banco['min'] <= pole_bulletin.average(
+            ) <= pole_banco['max']:
+                return True
+        return False
+
     def pole_is_boosted(self, pole_bulletin):
         "Indique si le pole fourni en paramètre est BOOSTé"
         pole_boost = self.__get_boost_rule(pole_bulletin)
-        if pole_boost:
+        if pole_boost and pole_bulletin.average():
             if pole_boost['min'] <= pole_bulletin.average(
             ) <= pole_boost['max']:
                 return True
@@ -71,7 +79,7 @@ class Rules():
     def pole_is_marathoned(self, pole_bulletin):
         "Indique si le pole fourni en paramètre est MARATHONé"
         pole_marathon = self.__get_marathon_rule(pole_bulletin)
-        if pole_marathon:
+        if pole_marathon and pole_bulletin.average():
             if pole_marathon['min'] <= pole_bulletin.average(
             ) <= pole_marathon['max']:
                 return True
@@ -112,7 +120,8 @@ class Rules():
     def get_pole_gain(self, pole_bulletin):
         "Indique le gain BOOST, MARATHON le plus favorable"
         if self.pole_is_boosted(pole_bulletin):
-            return self.get_pole_boost_gain(pole_bulletin) + self.get_pole_marathon_gain(pole_bulletin)
-        elif self.pole_is_marathoned(pole_bulletin):
+            return self.get_pole_boost_gain(
+                pole_bulletin) + self.get_pole_marathon_gain(pole_bulletin)
+        if self.pole_is_marathoned(pole_bulletin):
             return self.get_pole_marathon_gain(pole_bulletin)
         return None

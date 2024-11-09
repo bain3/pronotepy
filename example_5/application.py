@@ -6,12 +6,81 @@ résultats scolaires de l'eleve
 import tkinter as tk
 
 
+class PoleBancoFrame(tk.LabelFrame):
+    "Frame dédiée aux BANCOS des poles de disciplines (dans la frame des bancos)"
+
+    def __init__(self, container, pole, text='Banco', banco_total=None):
+        self.container = container
+        self.rules = container.rules
+        self.bulletin = container.bulletin
+        super().__init__(container, text=text)  # pole.name())
+        self.pack(fill="both", expand="yes")
+
+        self.labels = []
+        if banco_total is False or not self.rules.pole_is_bancoed(pole):
+            self.write("no BANCO", None)
+        else:
+            self.write("BANCO !", 'dark green')
+
+    def write(self, text, fg):
+        "Ecriture de la moyenne de discipline"
+        self.labels.append(
+            tk.Label(
+                self,
+                text=text,
+                anchor='w',
+                foreground=fg,
+                width=9).pack(
+                fill='x'))
+
+
+class PoleGainFrame(tk.LabelFrame):
+    "Frame dédiée au gains des poles de disciplines (dans la frame des gains)"
+
+    def __init__(self, container, pole, text='Gains', gain_total=None):
+        self.container = container
+        self.rules = container.rules
+        self.bulletin = container.bulletin
+        super().__init__(container, text=text)  # pole.name())
+        self.pack(fill="both", expand="yes")
+
+        self.labels = []
+        if gain_total:
+            self.write(f"{gain_total}€", 'dark green')
+        else:
+            marathon = self.rules.get_pole_marathon_gain(pole)
+            if not self.rules.pole_is_marathoned(pole):
+                self.write(f"{marathon}€ à gagner", None)
+            else:
+                self.write(f"{marathon}€", 'dark green')
+
+            boost = self.rules.get_pole_boost_gain(pole)
+            if not self.rules.pole_is_boosted(pole):
+                if self.rules.pole_has_boost(pole):
+                    self.write(
+                        f"{boost}€ à BOOSTER",
+                        None)  # 'dark slate gray')
+            else:
+                self.write(f"{boost}€ de BOOST !", 'dark green')
+
+    def write(self, text, fg):
+        "Ecriture de la moyenne de discipline"
+        self.labels.append(
+            tk.Label(
+                self,
+                text=text,
+                anchor='w',
+                foreground=fg,
+                width=12).pack(
+                fill='x'))
+
+
 class SubjectAveragesFrame(tk.Frame):
     "Frame dédiée aux moyennes de disciplines (dans la frame des poles)"
 
     def __init__(self, container, bg):
-        # frame 'bulletin'
-        super().__init__(container, relief=tk.GROOVE, background=bg, padx=5)
+        # frame 'moyenne par discipline'
+        super().__init__(container, relief=tk.GROOVE, background=bg)
         self.container = container
         self.rules = container.rules
         self.bulletin = container.bulletin
@@ -27,8 +96,9 @@ class SubjectAveragesFrame(tk.Frame):
                 self,
                 text=text,
                 background=self.bg,
-                anchor='e',
-                foreground=fg).pack(
+                anchor='w',
+                foreground=fg,
+                width=7).pack(
                 fill='x'))
 
 
@@ -37,7 +107,7 @@ class SubjectsFrame(tk.Frame):
 
     def __init__(self, container, bg):
         # frame 'bulletin'
-        super().__init__(container, relief=tk.GROOVE, background=bg, padx=5)
+        super().__init__(container, relief=tk.GROOVE, background=bg)
         self.container = container
         self.rules = container.rules
         self.bulletin = container.bulletin
@@ -53,52 +123,10 @@ class SubjectsFrame(tk.Frame):
                 self,
                 text=text,
                 background=self.bg,
-                anchor='w').pack(
+                anchor='e',
+                width=25).pack(
                 fill='x'))
 
-
-class PoleGainFrame(tk.LabelFrame):
-    "Frame dédiée au gains des poles de disciplines (dans la frame des gains)"
-
-    def __init__(self, container, pole):
-        self.container = container
-        self.rules = container.rules
-        self.bulletin = container.bulletin
-        # Apply rules on background
-        self.bg = None
-        # if pole.average():
-        #     if self.rules.pole_is_boosted(pole):
-        #         self.bg = 'Spring Green'
-        #     elif self.rules.get_pole_marathon_gain(pole):
-        #         self.bg = 'Light Green'
-
-        super().__init__(container, text=pole.name(), background=self.bg)
-        self.pack(fill="both", expand="yes", padx=5, pady=5)
-
-        self.labels = []
-        if not self.rules.pole_is_boosted(pole):
-            gain = self.rules.get_pole_marathon_gain(pole)
-            if gain:
-                self.write(f"{gain}€", 'dark green')
-            if self.rules.pole_has_boost(pole):
-                boost = self.rules.get_pole_boost_gain(pole)
-                self.write(f"{boost}€ à BOOSTER !", 'dark slate gray')
-        else:
-            gain = self.rules.get_pole_marathon_gain(pole)
-            self.write(f"{gain}€", 'dark slate gray')
-            boost = self.rules.get_pole_boost_gain(pole)
-            self.write(f"{boost}€ BOOST !", 'dark green')
-
-    def write(self, text, fg):
-        "Ecriture de la moyenne de discipline"
-        self.labels.append(
-            tk.Label(
-                self,
-                text=text,
-                background=self.bg,
-                anchor='w',
-                foreground=fg).pack(
-                fill='x'))
 
 class PoleAverageFrame(tk.LabelFrame):
     "Frame dédiée aux moyennes des poles de disciplines (dans la frame des moyennes)"
@@ -115,12 +143,13 @@ class PoleAverageFrame(tk.LabelFrame):
             elif self.rules.get_pole_marathon_gain(pole):
                 bg = 'Light Green'
 
-        if pole.average():
             text = f"{pole.name()} : {pole.average():.2f}/20"
+            if pole.name() == 'Retards':
+                text = f"{pole.name()} : {pole.average():.0f}"
         else:
             text = pole.name()
         super().__init__(container, text=text, background=bg)
-        self.pack(fill="both", expand="yes", padx=5, pady=5)
+        self.pack(fill="both", expand="yes")
 
         # frame 'subjects' et 'grades'
         self.frame_subjects = SubjectsFrame(self, bg)
@@ -139,116 +168,51 @@ class PoleAverageFrame(tk.LabelFrame):
                 elif self.rules.subject_downgrade_marathon_pole(pole, subject_average):
                     average_fg = 'Red'
 
-            if subject_average:
-                self.frame_subject_averages.write(
-                    f"{subject_average:.2f}/20", average_fg)
+                text = f"{subject_average:.2f}/20"
+                if bulletin_subject.name() == 'Retards':
+                    text = f"{subject_average:.0f}"
+                self.frame_subject_averages.write(text, average_fg)
             else:
                 self.frame_subject_averages.write('-', average_fg)
+
+
+class BancoFrame(tk.Frame):
+    "Frames dédiée aux bancos"
+
+    def __init__(self, container, pole, text='Banco', banco_total=None):
+        # frame 'banco par discipline'
+        super().__init__(container, relief=tk.GROOVE)
+        # self.container = container
+        self.rules = container.rules
+        self.bulletin = container.bulletin
+        self.pole_frame = []
+        self.pole_frame.append(PoleBancoFrame(self, pole, text, banco_total))
 
 
 class GainsFrame(tk.Frame):
     "Frames dédiée aux gains"
 
-    def __init__(self, container):
-        # frame 'bulletin'
+    def __init__(self, container, pole, text='Gains', gain_total=None):
+        # frame 'gains'
         super().__init__(container, relief=tk.GROOVE)
         # self.container = container
         self.rules = container.rules
         self.bulletin = container.bulletin
         self.pole_frame = []
-        for pole in self.bulletin.poles():
-            self.pole_frame.append(PoleGainFrame(self, pole))
+        self.pole_frame.append(PoleGainFrame(self, pole, text, gain_total))
 
 
-class AveragesFrame(tk.Frame):
-    "Frames dédiée aux moyennes"
+class BulletinFrame(tk.Frame):
+    "Frames dédiée au bulletin"
 
-    def __init__(self, container):
-        # frame 'bulletin'
+    def __init__(self, container, pole):
+        # frame 'moyenne'
         super().__init__(container, relief=tk.GROOVE)
         # self.container = container
         self.rules = container.rules
         self.bulletin = container.bulletin
         self.pole_frame = []
-        for pole in self.bulletin.poles():
-            self.pole_frame.append(PoleAverageFrame(self, pole))
-
-
-class DelaysFrames(tk.Frame):
-    "Frame dédiée aux retards"
-
-    def __init__(self, container):
-        # frame 'retards'
-        super().__init__(container, relief=tk.GROOVE)
-        self.container = container
-
-        if self.container.bulletin.delays() is not None:
-            # Apply rules on background
-            bg = None
-            if self.container.rules.pole_is_boosted(
-                    self.container.bulletin.delays()):
-                bg = 'Spring Green'
-            elif self.container.rules.get_pole_marathon_gain(self.container.bulletin.delays()):
-                bg = 'Light Green'
-            tk.Label(
-                self,
-                text=self.container.bulletin.delays(),
-                background=bg,
-                anchor='w').pack(
-                fill='x')
-
-class DelaysGainsFrames(tk.Frame):
-    "Frame dédiée aux gains des retards"
-
-    def __init__(self, container):
-        # frame 'gains des retards'
-        super().__init__(container, relief=tk.GROOVE)
-        self.container = container
-        self.rules = container.rules
-        self.bulletin = container.bulletin
-        self.retards = self.bulletin.delays()
-
-        if self.retards is not None:
-            # Apply rules on background
-            self.bg = None
-            # if self.container.rules.pole_is_boosted(
-            #         self.container.bulletin.delays()):
-            #     bg = 'Spring Green'
-            # elif self.container.rules.get_pole_marathon_gain(self.container.bulletin.delays()):
-            #     bg = 'Light Green'
-            tk.Label(
-                self,
-                text=self.retards,
-                background=self.bg,
-                anchor='w').pack(
-                fill='x')
-            
-        self.labels = []
-
-        marathon = self.rules.get_pole_marathon_gain(self.retards)
-        if not self.rules.pole_is_marathoned(self.retards):
-            fg = 'dark slate gray'
-        else:
-            fg = 'dark green'
-        self.write(f"{marathon}€", fg)
-        
-        boost = self.rules.get_pole_boost_gain(self.retards)
-        if not self.rules.pole_is_boosted(self.retards):
-            if self.rules.pole_has_boost(self.retards):
-                self.write(f"{boost}€ à BOOSTER !", 'dark slate gray')
-        else:
-            self.write(f"{boost}€ BOOST !", 'dark green')
-
-    def write(self, text, fg):
-        "Ecriture de la moyenne de retards"
-        self.labels.append(
-            tk.Label(
-                self,
-                text=text,
-                background=self.bg,
-                anchor='w',
-                foreground=fg).pack(
-                fill='x'))
+        self.pole_frame.append(PoleAverageFrame(self, pole))
 
 
 class Application(tk.Tk):
@@ -262,18 +226,50 @@ class Application(tk.Tk):
         self.title('PS5 ?')
         self.resizable(False, False)
 
-        self.averages = AveragesFrame(self)
-        self.gains = GainsFrame(self)
-        self.delays = DelaysFrames(self)
-        self.delays_gains = DelaysGainsFrames(self)
+        current_row = 0
+        self.bulletin_frame = []
+        self.gains = []
+        self.banco = []
+        self.gain_total = 0
+        self.banco_total = rules.bulletin_is_banco(bulletin)
+        for pole in self.bulletin.poles():
+            bulletin_frame = BulletinFrame(self, pole)
+            gains = GainsFrame(self, pole)
+            banco = BancoFrame(self, pole)
 
-        self.averages.grid(row=0, column=0, padx=10, pady=10)
-        self.gains.grid(row=0, column=1, padx=10, pady=10)
-        self.delays.grid(row=1, column=0, padx=10, pady=10)
-        self.delays_gains.grid(row=1, column=1, padx=10, pady=10)
+            bulletin_frame.grid(
+                row=current_row,
+                column=0,
+                padx=5,
+                pady=5,
+                sticky='n')
+            gains.grid(row=current_row, column=1, pady=5, sticky='n')
+            banco.grid(row=current_row, column=2, padx=5, pady=5, sticky='n')
 
-        # Rendre les frames visibles
-        self.averages.grid_propagate(False)
-        self.delays.grid_propagate(False)
-        self.gains.grid_propagate(False)
-        self.delays_gains.grid_propagate(False)
+            # Rendre les frames visibles
+            bulletin_frame.grid_propagate(False)
+            gains.grid_propagate(False)
+            banco.grid_propagate(False)
+
+            self.bulletin_frame.append(bulletin_frame)
+            self.gains.append(gains)
+            self.banco.append(banco)
+            current_row = current_row + 1
+
+            # Gain total
+            gain = rules.get_pole_gain(pole)
+            if gain:
+                self.gain_total = self.gain_total + gain
+
+        # Bilan
+        gains = GainsFrame(self, None, 'Synthèse', self.gain_total)
+        banco = BancoFrame(self, None, 'Synthèse', self.banco_total)
+
+        gains.grid(row=current_row, column=1, pady=5, sticky='n')
+        banco.grid(row=current_row, column=2, padx=5, pady=5, sticky='n')
+
+        gains.grid_propagate(False)
+        banco.grid_propagate(False)
+
+        self.gains.append(gains)
+        self.banco.append(banco)
