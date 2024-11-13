@@ -275,12 +275,12 @@ class BancoSafe(tk.Canvas):
         self.rate_banco = self.rules.get_banco_rate(self.report_card)
 
         self.safe = {}
-        self.safe[0]   = tk.PhotoImage(file="example_5\\images\\safe_00%.png")
-        self.safe[20]  = tk.PhotoImage(file="example_5\\images\\safe_20%.png")
-        self.safe[40]  = tk.PhotoImage(file="example_5\\images\\safe_40%.png")
-        self.safe[60]  = tk.PhotoImage(file="example_5\\images\\safe_60%.png")
-        self.safe[80]  = tk.PhotoImage(file="example_5\\images\\safe_80%.png")
-        self.safe[100] = tk.PhotoImage(file="example_5\\images\\safe_100%.png")
+        self.safe[0]   = tk.PhotoImage(file="the_school_award\\images\\safe_00%.png")
+        self.safe[20]  = tk.PhotoImage(file="the_school_award\\images\\safe_20%.png")
+        self.safe[40]  = tk.PhotoImage(file="the_school_award\\images\\safe_40%.png")
+        self.safe[60]  = tk.PhotoImage(file="the_school_award\\images\\safe_60%.png")
+        self.safe[80]  = tk.PhotoImage(file="the_school_award\\images\\safe_80%.png")
+        self.safe[100] = tk.PhotoImage(file="the_school_award\\images\\safe_100%.png")
 
         self.images = []
         self.images.append(self.create_image(
@@ -296,7 +296,7 @@ class MoneyPoolFull(tk.Toplevel):
         self.title("Congratulation !")
 
         # Afficher le coffre ouvert festif si la cagnotte est pleine
-        self.opened_safe_party = tk.PhotoImage(file = "example_5\\images\\congratulation.png")
+        self.opened_safe_party = tk.PhotoImage(file = "the_school_award\\images\\congratulation.png")
         self.canvas = tk.Canvas(self, width=self.opened_safe_party.width(), height=self.opened_safe_party.height())
         self.canvas.pack()
         self.images = []

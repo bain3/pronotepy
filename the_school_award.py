@@ -25,9 +25,9 @@ import json
 
 import pronotepy
 
-from example_5.report_card import ReportCard
-from example_5.rules import Rules
-from example_5.application import Application
+from the_school_award.report_card import ReportCard
+from the_school_award.rules import Rules
+from the_school_award.application import Application
 
 
 # load login from `python3 -m pronotepy.create_login` command
@@ -48,11 +48,11 @@ if client.logged_in:  # check if client successfully logged in
 
     current_period = client.current_period
 
-    current_report_card = ReportCard(Path('example_5', 'report_card.json'))
+    current_report_card = ReportCard(Path('the_school_award', 'report_card.json'))
     current_report_card.compute_report_card_averages(current_period.averages)
     current_report_card.compute_report_card_delays(current_period.delays)
 
-    school_award_rules = Rules(Path('example_5', 'rules.json'))
+    school_award_rules = Rules(Path('the_school_award', 'rules.json'))
 
     fenetre = Application(school_award_rules, current_report_card)
     fenetre.mainloop()
