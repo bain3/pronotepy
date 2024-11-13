@@ -52,9 +52,9 @@ if client.logged_in:  # check if client successfully logged in
     bulletin_actuel.compute_pole_averages(current_period.averages)
     bulletin_actuel.compute_pole_delays(current_period.delays)
 
-    ps5_rules = Rules(Path('example_5', 'rules.json'))
+    school_award_rules = Rules(Path('example_5', 'rules.json'))
 
-    fenetre = Application(ps5_rules, bulletin_actuel)
+    fenetre = Application(school_award_rules, bulletin_actuel)
     fenetre.mainloop()
 
 else:

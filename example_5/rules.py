@@ -19,109 +19,132 @@ class Rules():
         with open(path_configuration_json, 'r', encoding='utf-8') as json_file:
             self.configuration = json.load(json_file)
         # print(f"Rules - Configuration : {self.configuration}")
+        self.target_amount = self.configuration['Target amount']
         self.banco = {}
         for condition in self.configuration['Banco']:
-            self.banco[condition['Pole']] = copy.deepcopy(condition)
+            self.banco[condition['Cluster']] = copy.deepcopy(condition)
         self.boost = {}
         for condition in self.configuration['Boost']:
-            self.boost[condition['Pole']] = copy.deepcopy(condition)
+            self.boost[condition['Cluster']] = copy.deepcopy(condition)
         self.marathon = {}
         for condition in self.configuration['Marathon']:
-            self.marathon[condition['Pole']] = copy.deepcopy(condition)
+            self.marathon[condition['Cluster']] = copy.deepcopy(condition)
 
-    def __get_banco_rule(self, pole_bulletin):
+    def __get_banco_rule(self, cluster):
         "Retourne la regle de BANCO du pole de discipline"
-        if pole_bulletin.name() in self.banco:
-            return self.banco[pole_bulletin.name()]
+        if cluster.name() in self.banco:
+            return self.banco[cluster.name()]
         return None
 
-    def __get_boost_rule(self, pole_bulletin):
+    def __get_boost_rule(self, cluster):
         "Retourne la regle de BOOST du pole de discipline"
-        if pole_bulletin.name() in self.boost:
-            return self.boost[pole_bulletin.name()]
+        if cluster.name() in self.boost:
+            return self.boost[cluster.name()]
         return None
 
-    def __get_marathon_rule(self, pole_bulletin):
+    def __get_marathon_rule(self, cluster):
         "Retourne la regle du MARATHON du pole de discipline"
-        if pole_bulletin.name() in self.marathon:
-            return self.marathon[pole_bulletin.name()]
+        if cluster.name() in self.marathon:
+            return self.marathon[cluster.name()]
         return None
 
-    def bulletin_is_banco(self, bulletin):
+    def report_card_is_banco(self, bulletin):
         "Indique si le bulletin remplit la gratification BANCO"
-        for pole in self.banco:
-            if not self.pole_is_bancoed(bulletin.pole(pole)):
+        for cluster in self.banco:
+            if not self.cluster_is_bancoed(bulletin.pole(cluster)):
                 return False
         return True
 
-    def pole_has_boost(self, pole_bulletin):
+    def cluster_has_boost(self, cluster):
         "Indique si le pole a une option de BOOST"
-        return self.__get_boost_rule(pole_bulletin) is not None
+        return self.__get_boost_rule(cluster) is not None
 
-    def pole_is_bancoed(self, pole_bulletin):
+    def cluster_is_bancoed(self, cluster):
         "Indique si le pole fourni en paramètre est BANCOé"
-        pole_banco = self.__get_banco_rule(pole_bulletin)
-        if pole_banco and pole_bulletin.average():
-            if pole_banco['min'] <= pole_bulletin.average(
-            ) <= pole_banco['max']:
+        cluster_banco = self.__get_banco_rule(cluster)
+        if cluster_banco and cluster.average():
+            if cluster_banco['min'] <= cluster.average(
+            ) <= cluster_banco['max']:
                 return True
         return False
 
-    def pole_is_boosted(self, pole_bulletin):
+    def cluster_is_boosted(self, cluster):
         "Indique si le pole fourni en paramètre est BOOSTé"
-        pole_boost = self.__get_boost_rule(pole_bulletin)
-        if pole_boost and pole_bulletin.average():
-            if pole_boost['min'] <= pole_bulletin.average(
-            ) <= pole_boost['max']:
+        cluster_boost = self.__get_boost_rule(cluster)
+        if cluster_boost and cluster.average():
+            if cluster_boost['min'] <= cluster.average(
+            ) <= cluster_boost['max']:
                 return True
         return False
 
-    def pole_is_marathoned(self, pole_bulletin):
+    def cluster_is_marathoned(self, cluster):
         "Indique si le pole fourni en paramètre est MARATHONé"
-        pole_marathon = self.__get_marathon_rule(pole_bulletin)
-        if pole_marathon and pole_bulletin.average():
-            if pole_marathon['min'] <= pole_bulletin.average(
-            ) <= pole_marathon['max']:
+        cluster_marathon = self.__get_marathon_rule(cluster)
+        if cluster_marathon and cluster.average():
+            if cluster_marathon['min'] <= cluster.average(
+            ) <= cluster_marathon['max']:
                 return True
         return False
 
-    def subject_downgrade_boosted_pole(self, pole_bulletin, subject_average):
+    def subject_downgrades_boosted_cluster(self, cluster, subject_average):
         "Indique si la discipline dégrade le BOOST du pole fourni en paramètre"
-        pole_boost = self.__get_boost_rule(pole_bulletin)
-        if pole_boost:
-            if self.pole_is_boosted(
-                    pole_bulletin) and pole_boost['min'] > subject_average:
+        cluster_boost = self.__get_boost_rule(cluster)
+        if cluster_boost:
+            if self.cluster_is_boosted(
+                    cluster) and cluster_boost['min'] > subject_average:
                 return True
         return False
 
-    def subject_downgrade_marathon_pole(self, pole_bulletin, subject_average):
+    def subject_downgrades_marathon_cluster(self, cluster, subject_average):
         "Indique si la discipline dégrade le MARATHON du pole fourni en paramètre"
-        pole_marathon = self.__get_marathon_rule(pole_bulletin)
-        if pole_marathon:
-            if pole_marathon['min'] <= pole_bulletin.average(
-            ) <= pole_marathon['max'] and pole_marathon['min'] > subject_average:
+        cluster_marathon = self.__get_marathon_rule(cluster)
+        if cluster_marathon:
+            if cluster_marathon['min'] <= cluster.average(
+            ) <= cluster_marathon['max'] and cluster_marathon['min'] > subject_average:
                 return True
         return False
 
-    def get_pole_boost_gain(self, pole_bulletin):
+    def get_cluster_boost_money(self, cluster):
         "Indique le gain de BOOST"
-        pole_boost = self.__get_boost_rule(pole_bulletin)
-        if pole_boost:
-            return pole_boost['gain']
+        cluster_boost = self.__get_boost_rule(cluster)
+        if cluster_boost:
+            return cluster_boost['money']
         return None
 
-    def get_pole_marathon_gain(self, pole_bulletin):
+    def get_cluster_marathon_money(self, cluster):
         "Indique le gain de MARATHON"
-        pole_marathon = self.__get_marathon_rule(pole_bulletin)
-        if pole_marathon:
-            return pole_marathon['gain']
+        cluster_marathon = self.__get_marathon_rule(cluster)
+        if cluster_marathon:
+            return cluster_marathon['money']
         return None
 
-    def get_pole_gain(self, pole_bulletin):
+    def get_cluster_money(self, cluster):
         "Indique le gain BOOST, MARATHON le plus favorable"
-        if self.pole_is_boosted(pole_bulletin):
-            return self.get_pole_boost_gain(
-                pole_bulletin) + self.get_pole_marathon_gain(pole_bulletin)
-        if self.pole_is_marathoned(pole_bulletin):
-            return self.get_pole_marathon_gain(pole_bulletin)
+        if self.cluster_is_boosted(cluster):
+            return self.get_cluster_boost_money(
+                cluster) + self.get_cluster_marathon_money(cluster)
+        if self.cluster_is_marathoned(cluster):
+            return self.get_cluster_marathon_money(cluster)
         return None
+
+    def get_report_card_money(self, report_card):
+        "Indique la gain global du bulletin"
+        money_pool = 0
+        for cluster in report_card.poles():
+            gain = self.get_cluster_money(cluster)
+            if gain:
+                money_pool += gain
+        return money_pool
+
+    def get_banco_rate(self, report_card):
+        "Indique le taux de réussite du BANCO"
+        nb_banco = 0
+        for pole in self.banco:
+            if self.cluster_is_bancoed(report_card.pole(pole)):
+                nb_banco += 1
+        return int(nb_banco / len(self.banco) * 100)
+
+    def get_target_amount_rate(self, report_card):
+        "Indique le taux d'acquisition de la cagnotte cible BOOST, MARATHON"
+        money_pool = self.get_report_card_money(report_card)
+        return int(money_pool / self.target_amount * 100)

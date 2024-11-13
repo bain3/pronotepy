@@ -1,81 +1,82 @@
 {
+    "Target amount": 450,
     "Banco": [
         {
-            "Pole": "Pole artistique",
+            "Cluster": "Pole artistique",
             "min": 15.0,
             "max": 20.0
         },
         {
-            "Pole": "Pole littéraire",
+            "Cluster": "Pole littéraire",
             "min": 15.0,
             "max": 20.0
         },
         {
-            "Pole": "Pole scientifique",
+            "Cluster": "Pole scientifique",
             "min": 15.0,
             "max": 20.0
         },
         {
-            "Pole": "Pole sportif",
+            "Cluster": "Pole sportif",
             "min": 15.0,
             "max": 20.0
         },
         {
-            "Pole": "Retards",
+            "Cluster": "Retards",
             "min": 0.0,
             "max": 5.0
         }
     ],
     "Boost": [
         {
-            "Pole": "Pole littéraire",
+            "Cluster": "Pole littéraire",
             "min": 15.0,
             "max": 20.0,
-            "gain": 60
+            "money": 60
         },
         {
-            "Pole": "Pole scientifique",
+            "Cluster": "Pole scientifique",
             "min": 15.0,
             "max": 20.0,
-            "gain": 30
+            "money": 30
         },
         {
-            "Pole": "Retards",
+            "Cluster": "Retards",
             "min": 0.0,
             "max": 0.0,
-            "gain": 30
+            "money": 30
         }
     ],
     "Marathon": [
         {
-            "Pole": "Pole artistique",
+            "Cluster": "Pole artistique",
             "min": 13.0,
             "max": 20.0,
-            "gain": 30
+            "money": 30
         },
         {
-            "Pole": "Pole littéraire",
+            "Cluster": "Pole littéraire",
             "min": 13.0,
             "max": 20.0,
-            "gain": 30
+            "money": 30
         },
         {
-            "Pole": "Pole scientifique",
+            "Cluster": "Pole scientifique",
             "min": 13.0,
             "max": 20.0,
-            "gain": 30
+            "money": 30
         },
         {
-            "Pole": "Pole sportif",
+            "Cluster": "Pole sportif",
             "min": 13.0,
             "max": 20.0,
-            "gain": 30
+            "money": 30
         },
         {
-            "Pole": "Retards",
+            "Cluster": "Retards",
             "min": 0.0,
             "max": 8.0,
-            "gain": 30
+            "money": 30
         }
     ]
 }
