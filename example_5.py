@@ -2,7 +2,7 @@
 Objectif de l'exemple :
    - Parcours des données du trimestre en cours
    - Conversion avec la présentation d'un bulletin possible
-        (poles qui regroupent les matières) ('class Bulletin')
+        (poles qui regroupent les matières) ('class ReportCard')
    - Affichage d'une IHM qui représente le bulletin
         (codage par classe et héritage) ('class Application')
    - Applications de rêgles pour gagner une récompense/cagnotte ('class Rules')
@@ -10,13 +10,13 @@ Objectif de l'exemple :
                - Banco : Récompense sur un trimestre
                - Boost : Multiplicateur de gain sur un pôle
                - Marathon : Récompense cumulée sur plusieurs trimestres
-   - Définir une configuration de description d'un bulletin (JSON pour 'class Bulletin')
+   - Définir une configuration de description d'un bulletin (JSON pour 'class ReportCard')
                - Poles de disciplines
                - Moyennes par pole
-   - TODO : Affichage dans l'IHM de l'état de gain de la récompense et du niveau de la cagnotte
-   - TODO : Affichage spécifique BANCO
-   - TODO : Affichage spécifique BOOST
-   - TODO : Affichage spécifique MARATHON
+   - Affichage dans l'IHM de l'état de gain de la récompense et du niveau de la cagnotte
+   - Affichage spécifique BANCO
+   - Affichage spécifique BOOST
+   - Affichage spécifique MARATHON
 """
 
 import sys
@@ -25,7 +25,7 @@ import json
 
 import pronotepy
 
-from example_5.bulletin import Bulletin
+from example_5.report_card import ReportCard
 from example_5.rules import Rules
 from example_5.application import Application
 
@@ -43,18 +43,18 @@ if client.logged_in:  # check if client successfully logged in
     Path("credentials.json").write_text(
         json.dumps(credentials), encoding='utf-8')
 
-    nom_utilisateur = client.info.name  # get users name
-    print(f'Logged in as {nom_utilisateur}')
+    username = client.info.name  # get users name
+    print(f'Logged in as {username}')
 
     current_period = client.current_period
 
-    bulletin_actuel = Bulletin(Path('example_5', 'bulletin.json'))
-    bulletin_actuel.compute_pole_averages(current_period.averages)
-    bulletin_actuel.compute_pole_delays(current_period.delays)
+    current_report_card = ReportCard(Path('example_5', 'report_card.json'))
+    current_report_card.compute_report_card_averages(current_period.averages)
+    current_report_card.compute_report_card_delays(current_period.delays)
 
     school_award_rules = Rules(Path('example_5', 'rules.json'))
 
-    fenetre = Application(school_award_rules, bulletin_actuel)
+    fenetre = Application(school_award_rules, current_report_card)
     fenetre.mainloop()
 
 else:

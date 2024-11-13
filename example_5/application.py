@@ -6,19 +6,19 @@ résultats scolaires de l'eleve
 import tkinter as tk
 
 
-class PoleBancoFrame(tk.LabelFrame):
+class ClusterBancoFrame(tk.LabelFrame):
     "Frame dédiée aux BANCOS des poles de disciplines (dans la frame des bancos)"
 
-    def __init__(self, container, pole, text='Banco', banco_global=None):
+    def __init__(self, container, cluster, text='Banco', banco_global=None):
         self.container = container
         self.rules = container.rules
-        self.bulletin = container.bulletin
-        super().__init__(container, text=text)  # pole.name())
+        self.report_card = container.report_card
+        super().__init__(container, text=text)  # cluster.name())
         self.pack(fill="both", expand="yes")
 
         self.labels = []
-        if banco_global is True or pole and self.rules.cluster_is_bancoed(
-                pole):
+        if banco_global is True or cluster and self.rules.cluster_is_eligible_for_banco(
+                cluster):
             self.write("BANCO !", 'dark green')
         else:
             self.write("no BANCO", None)
@@ -35,34 +35,34 @@ class PoleBancoFrame(tk.LabelFrame):
                 fill='x'))
 
 
-class PoleGainFrame(tk.LabelFrame):
+class ClusterMoneyFrame(tk.LabelFrame):
     "Frame dédiée au gains des poles de disciplines (dans la frame des gains)"
 
-    def __init__(self, container, pole, text='Gains', gain_total=None):
+    def __init__(self, container, cluster, text='Gains', money_pool=None):
         self.container = container
         self.rules = container.rules
-        self.bulletin = container.bulletin
-        super().__init__(container, text=text)  # pole.name())
+        self.report_card = container.report_card
+        super().__init__(container, text=text)  # cluster.name())
         self.pack(fill="both", expand="yes")
 
         self.labels = []
-        if gain_total:
-            self.write(f"{gain_total}€", 'dark green')
+        if money_pool:
+            self.write(f"{money_pool}€", 'dark green')
         else:
-            marathon = self.rules.get_cluster_marathon_money(pole)
-            if not self.rules.cluster_is_marathoned(pole):
-                self.write(f"{marathon}€ à gagner", None)
+            marathon_money = self.rules.get_cluster_marathon_money(cluster)
+            if not self.rules.cluster_is_eligible_for_marathon(cluster):
+                self.write(f"{marathon_money}€ à gagner", None)
             else:
-                self.write(f"{marathon}€", 'dark green')
+                self.write(f"{marathon_money}€", 'dark green')
 
-            boost = self.rules.get_cluster_boost_money(pole)
-            if not self.rules.cluster_is_boosted(pole):
-                if self.rules.cluster_has_boost(pole):
+            boost_money = self.rules.get_cluster_boost_money(cluster)
+            if not self.rules.cluster_is_eligible_for_boost(cluster):
+                if self.rules.cluster_can_boost_money(cluster):
                     self.write(
-                        f"{boost}€ à BOOSTER",
+                        f"{boost_money}€ à BOOSTER",
                         None)  # 'dark slate gray')
             else:
-                self.write(f"{boost}€ de BOOST !", 'dark green')
+                self.write(f"{boost_money}€ de BOOST !", 'dark green')
 
     def write(self, text, fg):
         "Ecriture de la moyenne de discipline"
@@ -84,7 +84,7 @@ class SubjectAveragesFrame(tk.Frame):
         super().__init__(container, relief=tk.GROOVE, background=bg)
         self.container = container
         self.rules = container.rules
-        self.bulletin = container.bulletin
+        self.report_card = container.report_card
 
         self.pack(side=tk.RIGHT)
         self.bg = bg
@@ -107,11 +107,11 @@ class SubjectsFrame(tk.Frame):
     "Frame dédiée aux disciplines (dans la frame des poles)"
 
     def __init__(self, container, bg):
-        # frame 'bulletin'
+        # frame 'report_card'
         super().__init__(container, relief=tk.GROOVE, background=bg)
         self.container = container
         self.rules = container.rules
-        self.bulletin = container.bulletin
+        self.report_card = container.report_card
 
         self.pack(side=tk.LEFT)
         self.bg = bg
@@ -129,26 +129,26 @@ class SubjectsFrame(tk.Frame):
                 fill='x'))
 
 
-class PoleAverageFrame(tk.LabelFrame):
+class ClusterAverageFrame(tk.LabelFrame):
     "Frame dédiée aux moyennes des poles de disciplines (dans la frame des moyennes)"
 
-    def __init__(self, container, pole):
+    def __init__(self, container, cluster):
         self.container = container
         self.rules = container.rules
-        self.bulletin = container.bulletin
+        self.report_card = container.report_card
         # Apply rules on background
         bg = None
-        if pole.average():
-            if self.rules.cluster_is_boosted(pole):
+        if cluster.average():
+            if self.rules.cluster_is_eligible_for_boost(cluster):
                 bg = 'Spring Green'
-            elif self.rules.get_cluster_marathon_money(pole):
+            elif self.rules.get_cluster_marathon_money(cluster):
                 bg = 'Light Green'
 
-            text = f"{pole.name()} : {pole.average():.2f}/20"
-            if pole.name() == 'Retards':
-                text = f"{pole.name()} : {pole.average():.0f}"
+            text = f"{cluster.name()} : {cluster.average():.2f}/20"
+            if cluster.name() == 'Retards':
+                text = f"{cluster.name()} : {cluster.average():.0f}"
         else:
-            text = pole.name()
+            text = cluster.name()
         super().__init__(container, text=text, background=bg)
         self.pack(fill="both", expand="yes")
 
@@ -156,21 +156,21 @@ class PoleAverageFrame(tk.LabelFrame):
         self.frame_subjects = SubjectsFrame(self, bg)
         self.frame_subject_averages = SubjectAveragesFrame(self, bg)
 
-        for bulletin_subject in pole.subjects():
-            self.frame_subjects.write(bulletin_subject)
+        for report_card_subject in cluster.subjects():
+            self.frame_subjects.write(report_card_subject)
 
             # Apply rules on foreground
-            subject_average = pole.subject_average(bulletin_subject.name())
+            subject_average = cluster.subject_average(report_card_subject.name())
             average_fg = None
             if subject_average:
-                if self.rules.subject_downgrades_boosted_cluster(
-                        pole, subject_average):
+                if self.rules.subject_downgrades_eligible_cluster_for_boost(
+                        cluster, subject_average):
                     average_fg = 'FireBrick'
-                elif self.rules.subject_downgrades_marathon_cluster(pole, subject_average):
+                elif self.rules.subject_downgrades_eligible_cluster_for_marathon(cluster, subject_average):
                     average_fg = 'Red'
 
                 text = f"{subject_average:.2f}/20"
-                if bulletin_subject.name() == 'Retards':
+                if report_card_subject.name() == 'Retards':
                     text = f"{subject_average:.0f}"
                 self.frame_subject_averages.write(text, average_fg)
             else:
@@ -180,40 +180,40 @@ class PoleAverageFrame(tk.LabelFrame):
 class BancoFrame(tk.Frame):
     "Frames dédiée aux bancos"
 
-    def __init__(self, container, pole, text='Banco', banco_global=None):
+    def __init__(self, container, cluster, text='Banco', banco_global=None):
         # frame 'banco par discipline'
         super().__init__(container, relief=tk.GROOVE)
         # self.container = container
         self.rules = container.rules
-        self.bulletin = container.bulletin
-        self.pole_frame = []
-        self.pole_frame.append(PoleBancoFrame(self, pole, text, banco_global))
+        self.report_card = container.report_card
+        self.cluster_frame = []
+        self.cluster_frame.append(ClusterBancoFrame(self, cluster, text, banco_global))
 
 
-class GainsFrame(tk.Frame):
+class MoneyFrame(tk.Frame):
     "Frames dédiée aux gains"
 
-    def __init__(self, container, pole, text='Gains', gain_total=None):
+    def __init__(self, container, cluster, text='Gains', gain_total=None):
         # frame 'gains'
         super().__init__(container, relief=tk.GROOVE)
         # self.container = container
         self.rules = container.rules
-        self.bulletin = container.bulletin
-        self.pole_frame = []
-        self.pole_frame.append(PoleGainFrame(self, pole, text, gain_total))
+        self.report_card = container.report_card
+        self.cluster_frame = []
+        self.cluster_frame.append(ClusterMoneyFrame(self, cluster, text, gain_total))
 
 
-class BulletinFrame(tk.Frame):
+class ReportCardFrame(tk.Frame):
     "Frames dédiée au bulletin"
 
-    def __init__(self, container, pole):
+    def __init__(self, container, cluster):
         # frame 'moyenne'
         super().__init__(container, relief=tk.GROOVE)
         # self.container = container
         self.rules = container.rules
-        self.bulletin = container.bulletin
-        self.pole_frame = []
-        self.pole_frame.append(PoleAverageFrame(self, pole))
+        self.report_card = container.report_card
+        self.cluster_frame = []
+        self.cluster_frame.append(ClusterAverageFrame(self, cluster))
 
 
 class JaugeHorizontale(tk.Canvas):
@@ -238,10 +238,13 @@ class JaugeHorizontale(tk.Canvas):
 
     def set_value(self, value, max_value=100):
         "Positionner le niveau de la jauge"
-        fill_width = 10 + (self.width - 20) * (value / max_value)
+        ratio = value / max_value
+        if ratio > 1.:
+            ratio = 1.
+
+        fill_width = 10 + (self.width - 20) * ratio
         self.coords(self.barre, 10, 10, fill_width, self.height - 10)
 
-        ratio = value / max_value
         if ratio <= 0.5:
             red = 255
             green = int(2 * ratio * 255)
@@ -257,103 +260,105 @@ class JaugeHorizontale(tk.Canvas):
         self.label.place(x=fill_width, y=self.height // 2, anchor='e')
 
 
+
+
+class BancoSafe(tk.Canvas):
+    "Representation graphique du BANCO"
+
+    def __init__(self, rules, report_card, width, height):
+        super().__init__(width=width, height=height)
+        self.width = width
+        self.height = height
+
+        self.rules = rules
+        self.report_card = report_card
+        self.rate_banco = self.rules.get_banco_rate(self.report_card)
+
+        self.safe = {}
+        self.safe[0]   = tk.PhotoImage(file="example_5\\images\\safe_00%.png")
+        self.safe[20]  = tk.PhotoImage(file="example_5\\images\\safe_20%.png")
+        self.safe[40]  = tk.PhotoImage(file="example_5\\images\\safe_40%.png")
+        self.safe[60]  = tk.PhotoImage(file="example_5\\images\\safe_60%.png")
+        self.safe[80]  = tk.PhotoImage(file="example_5\\images\\safe_80%.png")
+        self.safe[100] = tk.PhotoImage(file="example_5\\images\\safe_100%.png")
+
+        self.images = []
+        self.images.append(self.create_image(
+            self.width / 2, self.height / 2, image=self.safe[self.rate_banco]))
+
+
+class MoneyPoolFull(tk.Toplevel):
+    "Representation graphique du BANCO"
+
+    def __init__(self, container):
+        super().__init__(container)
+        self.container = container
+        self.title("Congratulation !")
+
+        # Afficher le coffre ouvert festif si la cagnotte est pleine
+        self.opened_safe_party = tk.PhotoImage(file = "example_5\\images\\congratulation.png")
+        self.canvas = tk.Canvas(self, width=self.opened_safe_party.width(), height=self.opened_safe_party.height())
+        self.canvas.pack()
+        self.images = []
+        self.images.append(self.canvas.create_image(self.opened_safe_party.width() / 2, self.opened_safe_party.height() / 2, image=self.opened_safe_party))
+
+
 class Application(tk.Tk):
     "Application graphique"
 
-    def __init__(self, rules, bulletin):
+    def __init__(self, rules, report_card):
         super().__init__()
         self.rules = rules
-        self.bulletin = bulletin
+        self.report_card = report_card
 
         self.title('The school award')
         self.resizable(False, False)
 
         current_row = 0
-        self.bulletin_frame = []
+        self.report_card_frame = []
         self.gains = []
-        # Représentation textuelle de BANCO obsolète avec le CANVAS
-        # self.banco = []
-        self.gain_total = 0
-        # Représentation textuelle de BANCO obsolète avec le CANVAS
-        # self.banco_global = rules.report_card_is_banco(self.bulletin)
-        for pole in self.bulletin.poles():
-            bulletin_frame = BulletinFrame(self, pole)
-            gains = GainsFrame(self, pole)
-            # Représentation textuelle de BANCO obsolète avec le CANVAS
-            # banco = BancoFrame(self, pole)
+        for cluster in self.report_card.clusters():
+            report_card_frame = ReportCardFrame(self, cluster)
+            gains = MoneyFrame(self, cluster)
 
-            bulletin_frame.grid(
+            report_card_frame.grid(
                 row=current_row,
                 column=0,
                 padx=5,
                 pady=5,
                 sticky='n')
             gains.grid(row=current_row, column=1, pady=5, sticky='n')
-            # Représentation textuelle de BANCO obsolète avec le CANVAS
-            # banco.grid(row=current_row, column=2, padx=5, pady=5, sticky='n')
 
             # Rendre les frames visibles
-            bulletin_frame.grid_propagate(False)
+            report_card_frame.grid_propagate(False)
             gains.grid_propagate(False)
-            # Représentation textuelle de BANCO obsolète avec le CANVAS
-            # banco.grid_propagate(False)
 
-            self.bulletin_frame.append(bulletin_frame)
+            self.report_card_frame.append(report_card_frame)
             self.gains.append(gains)
-            # Représentation textuelle de BANCO obsolète avec le CANVAS
-            # self.banco.append(banco)
             current_row = current_row + 1
 
         # Bilan
-        self.gain_total = rules.get_report_card_money(self.bulletin)
-        gains = GainsFrame(self, None, 'Synthèse', self.gain_total)
-        # Représentation textuelle de BANCO obsolète avec le CANVAS
-        # banco = BancoFrame(self, None, 'Synthèse', self.banco_global)
-
+        self.gain_total = rules.get_report_card_money(self.report_card)
+        gains = MoneyFrame(self, None, 'Synthèse', self.gain_total)
         gains.grid(row=current_row, column=1, pady=5, sticky='n')
-        # Représentation textuelle de BANCO obsolète avec le CANVAS
-        # banco.grid(row=current_row, column=2, padx=5, pady=5, sticky='n')
-
         gains.grid_propagate(False)
-        # Représentation textuelle de BANCO obsolète avec le CANVAS
-        # banco.grid_propagate(False)
-
         self.gains.append(gains)
-        # Représentation textuelle de BANCO obsolète avec le CANVAS
-        # self.banco.append(banco)
 
         # Representation graphique du BANCO
-        # TODO : Déplacer ce code dans sa propre 'class'
-        self.canvas_width = 250
-        self.canvas_height = 450
-        self.canvas = tk.Canvas(
-            self,
-            width=self.canvas_width,
-            height=self.canvas_height)
-        self.canvas.grid(row=0, column=3, rowspan=5, pady=5, sticky='n')
-
-        # self.opened_safe_party_small = tk.PhotoImage(
-        #       file = "example_5\\images\\opened_safe_party_small.png"
-        #                                               ) #charger l'image depuis un fichier
-        # self.opened_safe_party = tk.PhotoImage(file = "example_5\\images\\opened_safe_party.png")
-        self.safe = {}
-        self.safe[0] = tk.PhotoImage(file="example_5\\images\\safe_00%.png")
-        self.safe[20] = tk.PhotoImage(file="example_5\\images\\safe_20%.png")
-        self.safe[40] = tk.PhotoImage(file="example_5\\images\\safe_40%.png")
-        self.safe[60] = tk.PhotoImage(file="example_5\\images\\safe_60%.png")
-        self.safe[80] = tk.PhotoImage(file="example_5\\images\\safe_80%.png")
-        self.safe[100] = tk.PhotoImage(file="example_5\\images\\safe_100%.png")
-
-        self.images = []
-        self.rate_banco = self.rules.get_banco_rate(self.bulletin)
-        self.images.append(self.canvas.create_image(
-            self.canvas_width / 2, self.canvas_height / 2, image=self.safe[self.rate_banco]))
+        self.banco_safe_width = 250
+        self.banco_safe_height = 450
+        self.banco_safe = BancoSafe(self.rules, self.report_card, self.banco_safe_width, self.banco_safe_height)
+        self.banco_safe.grid(row=0, column=3, rowspan=5, pady=5, sticky='n')
 
         # Jauge de la cagnote de récompense
-        self.rate_target_amount = rules.get_target_amount_rate(self.bulletin)
+        self.rate_target_amount = rules.get_target_amount_rate(self.report_card)
         self.rate_target_amount_canvas = JaugeHorizontale(
-            self, self.canvas_width, 49)
+            self, self.banco_safe_width, 49)
         self.rate_target_amount_canvas.set_value(self.rate_target_amount)
         self.rate_target_amount_canvas.grid(
             row=current_row, column=3, padx=5, pady=5, sticky='n')
         self.rate_target_amount_canvas.grid_propagate(False)
+
+        # Afficher le coffre ouvert festif si la cagnotte est pleine
+        if self.rate_target_amount >= 100:
+            self.money_pool = MoneyPoolFull(self)

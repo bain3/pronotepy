@@ -1,5 +1,5 @@
 {
-    "bulletin": [
+    "report_card": [
         {
             "name": "Pole artistique",
             "subjects": [
@@ -48,7 +48,7 @@
             "average": null
         }
     ],
-    "correspondance_matieres_pronote_vers_bulletin": {
+    "subject_mapping_pronote_to_report_card": {
         "HISTOIRE-GEOGRAPHIE": "Histoire-Géographie EMC",
         "ARTS PLASTIQUES": "Arts Plastiques",
         "PHYS-CHIM": "Physique-Chimie",
