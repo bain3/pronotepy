@@ -47,14 +47,17 @@ bulletin = [
 ]
 
 correspondance_matieres_pronote_vers_bulletin = {
-    'HISTOIRE-GEOGRAPHIE': 'Histoire-Géographie EMC',
-    'ARTS PLASTIQUES': 'Arts Plastiques',
-    'PHYS-CHIM': 'Physique-Chimie',
-    'ALLEMAND LV1': 'Allemand LV2',
-    'MATHEMATIQUES': 'Mathématiques',
-    'ANGLAIS': 'Anglais LV1',
-    'SCIENCES VIE&TERRE': 'Science Vie et Terre',
-    'FRANCAIS': 'Français',
+    "HISTOIRE-GEOGRAPHIE": "Histoire-Géographie EMC",
+    "ARTS PLASTIQUES": "Arts Plastiques",
+    "PHYS-CHIM": "Physique-Chimie",
+    "ALLEMAND LV1": "Allemand LV2",
+    "MATHEMATIQUES": "Mathématiques",
+    "ANGLAIS": "Anglais LV1",
+    "SCIENCES VIE&TERRE": "Science Vie et Terre",
+    "FRANCAIS": "Français",
+    "EDUCATION MUSICALE": "Éducation musicale",
+    "TECHNOLOGIE": "Technologie",
+    "ED.PHYSIQUE & SPORTIVE": "Éducation Physique et Sportive"
 }
 
 correspondance_matieres_bulletin_vers_pronote = {v:k for k,v in correspondance_matieres_pronote_vers_bulletin.items()}
@@ -150,7 +153,7 @@ def write_bulletin_to_ods():
             print(f"Ecriture ODS : {pole['name']} ({cell_index}, {row_index}) = {pole['average'].replace(',','.')}")
         for bulletin_subject in pole['subjects']:
             # Write subject average
-            row_index = row_index + 1
+            row_index += 1
             if bulletin_subject in pole['subjects_average']:
                 cell = select_row_cell_in_sheet(sheet, row_index, cell_index)
                 write_cell_in_ods(cell, pole['subjects_average'][bulletin_subject].replace(',','.'))

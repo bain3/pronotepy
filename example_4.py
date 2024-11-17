@@ -55,7 +55,10 @@ correspondance_matieres_pronote_vers_bulletin = {
     'MATHEMATIQUES': 'Mathématiques',
     'ANGLAIS': 'Anglais LV1',
     'SCIENCES VIE&TERRE': 'Science Vie et Terre',
-    'FRANCAIS': 'Français',
+    "FRANCAIS": "Français",
+    "EDUCATION MUSICALE": "Éducation musicale",
+    "TECHNOLOGIE": "Technologie",
+    "ED.PHYSIQUE & SPORTIVE": "Éducation Physique et Sportive"
 }
 
 correspondance_matieres_bulletin_vers_pronote = {v:k for k,v in correspondance_matieres_pronote_vers_bulletin.items()}

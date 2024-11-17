@@ -5,6 +5,34 @@ résultats scolaires de l'eleve
 
 import tkinter as tk
 
+class ToolTip:
+    """ToolTip pour afficher une description sur passage de la souris.
+    (code produit pas copilot)"""
+    def __init__(self, widget, text):
+        self.widget = widget
+        self.text = text
+        self.nb_lines = text.count('\n')
+        self.tooltip_window = None
+        self.widget.bind("<Enter>", self.show_tooltip)
+        self.widget.bind("<Leave>", self.hide_tooltip)
+
+    def show_tooltip(self, event):
+        x = event.x_root + 10
+        if self.nb_lines > 1:
+            y = event.y_root - 15 * int(self.nb_lines/2)
+        else:
+            y = event.y_root + 10
+        self.tooltip_window = tk.Toplevel(self.widget)
+        self.tooltip_window.wm_overrideredirect(True)
+        self.tooltip_window.wm_geometry(f"+{x}+{y}")
+        label = tk.Label(self.tooltip_window, text=self.text, relief="solid", borderwidth=1, justify="left", anchor="w")
+        label.pack()
+
+    def hide_tooltip(self, event):
+        if self.tooltip_window:
+            self.tooltip_window.destroy()
+        self.tooltip_window = None
+
 
 class ClusterBancoFrame(tk.LabelFrame):
     "Frame dédiée aux BANCOS des poles de disciplines (dans la frame des bancos)"
@@ -141,7 +169,7 @@ class ClusterAverageFrame(tk.LabelFrame):
         if cluster.average():
             if self.rules.cluster_is_eligible_for_boost(cluster):
                 bg = 'Spring Green'
-            elif self.rules.get_cluster_marathon_money(cluster):
+            elif self.rules.cluster_is_eligible_for_marathon(cluster):
                 bg = 'Light Green'
 
             text = f"{cluster.name()} : {cluster.average():.2f}/20"
@@ -349,6 +377,7 @@ class Application(tk.Tk):
         self.banco_safe_height = 450
         self.banco_safe = BancoSafe(self.rules, self.report_card, self.banco_safe_width, self.banco_safe_height)
         self.banco_safe.grid(row=0, column=3, rowspan=5, pady=5, sticky='n')
+        self.banco_tooltip = ToolTip(self.banco_safe, self.rules.get_banco_description())
 
         # Jauge de la cagnote de récompense
         self.rate_target_amount = rules.get_target_amount_rate(self.report_card)
@@ -358,6 +387,7 @@ class Application(tk.Tk):
         self.rate_target_amount_canvas.grid(
             row=current_row, column=3, padx=5, pady=5, sticky='n')
         self.rate_target_amount_canvas.grid_propagate(False)
+        self.rate_target_amount_tooltip = ToolTip(self.rate_target_amount_canvas, self.rules.get_marathon_description() + '\n\n' + self.rules.get_boost_description())
 
         # Afficher le coffre ouvert festif si la cagnotte est pleine
         if self.rate_target_amount >= 100:

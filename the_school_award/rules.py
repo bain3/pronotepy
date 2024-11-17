@@ -21,14 +21,19 @@ class Rules():
         # print(f"Rules - Configuration : {self.configuration}")
         self.target_amount = self.configuration['Target amount']
         self.banco = {}
-        for condition in self.configuration['Banco']:
+        for condition in self.configuration['Banco']['Rules']:
             self.banco[condition['Cluster']] = copy.deepcopy(condition)
         self.boost = {}
-        for condition in self.configuration['Boost']:
+        for condition in self.configuration['Boost']['Rules']:
             self.boost[condition['Cluster']] = copy.deepcopy(condition)
         self.marathon = {}
-        for condition in self.configuration['Marathon']:
+        for condition in self.configuration['Marathon']['Rules']:
             self.marathon[condition['Cluster']] = copy.deepcopy(condition)
+        
+        self.description = {}
+        self.description['Banco'] = self.configuration['Banco']['Description']
+        self.description['Boost'] = self.configuration['Boost']['Description']
+        self.description['Marathon'] = self.configuration['Marathon']['Description']
 
     def __get_banco_rule(self, cluster):
         "Retourne la regle de BANCO du pole de discipline"
@@ -148,3 +153,12 @@ class Rules():
         "Indique le taux d'acquisition de la cagnotte cible BOOST, MARATHON"
         money_pool = self.get_report_card_money(report_card)
         return int(money_pool / self.target_amount * 100)
+
+    def get_banco_description(self):
+        return self.description['Banco']
+
+    def get_boost_description(self):
+        return self.description['Boost']
+
+    def get_marathon_description(self):
+        return self.description['Marathon']

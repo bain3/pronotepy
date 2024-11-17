@@ -124,6 +124,15 @@ class ReportCard():
     def compute_report_card_averages(self, averages):
         "Calcule et enregistre les moyennes à partir des données pronote en parametre"
         if averages:
+            # Vérifier la complétude de la table de correspondance 'pronote' <=> 'report_card'
+            for average in averages:
+                if average.subject.name not in self.convert_pronote2report_card:
+                    print(f"""
+La discipline '{average.subject.name}' est introuvable dans la table de conversion 
+    'pronote' <=> 'report_card' (corriger le dictionnaire 'subject_mapping_pronote_to_report_card'
+    dans le fichier '{self.path_configuration_json} : ')""")
+
+            # Réaliser l'enregistrement des moyennes
             for cluster in self.clusters():
                 # print(cluster)
                 cluster_averages = []
@@ -136,10 +145,6 @@ class ReportCard():
                         cluster_averages.append(average)
                         cluster.write_subject_average(
                             report_card_subject.name(), average * 20.)
-                    else:
-                        print(f"""
-La discipline '{report_card_subject}' est introuvable dans la table de
-conversion 'pronote' <=> 'report_card' (corriger le fichier '{self.path_configuration_json}')""")
                 if len(cluster_averages) != 0:
                     cluster.write_average(
                         sum(cluster_averages) / len(cluster_averages) * 20)
