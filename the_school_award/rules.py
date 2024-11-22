@@ -29,7 +29,7 @@ class Rules():
         self.marathon = {}
         for condition in self.configuration['Marathon']['Rules']:
             self.marathon[condition['Cluster']] = copy.deepcopy(condition)
-        
+
         self.description = {}
         self.description['Banco'] = self.configuration['Banco']['Description']
         self.description['Boost'] = self.configuration['Boost']['Description']
@@ -56,7 +56,8 @@ class Rules():
     def report_card_is_eligible_banco(self, report_card):
         "Indique si le bulletin remplit la gratification BANCO"
         for cluster in self.banco:
-            if not self.cluster_is_eligible_for_banco(report_card.cluster(cluster)):
+            if not self.cluster_is_eligible_for_banco(
+                    report_card.cluster(cluster)):
                 return False
         return True
 
@@ -91,7 +92,8 @@ class Rules():
                 return True
         return False
 
-    def subject_downgrades_eligible_cluster_for_boost(self, cluster, subject_average):
+    def subject_downgrades_eligible_cluster_for_boost(
+            self, cluster, subject_average):
         "Indique si la discipline dégrade le BOOST du pole fourni en paramètre"
         cluster_boost = self.__get_boost_rule(cluster)
         if cluster_boost:
@@ -100,7 +102,8 @@ class Rules():
                 return True
         return False
 
-    def subject_downgrades_eligible_cluster_for_marathon(self, cluster, subject_average):
+    def subject_downgrades_eligible_cluster_for_marathon(
+            self, cluster, subject_average):
         "Indique si la discipline dégrade le MARATHON du pole fourni en paramètre"
         cluster_marathon = self.__get_marathon_rule(cluster)
         if cluster_marathon:
@@ -145,7 +148,8 @@ class Rules():
         "Indique le taux de réussite du BANCO"
         nb_banco = 0
         for cluster in self.banco:
-            if self.cluster_is_eligible_for_banco(report_card.cluster(cluster)):
+            if self.cluster_is_eligible_for_banco(
+                    report_card.cluster(cluster)):
                 nb_banco += 1
         return int(nb_banco / len(self.banco) * 100)
 
@@ -155,10 +159,13 @@ class Rules():
         return int(money_pool / self.target_amount * 100)
 
     def get_banco_description(self):
+        "Description du BANCO"
         return self.description['Banco']
 
     def get_boost_description(self):
+        "Description du BOOST"
         return self.description['Boost']
 
     def get_marathon_description(self):
+        "Description du Marathon"
         return self.description['Marathon']

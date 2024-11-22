@@ -128,7 +128,7 @@ class ReportCard():
             for average in averages:
                 if average.subject.name not in self.convert_pronote2report_card:
                     print(f"""
-La discipline '{average.subject.name}' est introuvable dans la table de conversion 
+La discipline '{average.subject.name}' est introuvable dans la table de conversion
     'pronote' <=> 'report_card' (corriger le dictionnaire 'subject_mapping_pronote_to_report_card'
     dans le fichier '{self.path_configuration_json} : ')""")
 

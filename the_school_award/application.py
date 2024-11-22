@@ -5,9 +5,11 @@ résultats scolaires de l'eleve
 
 import tkinter as tk
 
+
 class ToolTip:
     """ToolTip pour afficher une description sur passage de la souris.
     (code produit pas copilot)"""
+
     def __init__(self, widget, text):
         self.widget = widget
         self.text = text
@@ -17,18 +19,26 @@ class ToolTip:
         self.widget.bind("<Leave>", self.hide_tooltip)
 
     def show_tooltip(self, event):
+        "Afficher le ToolTip"
         x = event.x_root + 10
         if self.nb_lines > 1:
-            y = event.y_root - 15 * int(self.nb_lines/2)
+            y = event.y_root - 15 * int(self.nb_lines / 2)
         else:
             y = event.y_root + 10
         self.tooltip_window = tk.Toplevel(self.widget)
         self.tooltip_window.wm_overrideredirect(True)
         self.tooltip_window.wm_geometry(f"+{x}+{y}")
-        label = tk.Label(self.tooltip_window, text=self.text, relief="solid", borderwidth=1, justify="left", anchor="w")
+        label = tk.Label(
+            self.tooltip_window,
+            text=self.text,
+            relief="solid",
+            borderwidth=1,
+            justify="left",
+            anchor="w")
         label.pack()
 
-    def hide_tooltip(self, event):
+    def hide_tooltip(self, event): # pylint: disable=unused-argument
+        "Cacher le ToolTip"
         if self.tooltip_window:
             self.tooltip_window.destroy()
         self.tooltip_window = None
@@ -188,13 +198,15 @@ class ClusterAverageFrame(tk.LabelFrame):
             self.frame_subjects.write(report_card_subject)
 
             # Apply rules on foreground
-            subject_average = cluster.subject_average(report_card_subject.name())
+            subject_average = cluster.subject_average(
+                report_card_subject.name())
             average_fg = None
             if subject_average:
                 if self.rules.subject_downgrades_eligible_cluster_for_boost(
                         cluster, subject_average):
                     average_fg = 'FireBrick'
-                elif self.rules.subject_downgrades_eligible_cluster_for_marathon(cluster, subject_average):
+                elif self.rules.subject_downgrades_eligible_cluster_for_marathon(
+                        cluster, subject_average):
                     average_fg = 'Red'
 
                 text = f"{subject_average:.2f}/20"
@@ -215,7 +227,9 @@ class BancoFrame(tk.Frame):
         self.rules = container.rules
         self.report_card = container.report_card
         self.cluster_frame = []
-        self.cluster_frame.append(ClusterBancoFrame(self, cluster, text, banco_global))
+        self.cluster_frame.append(
+            ClusterBancoFrame(
+                self, cluster, text, banco_global))
 
 
 class MoneyFrame(tk.Frame):
@@ -228,7 +242,9 @@ class MoneyFrame(tk.Frame):
         self.rules = container.rules
         self.report_card = container.report_card
         self.cluster_frame = []
-        self.cluster_frame.append(ClusterMoneyFrame(self, cluster, text, gain_total))
+        self.cluster_frame.append(
+            ClusterMoneyFrame(
+                self, cluster, text, gain_total))
 
 
 class ReportCardFrame(tk.Frame):
@@ -267,8 +283,7 @@ class JaugeHorizontale(tk.Canvas):
     def set_value(self, value, max_value=100):
         "Positionner le niveau de la jauge"
         ratio = value / max_value
-        if ratio > 1.:
-            ratio = 1.
+        ratio = min(ratio, 1.0)
 
         fill_width = 10 + (self.width - 20) * ratio
         self.coords(self.barre, 10, 10, fill_width, self.height - 10)
@@ -286,8 +301,6 @@ class JaugeHorizontale(tk.Canvas):
         # Mettre à jour le texte du label et sa position
         self.label.config(text=f"{int(value / max_value * 100)}%", bg=color)
         self.label.place(x=fill_width, y=self.height // 2, anchor='e')
-
-
 
 
 class BancoSafe(tk.Canvas):
@@ -324,11 +337,18 @@ class MoneyPoolFull(tk.Toplevel):
         self.title("Congratulation !")
 
         # Afficher le coffre ouvert festif si la cagnotte est pleine
-        self.opened_safe_party = tk.PhotoImage(file = "the_school_award\\images\\congratulation.png")
-        self.canvas = tk.Canvas(self, width=self.opened_safe_party.width(), height=self.opened_safe_party.height())
+        self.opened_safe_party = tk.PhotoImage(
+            file="the_school_award\\images\\congratulation.png")
+        self.canvas = tk.Canvas(self,
+                                width=self.opened_safe_party.width(),
+                                height=self.opened_safe_party.height())
         self.canvas.pack()
         self.images = []
-        self.images.append(self.canvas.create_image(self.opened_safe_party.width() / 2, self.opened_safe_party.height() / 2, image=self.opened_safe_party))
+        self.images.append(
+            self.canvas.create_image(
+                self.opened_safe_party.width() / 2,
+                self.opened_safe_party.height() / 2,
+                image=self.opened_safe_party))
 
 
 class Application(tk.Tk):
@@ -375,19 +395,30 @@ class Application(tk.Tk):
         # Representation graphique du BANCO
         self.banco_safe_width = 250
         self.banco_safe_height = 450
-        self.banco_safe = BancoSafe(self.rules, self.report_card, self.banco_safe_width, self.banco_safe_height)
+        self.banco_safe = BancoSafe(
+            self.rules,
+            self.report_card,
+            self.banco_safe_width,
+            self.banco_safe_height)
         self.banco_safe.grid(row=0, column=3, rowspan=5, pady=5, sticky='n')
-        self.banco_tooltip = ToolTip(self.banco_safe, self.rules.get_banco_description())
+        self.banco_tooltip = ToolTip(
+            self.banco_safe,
+            self.rules.get_banco_description())
 
         # Jauge de la cagnote de récompense
-        self.rate_target_amount = rules.get_target_amount_rate(self.report_card)
+        self.rate_target_amount = rules.get_target_amount_rate(
+            self.report_card)
         self.rate_target_amount_canvas = JaugeHorizontale(
             self, self.banco_safe_width, 49)
         self.rate_target_amount_canvas.set_value(self.rate_target_amount)
         self.rate_target_amount_canvas.grid(
             row=current_row, column=3, padx=5, pady=5, sticky='n')
         self.rate_target_amount_canvas.grid_propagate(False)
-        self.rate_target_amount_tooltip = ToolTip(self.rate_target_amount_canvas, self.rules.get_marathon_description() + '\n\n' + self.rules.get_boost_description())
+        self.rate_target_amount_tooltip = ToolTip(
+            self.rate_target_amount_canvas,
+            self.rules.get_marathon_description() +
+            '\n\n' +
+            self.rules.get_boost_description())
 
         # Afficher le coffre ouvert festif si la cagnotte est pleine
         if self.rate_target_amount >= 100:

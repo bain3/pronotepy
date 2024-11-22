@@ -48,7 +48,8 @@ if client.logged_in:  # check if client successfully logged in
 
     current_period = client.current_period
 
-    current_report_card = ReportCard(Path('the_school_award', 'report_card.json'))
+    current_report_card = ReportCard(
+        Path('the_school_award', 'report_card.json'))
     current_report_card.compute_report_card_averages(current_period.averages)
     current_report_card.compute_report_card_delays(current_period.delays)
 
