@@ -2,6 +2,7 @@
 import sys
 from pathlib import Path
 import json
+from datetime import datetime as dt
 
 import pronotepy
 
@@ -64,6 +65,8 @@ correspondance_matieres_bulletin_vers_pronote = {
 def compute_pole_grades(grades):
     if grades:
         for pole in bulletin:
+            pole['subjects_average'].clear()
+            pole['subjects_grades'].clear()
             for bulletin_subject in pole['subjects']:
                 if bulletin_subject in correspondance_matieres_bulletin_vers_pronote:
                     pronote_subject = correspondance_matieres_bulletin_vers_pronote[
@@ -89,6 +92,7 @@ def save_grade(pole, subject, grade):
 def compute_pole_averages(averages):
     if averages:
         for pole in bulletin:
+            pole['average'] = None
             pole_averages = get_averages_list(averages, pole)
             if pole_averages:
                 pole['average'] = f'{
@@ -139,7 +143,7 @@ def print_average_calculation(pole, subject, pronote_average):
         result = 'You LOSE'
     else:
         result = 'You win'
-    print(f'{' ' * 5}Calculation : SUM grades = {sum_grades * 20} for {sum_coef} grades')
+    print(f'{' ' * 5}Calculation : SUM grades = {round(sum_grades * 20, 2)} for {sum_coef} grades')
     print(f'{' ' * 5}Calculation : average = {average}/20 {result} {
         round(abs(average - pronote_average), 2)} points.')
 
@@ -159,12 +163,17 @@ def print_delta_average():
         for bulletin_subject in pole['subjects']:
             average_calculation = get_average_calculation(
                 pole, bulletin_subject)
-            average_pronote = pole['subjects_average'][bulletin_subject]
-            if average_calculation != average_pronote:
-                print(f"{bulletin_subject} :")
-                print_average_calculation(
-                    pole, bulletin_subject, average_pronote)
-                print_average_pronote(pole, bulletin_subject)
+            if average_calculation is not None:
+                average_pronote = pole['subjects_average'][bulletin_subject]
+                if abs(average_calculation - average_pronote) > 0.1:
+                    print(f"{bulletin_subject} : !")
+                    print_average_calculation(
+                        pole, bulletin_subject, average_pronote)
+                    print_average_pronote(pole, bulletin_subject)
+                else:
+                    print(f"{bulletin_subject} : =")                
+            else:
+                    print(f"{bulletin_subject} : -")                
 
 
 # load login from `python3 -m pronotepy.create_login` command
@@ -182,9 +191,16 @@ if client.logged_in:  # check if client successfully logged in
     nom_utilisateur = client.info.name  # get users name
     print(f'Logged in as {nom_utilisateur}')
 
-    current_period = client.current_period
-    compute_period_bulletin(current_period)
-    print_delta_average()
+    now = dt.now()
+    report_cards = []
+    for period in client.periods:
+        # Period.name : 'Trimestre x', 'Semestre x', 'Annee continue' ...
+        if not period.name.startswith('Trimestre'):
+            continue
+        if period.start <= now:
+            print(f"{'#'*20} {period.name} {'#'*20}")
+            compute_period_bulletin(period)
+            print_delta_average()
 
     input("Appuyez sur Entrée pour quitter...")
 

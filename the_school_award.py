@@ -22,13 +22,13 @@ Objectif de l'exemple :
 import sys
 from pathlib import Path
 import json
+from datetime import datetime as dt
 
 import pronotepy
 
 from the_school_award.report_card import ReportCard
 from the_school_award.rules import Rules
 from the_school_award.application import Application
-
 
 # load login from `python3 -m pronotepy.create_login` command
 # See quickstart in documentation for other login methods.
@@ -44,18 +44,38 @@ if client.logged_in:  # check if client successfully logged in
         json.dumps(credentials), encoding='utf-8')
 
     username = client.info.name  # get users name
-    print(f'Logged in as {username}')
+    user_class = client.info.class_name
+    establishment = client.info.establishment
+    year = client.start_day.year
+    print(f'Logged in as {username} from class "{user_class}" in establishment "{establishment}" year {year}-{year+1}')
 
-    current_period = client.current_period
-
-    current_report_card = ReportCard(
-        Path('the_school_award', 'report_card.json'))
-    current_report_card.compute_report_card_averages(current_period.averages)
-    current_report_card.compute_report_card_delays(current_period.delays)
+    now = dt.now()
+    now_date = now.date()
+    report_cards = []
+    for period in client.periods:
+        # Period.name : 'Trimestre x', 'Semestre x', 'Annee continue' ...
+        if not period.name.startswith('Trimestre'):
+            continue
+        if period.start <= now:
+            # Trimestre achevé ou commencé
+            report_card = ReportCard(
+                Path('the_school_award', 'report_card.json'))
+            report_card.compute_report_card_infos(client, period)
+            report_card.compute_report_card_averages(period.averages)
+            report_card.compute_report_card_delays(period.delays)
+            # Save period to json with date until it is over. Then save final period and stop to save.
+            if now <= period.end:
+                save_path = Path('the_school_award', f'report_card_{period.name.replace(' ','_')}_{now_date}.json')
+                report_card.save(save_path)
+            else:
+                save_path = Path('the_school_award', f'report_card_{period.name.replace(' ','_')}.json')
+                if not save_path.exists():
+                    report_card.save(save_path)
+            report_cards.append(report_card)
 
     school_award_rules = Rules(Path('the_school_award', 'rules.json'))
 
-    fenetre = Application(school_award_rules, current_report_card)
+    fenetre = Application(school_award_rules, report_cards)
     fenetre.mainloop()
 
 else:

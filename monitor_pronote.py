@@ -4,10 +4,11 @@ import sys
 import datetime
 from pathlib import Path
 import json
+from datetime import datetime as dt
 
 import pronotepy
 
-bulletin = [{'name': 'Pole artistique',
+report_card = [{'name': 'Pole artistique',
              'subjects': ['Arts Plastiques',
                           'Éducation musicale'],
              'subjects_average': {},
@@ -40,7 +41,7 @@ bulletin = [{'name': 'Pole artistique',
              },
             ]
 
-correspondance_matieres_pronote_vers_bulletin = {
+correspondance_matieres_pronote_vers_report_card = {
     'HISTOIRE-GEOGRAPHIE': 'Histoire-Géographie EMC',
     'ARTS PLASTIQUES': 'Arts Plastiques',
     'PHYS-CHIM': 'Physique-Chimie',
@@ -55,30 +56,30 @@ correspondance_matieres_pronote_vers_bulletin = {
     "ED.PHYSIQUE & SPORTIVE": "Éducation Physique et Sportive"
 }
 
-correspondance_matieres_bulletin_vers_pronote = {
-    v: k for k, v in correspondance_matieres_pronote_vers_bulletin.items()}
+correspondance_matieres_report_card_vers_pronote = {
+    v: k for k, v in correspondance_matieres_pronote_vers_report_card.items()}
 
 
-def print_grades_bulletin(grades):
+def print_grades_report_card(grades):
     if grades:
-        print(f'{"-" * 20} Grades Report Card {"-" * 20}')
-        for pole in bulletin:
+        print(f'{"-" * 20} Report Card Grades {"-" * 20}')
+        for pole in report_card:
             # print(pole)
             print(pole['name'])
-            for bulletin_subject in pole['subjects']:
-                if bulletin_subject in correspondance_matieres_bulletin_vers_pronote:
-                    pronote_subject = correspondance_matieres_bulletin_vers_pronote[
-                        bulletin_subject]
+            for report_card_subject in pole['subjects']:
+                if report_card_subject in correspondance_matieres_report_card_vers_pronote:
+                    pronote_subject = correspondance_matieres_report_card_vers_pronote[
+                        report_card_subject]
                     no_grade = True
                     for grade in grades:  # iterate over all the grades
                         if grade.subject.name == pronote_subject:
                             no_grade = False
-                            print_grade(bulletin_subject, grade)
-                            save_grade(pole, bulletin_subject, grade)
+                            print_grade(report_card_subject, grade)
+                            save_grade(pole, report_card_subject, grade)
                     if no_grade:
-                        print(f'{' ' * 5}{bulletin_subject} : -')
+                        print(f'{' ' * 5}{report_card_subject} : -')
                 else:
-                    print(f'{' ' * 5}{bulletin_subject} : -')
+                    print(f'{' ' * 5}{report_card_subject} : -')
 
 def print_grade(subject, grade):
     "print out the grade in this style: 20/20"
@@ -88,6 +89,7 @@ def print_grade(subject, grade):
     else:
         print(f'{' '*5}{subject} : {grade.grade}/{grade.out_of} le {
             grade.date.strftime("%d/%m/%Y")}')
+    # print(f'{'*'*20} le {grade.date.strftime("%d/%m/%Y")}')
 
 def save_grade(pole, subject, grade):
     if subject not in pole['subjects_grades']:
@@ -102,30 +104,39 @@ def save_grade(pole, subject, grade):
         pass
 
 def print_last_grade_date(grades):
+    print(f'{"-" * 20} Last Grades {"-" * 20}')
     if grades:
-        last_date = datetime.date(1, 1, 1)
+        last_grade = None
         for grade in grades:  # iterate over all the grades
-            last_date = max(last_date, grade.date)
-        if last_date != datetime.date(1, 1, 1):
-            print(f'{"-" * 20} Last Grades {"-" * 20}')
-            print(f'Dernère note le {last_date.strftime("%d/%m/%Y")}')
+            if not last_grade:
+                last_grade = grade
+                continue
+            elif last_grade.date < grade.date:
+                last_grade = grade
+        if last_grade:
+            report_card_subject = correspondance_matieres_pronote_vers_report_card[
+                        grade.subject.name]
+            print(f'Dernière note : {report_card_subject} {last_grade.grade}/{last_grade.out_of
+                  } le {last_grade.date.strftime("%d/%m/%Y")}')
+        else:
+            print("Pas de dernière note.")
 
 
 def compute_pole_averages(averages):
     if averages:
-        for pole in bulletin:
+        for pole in report_card:
             # print(pole)
             pole_averages = []
-            for bulletin_subject in pole['subjects']:
-                if bulletin_subject in correspondance_matieres_bulletin_vers_pronote:
-                    pronote_subject = correspondance_matieres_bulletin_vers_pronote[
-                        bulletin_subject]
+            for report_card_subject in pole['subjects']:
+                if report_card_subject in correspondance_matieres_report_card_vers_pronote:
+                    pronote_subject = correspondance_matieres_report_card_vers_pronote[
+                        report_card_subject]
                     for average in averages:  # iterate over all the averages
                         if average.subject.name == pronote_subject:
                             f_average = float(average.student.replace(',','.'))/int(average.out_of)
                             pole_averages.append( f_average )
                             s_average = f'{average.student}/{average.out_of}'
-                            pole['subjects_average'][bulletin_subject] = s_average
+                            pole['subjects_average'][report_card_subject] = s_average
             if pole_averages:
                 pole['average'] = f'{
                     sum(pole_averages) /
@@ -134,29 +145,29 @@ def compute_pole_averages(averages):
             # print(pole)
 
 
-def print_averages_bulletin(averages):
+def print_averages_report_card(averages):
     if averages:
-        print(f'{"-" * 20} Averages bulletin {"-" * 20}')
+        print(f'{"-" * 20} Report Card Averages {"-" * 20}')
         compute_pole_averages(averages)
-        for pole in bulletin:
+        for pole in report_card:
             # print(pole)
             if 'average' in pole and pole['average']:
                 print(f'{pole['name']} : {pole['average']}')
             else:
                 print(f'{pole['name']}')
-            for bulletin_subject in pole['subjects']:
-                if bulletin_subject in correspondance_matieres_bulletin_vers_pronote:
-                    pronote_subject = correspondance_matieres_bulletin_vers_pronote[
-                        bulletin_subject]
+            for report_card_subject in pole['subjects']:
+                if report_card_subject in correspondance_matieres_report_card_vers_pronote:
+                    pronote_subject = correspondance_matieres_report_card_vers_pronote[
+                        report_card_subject]
                     no_average = True
                     for average in averages:  # iterate over all the averages
                         if average.subject.name == pronote_subject:
                             no_average = False
-                            print_average(bulletin_subject, average)
+                            print_average(report_card_subject, average)
                     if no_average:
-                        print_average(bulletin_subject, None)
+                        print_average(report_card_subject, None)
                 else:
-                    print_average(bulletin_subject, None)
+                    print_average(report_card_subject, None)
 
 def print_average(subject, average):
     if average:
@@ -164,7 +175,7 @@ def print_average(subject, average):
     else:
         print(f'{' ' * 5}{subject} : -')
 
-def print_absences_bulletin(absences):
+def print_absences_report_card(absences):
     if absences:
         print(f'{"-" * 20} Absences {"-" * 20}')
         for absence in absences:
@@ -172,13 +183,13 @@ def print_absences_bulletin(absences):
             print(f'- {absence.from_date.strftime("%d/%m/%Y at %Hh%M")
                        } to {absence.to_date.strftime("%Hh%M")}')
 
-def print_delays_bulletin(delays):
+def print_delays_report_card(delays):
     if delays:
         print(f'{"-" * 20} Delays {"-" * 20}')
         print(f'Nombre de retards : {len(delays)}')
 
 
-def print_punishments_bulletin(punishments):
+def print_punishments_report_card(punishments):
     if punishments:
         print(f'{"-" * 20} Punishments {"-" * 20}')
         for punishment in punishments:
@@ -190,18 +201,19 @@ def print_punishments_bulletin(punishments):
             for schedule in punishment.schedule:
                 print(f'    - le {schedule.start.strftime("%d/%m/%Y at %Hh%M")}')
 
-def print_period_bulletin(period):
+def print_period_report_card(period):
     # print(f'Period = {period.to_dict()}')
     print(f'{"#" * 20} {period.name} {"#" * 20}')
 
-    print_grades_bulletin(period.grades)
-    print_averages_bulletin(period.averages)
-    print_last_grade_date(period.grades)
+    print_grades_report_card(period.grades)
+    print_averages_report_card(period.averages)
+    if dt.now() <= period.end:
+        print_last_grade_date(period.grades)
 
 
 def print_new_subject(period):
     for average in period.averages:
-        if average.subject.name not in correspondance_matieres_pronote_vers_bulletin:
+        if average.subject.name not in correspondance_matieres_pronote_vers_report_card:
             print(f"La discipline '{average.subject.name}' est introuvable dans la table de "
                   "conversion 'pronote' <=> 'report_card' (corriger le fichier "
                   "'the_school_award\\report_card.json')")
@@ -221,10 +233,15 @@ if client.logged_in:  # check if client successfully logged in
     nom_utilisateur = client.info.name  # get users name
     print(f'Logged in as {nom_utilisateur}')
 
-    current_period = client.current_period
-    print_period_bulletin(current_period)
-
-    print_new_subject(current_period)
+    now = dt.now()
+    report_cards = []
+    for period in client.periods:
+        # Period.name : 'Trimestre x', 'Semestre x', 'Annee continue' ...
+        if not period.name.startswith('Trimestre'):
+            continue
+        if period.start <= now:
+            print_period_report_card(period)
+            print_new_subject(period)
 
     input("Appuyez sur Entrée pour quitter...")
 
