@@ -1,5 +1,5 @@
 """
-This class implements the rules to apply to the report card in order to define the 
+This class implements the rules to apply to the report card in order to define the
 rewards obtained. These rules are specific to each person and can be configured in a provided JSON.
 """
 
@@ -9,8 +9,9 @@ import json
 
 class Rules():
     """
-    This class implements the rules to apply to the report card in order to define the 
-    rewards obtained. These rules are specific to each person and can be configured in a provided JSON.
+    This class implements the rules to apply to the report card in order to define the
+    rewards obtained. These rules are specific to each person and can be configured in
+    a provided JSON.
     """
 
     def __init__(self, configuration_json_path):

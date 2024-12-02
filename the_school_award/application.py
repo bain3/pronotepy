@@ -1,5 +1,5 @@
 """
-Graphical application to display averages, successes, difficulties, and gains related to 
+Graphical application to display averages, successes, difficulties, and gains related to
 the student's academic results.
 """
 
@@ -37,7 +37,7 @@ class ToolTip:
             anchor="w")
         label.pack()
 
-    def hide_tooltip(self, event): # pylint: disable=unused-argument
+    def hide_tooltip(self, event):  # pylint: disable=unused-argument
         "Hide the ToolTip"
         if self.tooltip_window:
             self.tooltip_window.destroy()
@@ -112,6 +112,7 @@ class ClusterMoneyFrame(tk.LabelFrame):
                 foreground=fg,
                 width=12).pack(
                 fill='x'))
+
 
 class ShortClusterMoneyFrame(tk.LabelFrame):
     "Narrow frame dedicated to the gains of past discipline clusters (in the gains frame)"
@@ -288,6 +289,7 @@ class MoneyFrame(tk.Frame):
             ClusterMoneyFrame(
                 self, cluster, text, total_gain))
 
+
 class ShortMoneyFrame(tk.Frame):
     "Narrow frames dedicated to past gains"
 
@@ -327,7 +329,7 @@ class HorizontalGauge(tk.Canvas):
         self.width = width
         self.height = height
         self.create_rectangle(10, 10, width - 10, height - 10, outline='black')
-        self.bar = self.create_rectangle(
+        self.gauge_bar = self.create_rectangle(
             10, 10, 10, height - 10, fill='green')
 
         # Create the label with a background color matching the canvas
@@ -350,7 +352,7 @@ class HorizontalGauge(tk.Canvas):
             fill_width = max(fill_width, 45)
         else:
             fill_width = max(fill_width, 55)
-        self.coords(self.bar, 10, 10, fill_width, self.height - 10)
+        self.coords(self.gauge_bar, 10, 10, fill_width, self.height - 10)
 
         if ratio <= 0.5:
             red = 255
@@ -360,7 +362,7 @@ class HorizontalGauge(tk.Canvas):
             red = int((1 - 2 * (ratio - 0.5)) * 255)
         color = f'#{red:02x}{green:02x}00'
 
-        self.itemconfig(self.bar, fill=color)
+        self.itemconfig(self.gauge_bar, fill=color)
 
         # Update the label text and its position
         self.label.config(text=f"{int(value / max_value * 100)}%", bg=color)
@@ -474,7 +476,7 @@ class Application(tk.Tk):
         self.banco_safe_height = 450
         self.banco_safe = BancoSafe(
             self.rules,
-            self.report_cards[-1], # Current report card
+            self.report_cards[-1],  # Current report card
             self.banco_safe_width,
             self.banco_safe_height)
         self.banco_safe.grid(row=0, column=current_column, rowspan=5, pady=5, sticky='n')
@@ -500,4 +502,3 @@ class Application(tk.Tk):
         # Display the festive open safe if the money pool is full
         if self.target_amount_rate and self.target_amount_rate >= 100:
             self.money_pool = MoneyPoolFull(self)
-                 

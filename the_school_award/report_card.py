@@ -23,16 +23,17 @@ class ReportCard():
             'subject_mapping_pronote_to_report_card']
         self.convert_report_card_to_pronote = {
             v: k for k, v in self.convert_pronote_to_report_card.items()}
+        self.infos = None
 
     def to_dict(self):
         "Convert the report card into a dictionary (for JSON recording)"
         data = {}
         data['infos'] = {}
-        data['infos']['username'] = self.infos._username
-        data['infos']['class_name'] = self.infos._class_name
-        data['infos']['establishment'] = self.infos._establishment
-        data['infos']['year'] = self.infos._year
-        data['infos']['period_name'] = self.infos._period_name
+        data['infos']['username'] = self.infos.username
+        data['infos']['class_name'] = self.infos.class_name
+        data['infos']['establishment'] = self.infos.establishment
+        data['infos']['year'] = self.infos.year
+        data['infos']['period_name'] = self.infos.period_name
         data['clusters'] = []
         for cluster in self.clusters():
             data_cluster = {}
@@ -161,40 +162,49 @@ class ReportCard():
                     self._establishment = client.info.establishment
                     self._year = client.start_day.year
                     self._period_name = period.name
+                    self._short_period_name = period.name[0] + period.name[-1]
 
                 def __str__(self):
-                    return f"{self.year()}-{self.year()+1} {self.class_name()} : {self.period_name()} from {self.username()}"
+                    return f"{self.year()}-{self.year()+1} {self.class_name()} : {
+                        self.period_name()} from {self.username()}"
 
+                @property
                 def username(self):
                     "Return the name"
                     return self._username
 
+                @property
                 def class_name(self):
                     "Return the class name"
                     return self._class_name
 
+                @property
                 def establishment(self):
                     "Return the name of the establishment"
                     return self._establishment
 
+                @property
                 def year(self):
                     "Return the school year"
                     return self._year
 
+                @property
                 def period_name(self):
                     "Return the period name"
                     return self._period_name
 
+                @property
                 def short_period_name(self):
                     "Return the short period name"
-                    return self._period_name[0]+self._period_name[-1]
+                    return self._short_period_name
 
             self.infos = Infos(client, period)
 
     def compute_report_card_averages(self, averages):
         "Calculate and record the averages from the given Pronote data"
         if averages:
-            # Check the completeness of the 'pronote' <=> 'report_card' mapping table
+            # Check the completeness of the 'pronote' <=> 'report_card' mapping
+            # table
             for average in averages:
                 if average.subject.name not in self.convert_pronote_to_report_card:
                     print(f"""
@@ -208,8 +218,8 @@ The subject '{average.subject.name}' is not found in the conversion table
                 cluster_averages = []
                 for report_card_subject in cluster.subjects():
                     if report_card_subject.name() in self.convert_report_card_to_pronote:
-                        pronote_subject = self.convert_report_card_to_pronote[report_card_subject.name(
-                        )]
+                        pronote_subject = self.convert_report_card_to_pronote[
+                            report_card_subject.name()]
                         average = self.__get_pronote_average(
                             averages, pronote_subject)
                         if average is not None:

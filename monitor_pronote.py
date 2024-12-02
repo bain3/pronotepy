@@ -9,37 +9,37 @@ from datetime import datetime as dt
 import pronotepy
 
 report_card = [{'name': 'Pole artistique',
-             'subjects': ['Arts Plastiques',
-                          'Éducation musicale'],
-             'subjects_average': {},
-             'subjects_grades': {},
-             'average': None,
-             },
-            {'name': 'Pole littéraire',
-             'subjects': ['Anglais LV1',
-                          'Allemand LV2',
-                          'Français',
-                          'Histoire-Géographie EMC'],
-             'subjects_average': {},
-             'subjects_grades': {},
-             'average': None,
-             },
-            {'name': 'Pole scientifique',
-             'subjects': ['Mathématiques',
-                          'Physique-Chimie',
-                          'Science Vie et Terre',
-                          'Technologie'],
-             'subjects_average': {},
-             'subjects_grades': {},
-             'average': None,
-             },
-            {'name': 'Pole sportif',
-             'subjects': ['Éducation Physique et Sportive'],
-             'subjects_average': {},
-             'subjects_grades': {},
-             'average': None,
-             },
-            ]
+                'subjects': ['Arts Plastiques',
+                             'Éducation musicale'],
+                'subjects_average': {},
+                'subjects_grades': {},
+                'average': None,
+                },
+               {'name': 'Pole littéraire',
+                'subjects': ['Anglais LV1',
+                             'Allemand LV2',
+                             'Français',
+                             'Histoire-Géographie EMC'],
+                'subjects_average': {},
+                'subjects_grades': {},
+                'average': None,
+                },
+               {'name': 'Pole scientifique',
+                'subjects': ['Mathématiques',
+                             'Physique-Chimie',
+                             'Science Vie et Terre',
+                             'Technologie'],
+                'subjects_average': {},
+                'subjects_grades': {},
+                'average': None,
+                },
+               {'name': 'Pole sportif',
+                'subjects': ['Éducation Physique et Sportive'],
+                'subjects_average': {},
+                'subjects_grades': {},
+                'average': None,
+                },
+               ]
 
 correspondance_matieres_pronote_vers_report_card = {
     'HISTOIRE-GEOGRAPHIE': 'Histoire-Géographie EMC',
@@ -81,27 +81,31 @@ def print_grades_report_card(grades):
                 else:
                     print(f'{' ' * 5}{report_card_subject} : -')
 
+
 def print_grade(subject, grade):
     "print out the grade in this style: 20/20"
     if float(grade.coefficient) != 1:
-        print(f'{' '*5}{subject} : {grade.grade}/{grade.out_of} le {
+        print(f'{' ' * 5}{subject} : {grade.grade}/{grade.out_of} le {
             grade.date.strftime("%d/%m/%Y")} (coef. {float(grade.coefficient)})')
     else:
-        print(f'{' '*5}{subject} : {grade.grade}/{grade.out_of} le {
+        print(f'{' ' * 5}{subject} : {grade.grade}/{grade.out_of} le {
             grade.date.strftime("%d/%m/%Y")}')
     # print(f'{'*'*20} le {grade.date.strftime("%d/%m/%Y")}')
+
 
 def save_grade(pole, subject, grade):
     if subject not in pole['subjects_grades']:
         pole['subjects_grades'][subject] = []
     try:
-        coef = float(grade.coefficient.replace(',','.'))
-        grade = round( float(grade.grade.replace(',','.')) / float(
-            grade.out_of.replace(',','.')) *20, 2) /20
-        pole['subjects_grades'][subject].append({'coefficient': coef, 'grade': grade})
+        coef = float(grade.coefficient.replace(',', '.'))
+        grade = round(float(grade.grade.replace(',', '.')) / float(
+            grade.out_of.replace(',', '.')) * 20, 2) / 20
+        pole['subjects_grades'][subject].append(
+            {'coefficient': coef, 'grade': grade})
     except ValueError:
         # If grade.grade not float, no grade to record.
         pass
+
 
 def print_last_grade_date(grades):
     print(f'{"-" * 20} Last Grades {"-" * 20}')
@@ -169,19 +173,22 @@ def print_averages_report_card(averages):
                 else:
                     print_average(report_card_subject, None)
 
+
 def print_average(subject, average):
     if average:
         print(f'{' ' * 5}{subject} : {average.student}/{average.out_of}')
     else:
         print(f'{' ' * 5}{subject} : -')
 
+
 def print_absences_report_card(absences):
     if absences:
         print(f'{"-" * 20} Absences {"-" * 20}')
         for absence in absences:
-            #print(f'absence = {absence.to_dict()}')
+            # print(f'absence = {absence.to_dict()}')
             print(f'- {absence.from_date.strftime("%d/%m/%Y at %Hh%M")
                        } to {absence.to_date.strftime("%Hh%M")}')
+
 
 def print_delays_report_card(delays):
     if delays:
@@ -193,7 +200,7 @@ def print_punishments_report_card(punishments):
     if punishments:
         print(f'{"-" * 20} Punishments {"-" * 20}')
         for punishment in punishments:
-            #print(f'punishment = {punishment.to_dict()}')
+            # print(f'punishment = {punishment.to_dict()}')
             print(f'- Gave by {punishment.giver} at {
                 punishment.given.strftime("%d/%m/%Y at %Hh%M")}')
             print(f'  circumstances : {punishment.circumstances}')
@@ -217,6 +224,7 @@ def print_new_subject(period):
             print(f"La discipline '{average.subject.name}' est introuvable dans la table de "
                   "conversion 'pronote' <=> 'report_card' (corriger le fichier "
                   "'the_school_award\\report_card.json')")
+
 
 # load login from `python3 -m pronotepy.create_login` command
 # See quickstart in documentation for other login methods.

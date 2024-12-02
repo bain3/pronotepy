@@ -47,7 +47,8 @@ if client.logged_in:  # check if client successfully logged in
     user_class = client.info.class_name
     establishment = client.info.establishment
     year = client.start_day.year
-    print(f'Logged in as {username} from class "{user_class}" in establishment "{establishment}" year {year}-{year+1}')
+    print(f'Logged in as {username} from class "{user_class}" in establishment "{
+        establishment}" year {year}-{year+1}')
 
     now = dt.now()
     now_date = now.date()
@@ -63,12 +64,15 @@ if client.logged_in:  # check if client successfully logged in
             report_card.compute_report_card_infos(client, period)
             report_card.compute_report_card_averages(period.averages)
             report_card.compute_report_card_delays(period.delays)
-            # Save period to json with date until it is over. Then save final period and stop to save.
+            # Save period to json with date until it is over. Then save final
+            # period and stop to save.
             if now <= period.end:
-                save_path = Path('the_school_award', f'report_card_{period.name.replace(" ","_")}_{now_date}.json')
+                save_path = Path('the_school_award', f'report_card_{
+                    period.name.replace(" ","_")}_{now_date}.json')
                 report_card.save(save_path)
             else:
-                save_path = Path('the_school_award', f'report_card_{period.name.replace(" ","_")}.json')
+                save_path = Path('the_school_award', f'report_card_{
+                    period.name.replace(" ","_")}.json')
                 if not save_path.exists():
                     report_card.save(save_path)
             report_cards.append(report_card)

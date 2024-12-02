@@ -75,13 +75,14 @@ def compute_pole_grades(grades):
                         if grade.subject.name == pronote_subject:
                             save_grade(pole, bulletin_subject, grade)
 
+
 def save_grade(pole, subject, grade):
     if subject not in pole['subjects_grades']:
         pole['subjects_grades'][subject] = []
     try:
-        coef = float(grade.coefficient.replace(',','.'))
-        grade = round( float(grade.grade.replace(',','.')) / float(
-            grade.out_of.replace(',','.')) *20, 2) /20
+        coef = float(grade.coefficient.replace(',', '.'))
+        grade = round(float(grade.grade.replace(',', '.')) / float(
+            grade.out_of.replace(',', '.')) * 20, 2) / 20
         pole['subjects_grades'][subject
                                 ].append({'coefficient': coef, 'grade': grade})
     except ValueError:
@@ -100,6 +101,7 @@ def compute_pole_averages(averages):
                     len(pole_averages) *
                     20:.2f}/20'
 
+
 def get_averages_list(averages, pole):
     pole_averages = []
     if averages:
@@ -110,13 +112,16 @@ def get_averages_list(averages, pole):
                 for average in averages:  # iterate over all the averages
                     if average.subject.name == pronote_subject:
                         f_average = average_str2float(average)
-                        pole_averages.append( f_average )
-                        pole['subjects_average'][bulletin_subject] = round( f_average * 20., 2)
+                        pole_averages.append(f_average)
+                        pole['subjects_average'][bulletin_subject] = round(
+                            f_average * 20., 2)
                         break
     return pole_averages
 
+
 def average_str2float(average):
-    return float(average.student.replace(',','.'))/int(average.out_of)
+    return float(average.student.replace(',', '.')) / int(average.out_of)
+
 
 def get_average_calculation(pole, subject):
     if subject not in pole['subjects_grades']:
@@ -138,7 +143,7 @@ def print_average_calculation(pole, subject, pronote_average):
         index += 1
         print(f'{' '*5}Calculation : grade {index} = {grade['grade']*20}/20 coef. {
             grade['coefficient']}')
-    average = round(sum_grades/sum_coef*20, 2)
+    average = round(sum_grades / sum_coef * 20, 2)
     if average > pronote_average:
         result = 'You LOSE'
     else:
@@ -150,7 +155,7 @@ def print_average_calculation(pole, subject, pronote_average):
 
 def print_average_pronote(pole, subject):
     print(f'{' ' * 5}Pronote{' ' * (len('Calculation') - len('Pronote'))} : average = {
-        pole['subjects_average'][subject]}/20')
+        pole['subjects_average'][subject]} / 20')
 
 
 def compute_period_bulletin(period):
@@ -171,9 +176,9 @@ def print_delta_average():
                         pole, bulletin_subject, average_pronote)
                     print_average_pronote(pole, bulletin_subject)
                 else:
-                    print(f"{bulletin_subject} : =")                
+                    print(f"{bulletin_subject} : =")
             else:
-                    print(f"{bulletin_subject} : -")                
+                print(f"{bulletin_subject} : -")
 
 
 # load login from `python3 -m pronotepy.create_login` command
@@ -186,7 +191,8 @@ if client.logged_in:  # check if client successfully logged in
 
     # save new credentials - IMPORTANT
     credentials = client.export_credentials()
-    Path("credentials.json").write_text(json.dumps(credentials), encoding='utf-8')
+    Path("credentials.json").write_text(
+        json.dumps(credentials), encoding='utf-8')
 
     nom_utilisateur = client.info.name  # get users name
     print(f'Logged in as {nom_utilisateur}')
@@ -198,7 +204,7 @@ if client.logged_in:  # check if client successfully logged in
         if not period.name.startswith('Trimestre'):
             continue
         if period.start <= now:
-            print(f"{'#'*20} {period.name} {'#'*20}")
+            print(f"{'#' * 20} {period.name} {'#' * 20}")
             compute_period_bulletin(period)
             print_delta_average()
 
