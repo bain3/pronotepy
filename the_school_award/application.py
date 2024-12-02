@@ -283,7 +283,7 @@ class MoneyFrame(tk.Frame):
         self.rules = container.rules
         self.report_card = report_card
         if not text:
-            text = report_card.infos.period_name()
+            text = report_card.infos.period_name
         self.cluster_frame = []
         self.cluster_frame.append(
             ClusterMoneyFrame(
@@ -300,7 +300,7 @@ class ShortMoneyFrame(tk.Frame):
         self.rules = container.rules
         self.report_card = report_card
         if not text:
-            text = report_card.infos.short_period_name()
+            text = report_card.infos.short_period_name
         self.cluster_frame = []
         self.cluster_frame.append(
             ShortClusterMoneyFrame(

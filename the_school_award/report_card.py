@@ -165,8 +165,8 @@ class ReportCard():
                     self._short_period_name = period.name[0] + period.name[-1]
 
                 def __str__(self):
-                    return f"{self.year()}-{self.year()+1} {self.class_name()} : {
-                        self.period_name()} from {self.username()}"
+                    return f"{self.year}-{self.year+1} {self.class_name} : {
+                        self.period_name} from {self.username}"
 
                 @property
                 def username(self):
