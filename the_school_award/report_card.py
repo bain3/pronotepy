@@ -1,7 +1,7 @@
 """
-Cette classe implémente un bulletin correspondant à celui que produit un
-établissement. Sa forme et son organisation dépendent de chaque
-établissement et sont configurables dans un JSON à fournir.
+This class implements a report card corresponding to what an
+institution produces. Its format and organization depend on each
+institution and are configurable in a provided JSON.
 """
 
 import json
@@ -9,23 +9,23 @@ import json
 
 class ReportCard():
     """
-    Cette classe implémente un bulletin correspondant à celui que produit un
-    établissement. Sa forme et son organisation dépendent de chaque
-    établissement et sont configurables dans un JSON à fournir.
+    This class implements a report card corresponding to what an
+    institution produces. Its format and organization depend on each
+    institution and are configurable in a provided JSON.
     """
 
-    def __init__(self, path_configuration_json):
-        self.path_configuration_json = path_configuration_json
-        with open(path_configuration_json, 'r', encoding='utf-8') as json_file:
+    def __init__(self, configuration_json_path):
+        self.configuration_json_path = configuration_json_path
+        with open(configuration_json_path, 'r', encoding='utf-8') as json_file:
             self.configuration = json.load(json_file)
         # print(f"Report card - Configuration : {self.configuration}")
-        self.convert_pronote2report_card = self.configuration[
+        self.convert_pronote_to_report_card = self.configuration[
             'subject_mapping_pronote_to_report_card']
-        self.convert_report_card2pronote = {
-            v: k for k, v in self.convert_pronote2report_card.items()}
+        self.convert_report_card_to_pronote = {
+            v: k for k, v in self.convert_pronote_to_report_card.items()}
 
     def to_dict(self):
-        "Conversion du bulletin en dictionnaire (pour enregistrement JSON)"
+        "Convert the report card into a dictionary (for JSON recording)"
         data = {}
         data['infos'] = {}
         data['infos']['username'] = self.infos._username
@@ -47,22 +47,22 @@ class ReportCard():
             data['clusters'].append(data_cluster)
         return data
 
-    def save(self, path_save_json):
-        "Enregistre le bulletin dans un fichier JSON"
-        with open(path_save_json, 'w', encoding='utf-8') as json_file:
+    def save(self, save_json_path):
+        "Save the report card in a JSON file"
+        with open(save_json_path, 'w', encoding='utf-8') as json_file:
             json.dump(self.to_dict(), json_file, ensure_ascii=False, indent=4)
 
     def cluster(self, name):
-        "Retourne les information d'un pole à partir de son 'nom' donné en parametre"
+        "Return the information of a cluster based on its 'name' given as a parameter"
         for cluster in self.clusters():
             if name == cluster.name():
                 return cluster
         return None
 
     def clusters(self):
-        "Retourne la liste des poles"
+        "Return the list of clusters"
         class Cluster():
-            "Interface pour manipuler un pole de discipline"
+            "Interface to manipulate a discipline cluster"
 
             def __init__(self, cluster):
                 self.cluster = cluster
@@ -71,14 +71,14 @@ class ReportCard():
                 return self.name()
 
             def name(self):
-                "Retourne le nom"
+                "Return the name"
                 return self.cluster['name']
 
             def subjects(self):
-                "Retourne les disciplines du pole"
+                "Return the subjects of the cluster"
                 class Subject():
                     """
-                    Interface pour manipuler le nom d'une discipline
+                    Interface to manipulate the name of a subject
                     """
 
                     def __init__(self, subject):
@@ -88,16 +88,16 @@ class ReportCard():
                         return self.name()
 
                     def name(self):
-                        "Retourne le nom"
+                        "Return the name"
                         return self.subject
 
                 return [Subject(subject) for subject in self.cluster['subjects']]
 
             def subjects_average(self):
-                "Retourne les moyennes des disciplines du pole"
+                "Return the averages of the subjects in the cluster"
                 class SubjectAverage():
                     """
-                    Interface pour manipuler la moyenne d'une discipline
+                    Interface to manipulate the average of a subject
                     """
 
                     def __init__(self, subject_average):
@@ -107,34 +107,34 @@ class ReportCard():
                         return f"{self.name()} : {self.average()}"
 
                     def name(self):
-                        "Retourne le nom"
+                        "Return the name"
                         return self._name
 
                     def average(self):
-                        "Retourne la moyenne"
+                        "Return the average"
                         return self._average
 
                 return [SubjectAverage(subject_average)
                         for subject_average in self.cluster['subjects_average'].items()]
 
             def subject_average(self, name):
-                "Retourne la moyenne d'une discipline donnée en paramètre"
+                "Return the average of a given subject"
                 if name in self.cluster['subjects_average']:
                     return self.cluster['subjects_average'].get(name)
                 return None
 
             def write_subject_average(self, name, average):
-                "Ecrit la moyenne d'une discipline donnée en paramètre"
+                "Write the average of a given subject"
                 self.cluster['subjects_average'][name] = average
 
             def average(self):
-                "Retourne la moyenne du pole de disciplines"
+                "Return the average of the discipline cluster"
                 if self.cluster['average'] is not None:
                     return self.cluster['average']
                 return None
 
             def write_average(self, average):
-                "Ecrit la moyenne du pole de disciplines"
+                "Write the average of the discipline cluster"
                 self.cluster['average'] = average
 
         return [Cluster(cluster)
@@ -148,67 +148,67 @@ class ReportCard():
         return None
 
     def compute_report_card_infos(self, client, period):
-        "Enregistre les informations générales à partir des données pronote en parametre"
+        "Record general information from the given Pronote data"
         if client:
             class Infos():
                 """
-                Interface pour manipuler la moyenne d'une discipline
+                Interface to manipulate the average of a subject
                 """
 
                 def __init__(self, client, period):
-                    self._username = client.info.name  # get users name
+                    self._username = client.info.name  # get user's name
                     self._class_name = client.info.class_name
                     self._establishment = client.info.establishment
                     self._year = client.start_day.year
                     self._period_name = period.name
 
                 def __str__(self):
-                    return f"{self.year()}-{self.year()+1} {self.class_name()} : {self.period_name()} de {self.username()}"
+                    return f"{self.year()}-{self.year()+1} {self.class_name()} : {self.period_name()} from {self.username()}"
 
                 def username(self):
-                    "Retourne le nom"
+                    "Return the name"
                     return self._username
 
                 def class_name(self):
-                    "Retourne le nom de la classe"
+                    "Return the class name"
                     return self._class_name
 
                 def establishment(self):
-                    "Retourne le nom de l'établissement"
+                    "Return the name of the establishment"
                     return self._establishment
 
                 def year(self):
-                    "Retourne l'année de scolarité"
+                    "Return the school year"
                     return self._year
 
                 def period_name(self):
-                    "Retourne le nom du trimestre"
+                    "Return the period name"
                     return self._period_name
 
                 def short_period_name(self):
-                    "Retourne le nom court du trimestre"
+                    "Return the short period name"
                     return self._period_name[0]+self._period_name[-1]
 
             self.infos = Infos(client, period)
 
     def compute_report_card_averages(self, averages):
-        "Calcule et enregistre les moyennes à partir des données pronote en parametre"
+        "Calculate and record the averages from the given Pronote data"
         if averages:
-            # Vérifier la complétude de la table de correspondance 'pronote' <=> 'report_card'
+            # Check the completeness of the 'pronote' <=> 'report_card' mapping table
             for average in averages:
-                if average.subject.name not in self.convert_pronote2report_card:
+                if average.subject.name not in self.convert_pronote_to_report_card:
                     print(f"""
-La discipline '{average.subject.name}' est introuvable dans la table de conversion
-    'pronote' <=> 'report_card' (corriger le dictionnaire 'subject_mapping_pronote_to_report_card'
-    dans le fichier '{self.path_configuration_json} : ')""")
+The subject '{average.subject.name}' is not found in the conversion table
+    'pronote' <=> 'report_card' (correct the 'subject_mapping_pronote_to_report_card' dictionary
+    in the '{self.configuration_json_path}' file : )""")
 
-            # Réaliser l'enregistrement des moyennes
+            # Record the averages
             for cluster in self.clusters():
                 # print(cluster)
                 cluster_averages = []
                 for report_card_subject in cluster.subjects():
-                    if report_card_subject.name() in self.convert_report_card2pronote:
-                        pronote_subject = self.convert_report_card2pronote[report_card_subject.name(
+                    if report_card_subject.name() in self.convert_report_card_to_pronote:
+                        pronote_subject = self.convert_report_card_to_pronote[report_card_subject.name(
                         )]
                         average = self.__get_pronote_average(
                             averages, pronote_subject)
@@ -223,8 +223,8 @@ La discipline '{average.subject.name}' est introuvable dans la table de conversi
 
     def compute_report_card_delays(self, delays):
         """
-        Calcule et enregistre les données de retards à partir des données pronote en parametre.
-        Les retards sont intégrés au bulletin comme une moyenne pour uniformiser les traitements
+        Calculate and record delay data from the given Pronote data.
+        Delays are integrated into the report card as an average to standardize the processing
         """
         if delays:
             for cluster in self.clusters():

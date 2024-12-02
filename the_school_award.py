@@ -1,22 +1,22 @@
 """
-Objectif de l'exemple :
-   - Parcours des données du trimestre en cours
-   - Conversion avec la présentation d'un bulletin possible
-        (poles qui regroupent les matières) ('class ReportCard')
-   - Affichage d'une IHM qui représente le bulletin
-        (codage par classe et héritage) ('class Application')
-   - Applications de rêgles pour gagner une récompense/cagnotte ('class Rules')
-   - Définir une configuration de récompense/cagnotte (JSON pour 'class Rules')
-               - Banco : Récompense sur un trimestre
-               - Boost : Multiplicateur de gain sur un pôle
-               - Marathon : Récompense cumulée sur plusieurs trimestres
-   - Définir une configuration de description d'un bulletin (JSON pour 'class ReportCard')
-               - Poles de disciplines
-               - Moyennes par pole
-   - Affichage dans l'IHM de l'état de gain de la récompense et du niveau de la cagnotte
-   - Affichage spécifique BANCO
-   - Affichage spécifique BOOST
-   - Affichage spécifique MARATHON
+Purpose of the example:
+   - Traversal of data for the current term
+   - Conversion with the presentation of a possible report card
+        (clusters that group subjects) ('class ReportCard')
+   - Display of a GUI that represents the report card
+        (coding by class and inheritance) ('class Application')
+   - Application of rules to earn a reward/money pool ('class Rules')
+   - Define a reward/money pool configuration (JSON for 'class Rules')
+               - Banco: Reward for a term
+               - Boost: Gain multiplier for a cluster
+               - Marathon: Cumulative reward over multiple terms
+   - Define a report card description configuration (JSON for 'class ReportCard')
+               - Discipline clusters
+               - Averages per cluster
+   - Display in the GUI of the reward gain status and money pool level
+   - Specific BANCO display
+   - Specific BOOST display
+   - Specific MARATHON display
 """
 
 import sys
@@ -43,7 +43,7 @@ if client.logged_in:  # check if client successfully logged in
     Path("credentials.json").write_text(
         json.dumps(credentials), encoding='utf-8')
 
-    username = client.info.name  # get users name
+    username = client.info.name  # get user's name
     user_class = client.info.class_name
     establishment = client.info.establishment
     year = client.start_day.year
@@ -57,7 +57,7 @@ if client.logged_in:  # check if client successfully logged in
         if not period.name.startswith('Trimestre'):
             continue
         if period.start <= now:
-            # Trimestre achevé ou commencé
+            # Trimester completed or started
             report_card = ReportCard(
                 Path('the_school_award', 'report_card.json'))
             report_card.compute_report_card_infos(client, period)
@@ -65,18 +65,18 @@ if client.logged_in:  # check if client successfully logged in
             report_card.compute_report_card_delays(period.delays)
             # Save period to json with date until it is over. Then save final period and stop to save.
             if now <= period.end:
-                save_path = Path('the_school_award', f'report_card_{period.name.replace(' ','_')}_{now_date}.json')
+                save_path = Path('the_school_award', f'report_card_{period.name.replace(" ","_")}_{now_date}.json')
                 report_card.save(save_path)
             else:
-                save_path = Path('the_school_award', f'report_card_{period.name.replace(' ','_')}.json')
+                save_path = Path('the_school_award', f'report_card_{period.name.replace(" ","_")}.json')
                 if not save_path.exists():
                     report_card.save(save_path)
             report_cards.append(report_card)
 
     school_award_rules = Rules(Path('the_school_award', 'rules.json'))
 
-    fenetre = Application(school_award_rules, report_cards)
-    fenetre.mainloop()
+    window = Application(school_award_rules, report_cards)
+    window.mainloop()
 
 else:
     print("Failed to log in")

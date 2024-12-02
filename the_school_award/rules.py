@@ -1,7 +1,6 @@
 """
-Cette classe implémente les rêgles à appliquer sur le bulletin de notes afin de définir les
-gratifications obtenues. Ces rêgles sont propres à chacun et sont configurables dans un JSON
-à fournir.
+This class implements the rules to apply to the report card in order to define the 
+rewards obtained. These rules are specific to each person and can be configured in a provided JSON.
 """
 
 import copy
@@ -10,13 +9,12 @@ import json
 
 class Rules():
     """
-    Cette classe implémente les rêgles à appliquer sur le bulletin de notes afin de définir les
-    gratifications obtenues. Ces rêgles sont propres à chacun et sont configurables dans un JSON
-    à fournir.
+    This class implements the rules to apply to the report card in order to define the 
+    rewards obtained. These rules are specific to each person and can be configured in a provided JSON.
     """
 
-    def __init__(self, path_configuration_json):
-        with open(path_configuration_json, 'r', encoding='utf-8') as json_file:
+    def __init__(self, configuration_json_path):
+        with open(configuration_json_path, 'r', encoding='utf-8') as json_file:
             self.configuration = json.load(json_file)
         # print(f"Rules - Configuration : {self.configuration}")
         self.target_amount = self.configuration['Target amount']
@@ -36,28 +34,28 @@ class Rules():
         self.description['Marathon'] = self.configuration['Marathon']['Description']
 
     def __get_banco_rule(self, cluster):
-        "Retourne la regle de BANCO du pole de discipline"
+        "Returns the BANCO rule for the given cluster"
         if cluster:
             if cluster.name() in self.banco:
                 return self.banco[cluster.name()]
         return None
 
     def __get_boost_rule(self, cluster):
-        "Retourne la regle de BOOST du pole de discipline"
+        "Returns the BOOST rule for the given cluster"
         if cluster:
             if cluster.name() in self.boost:
                 return self.boost[cluster.name()]
         return None
 
     def __get_marathon_rule(self, cluster):
-        "Retourne la regle du MARATHON du pole de discipline"
+        "Returns the MARATHON rule for the given cluster"
         if cluster:
             if cluster.name() in self.marathon:
                 return self.marathon[cluster.name()]
         return None
 
-    def report_card_is_eligible_banco(self, report_card):
-        "Indique si le bulletin remplit la gratification BANCO"
+    def report_card_is_eligible_for_banco(self, report_card):
+        "Indicates if the report card meets the BANCO reward criteria"
         if report_card:
             for cluster in self.banco:
                 if not self.cluster_is_eligible_for_banco(
@@ -66,11 +64,11 @@ class Rules():
         return True
 
     def cluster_can_boost_money(self, cluster):
-        "Indique si le pole a une option de BOOST"
+        "Indicates if the cluster has a BOOST option"
         return self.__get_boost_rule(cluster) is not None
 
     def cluster_is_eligible_for_banco(self, cluster):
-        "Indique si le pole fourni en paramètre est éligible au BANCO"
+        "Indicates if the provided cluster is eligible for BANCO"
         if cluster:
             cluster_banco = self.__get_banco_rule(cluster)
             if cluster_banco and cluster.average():
@@ -80,7 +78,7 @@ class Rules():
         return False
 
     def cluster_is_eligible_for_boost(self, cluster):
-        "Indique si le pole fourni en paramètre est éligible au BOOST"
+        "Indicates if the provided cluster is eligible for BOOST"
         if cluster:
             cluster_boost = self.__get_boost_rule(cluster)
             if cluster_boost and cluster.average():
@@ -90,7 +88,7 @@ class Rules():
         return False
 
     def cluster_is_eligible_for_marathon(self, cluster):
-        "Indique si le pole fourni en paramètre est éligible au MARATHON"
+        "Indicates if the provided cluster is eligible for MARATHON"
         if cluster:
             cluster_marathon = self.__get_marathon_rule(cluster)
             if cluster_marathon and cluster.average():
@@ -101,7 +99,7 @@ class Rules():
 
     def subject_downgrades_eligible_cluster_for_boost(
             self, cluster, subject_average):
-        "Indique si la discipline dégrade le BOOST du pole fourni en paramètre"
+        "Indicates if the subject downgrades the BOOST eligibility of the provided cluster"
         if cluster:
             cluster_boost = self.__get_boost_rule(cluster)
             if cluster_boost:
@@ -112,7 +110,7 @@ class Rules():
 
     def subject_downgrades_eligible_cluster_for_marathon(
             self, cluster, subject_average):
-        "Indique si la discipline dégrade le MARATHON du pole fourni en paramètre"
+        "Indicates if the subject downgrades the MARATHON eligibility of the provided cluster"
         if cluster:
             cluster_marathon = self.__get_marathon_rule(cluster)
             if cluster_marathon:
@@ -122,7 +120,7 @@ class Rules():
         return False
 
     def get_cluster_boost_money(self, cluster):
-        "Indique le gain de BOOST"
+        "Indicates the BOOST reward amount"
         if cluster:
             cluster_boost = self.__get_boost_rule(cluster)
             if cluster_boost:
@@ -130,7 +128,7 @@ class Rules():
         return None
 
     def get_cluster_marathon_money(self, cluster):
-        "Indique le gain de MARATHON"
+        "Indicates the MARATHON reward amount"
         if cluster:
             cluster_marathon = self.__get_marathon_rule(cluster)
             if cluster_marathon:
@@ -138,7 +136,7 @@ class Rules():
         return None
 
     def get_cluster_money(self, cluster):
-        "Indique le gain BOOST, MARATHON du pole"
+        "Indicates the BOOST and MARATHON reward amount for the cluster"
         if cluster:
             if self.cluster_is_eligible_for_boost(cluster):
                 return self.get_cluster_boost_money(
@@ -148,7 +146,7 @@ class Rules():
         return None
 
     def get_report_card_money(self, report_card):
-        "Indique le gain global du bulletin"
+        "Indicates the total reward amount for the report card"
         money_pool = 0
         if report_card:
             for cluster in report_card.clusters():
@@ -158,7 +156,7 @@ class Rules():
         return money_pool
 
     def get_banco_rate(self, report_card):
-        "Indique le taux de réussite du BANCO"
+        "Indicates the BANCO success rate"
         nb_banco = 0
         if report_card:
             for cluster in self.banco:
@@ -168,8 +166,8 @@ class Rules():
         return int(nb_banco / len(self.banco) * 100)
 
     def get_target_amount_rate(self, report_card=None, money_pool=None):
-        """Indique le taux d'acquisition de la cagnotte cible BOOST, MARATHON
-        indiquer la valeur de la cagnotte (money_pool) ou le bulletin de note (report_card) à estimer"""
+        """Indicates the acquisition rate of the target reward amount for BOOST and MARATHON.
+        Provide the reward amount (money_pool) or the report card (report_card) to estimate"""
         if not money_pool:
             if report_card:
                 money_pool = self.get_report_card_money(report_card)
@@ -178,13 +176,13 @@ class Rules():
         return int(money_pool / self.target_amount * 100)
 
     def get_banco_description(self):
-        "Description du BANCO"
+        "BANCO Description"
         return self.description['Banco']
 
     def get_boost_description(self):
-        "Description du BOOST"
+        "BOOST Description"
         return self.description['Boost']
 
     def get_marathon_description(self):
-        "Description du Marathon"
+        "Marathon Description"
         return self.description['Marathon']
