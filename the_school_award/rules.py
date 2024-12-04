@@ -72,7 +72,7 @@ class Rules():
         "Indicates if the provided cluster is eligible for BANCO"
         if cluster:
             cluster_banco = self.__get_banco_rule(cluster)
-            if cluster_banco and cluster.average():
+            if cluster_banco and cluster.average() is not None:
                 if cluster_banco['min'] <= cluster.average(
                 ) <= cluster_banco['max']:
                     return True
@@ -82,7 +82,7 @@ class Rules():
         "Indicates if the provided cluster is eligible for BOOST"
         if cluster:
             cluster_boost = self.__get_boost_rule(cluster)
-            if cluster_boost and cluster.average():
+            if cluster_boost and cluster.average() is not None:
                 if cluster_boost['min'] <= cluster.average(
                 ) <= cluster_boost['max']:
                     return True
@@ -92,7 +92,7 @@ class Rules():
         "Indicates if the provided cluster is eligible for MARATHON"
         if cluster:
             cluster_marathon = self.__get_marathon_rule(cluster)
-            if cluster_marathon and cluster.average():
+            if cluster_marathon and cluster.average() is not None:
                 if cluster_marathon['min'] <= cluster.average(
                 ) <= cluster_marathon['max']:
                     return True

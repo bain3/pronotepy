@@ -80,11 +80,11 @@ def save_grade(pole, subject, grade):
     if subject not in pole['subjects_grades']:
         pole['subjects_grades'][subject] = []
     try:
-        coef = float(grade.coefficient.replace(',', '.'))
-        grade = round(float(grade.grade.replace(',', '.')) / float(
-            grade.out_of.replace(',', '.')) * 20, 2) / 20
-        pole['subjects_grades'][subject
-                                ].append({'coefficient': coef, 'grade': grade})
+        f_coef = float(grade.coefficient.replace(',', '.'))
+        f_grade = float(grade.grade.replace(',', '.'))
+        f_out_of = float(grade.out_of.replace(',', '.'))
+        pole['subjects_grades'][subject].append(
+            {'coefficient': f_coef, 'grade': f_grade, 'out_of': f_out_of})
     except ValueError:
         # If grade.grade not float, no grade to record.
         pass
@@ -128,9 +128,10 @@ def get_average_calculation(pole, subject):
         return None
     sum_grades = sum_coef = 0
     for grade in pole['subjects_grades'][subject]:
+        coef_out_of_20 = grade['coefficient'] * grade['out_of'] / 20.
         sum_grades += grade['grade'] * grade['coefficient']
-        sum_coef += grade['coefficient']
-    return round(sum_grades / sum_coef * 20, 2)
+        sum_coef += coef_out_of_20
+    return round(sum_grades / sum_coef, 2)
 
 
 def print_average_calculation(pole, subject, pronote_average):
@@ -138,18 +139,19 @@ def print_average_calculation(pole, subject, pronote_average):
         return
     sum_grades = sum_coef = index = 0
     for grade in pole['subjects_grades'][subject]:
+        coef_out_of_20 = grade['coefficient'] * grade['out_of'] / 20.
         sum_grades += grade['grade'] * grade['coefficient']
-        sum_coef += grade['coefficient']
+        sum_coef += coef_out_of_20
         index += 1
-        print(f'{' '*5}Calculation : grade {index} = {grade['grade']*20}/20 coef. {
-            grade['coefficient']}')
-    average = round(sum_grades / sum_coef * 20, 2)
+        print(f'{' '*5}Calculation : grade {index} = {
+            grade['grade']} / {grade['out_of']} coef. {grade['coefficient']}')
+    average = round(sum_grades / sum_coef, 2)
     if average > pronote_average:
         result = 'You LOSE'
     else:
         result = 'You win'
-    print(f'{' ' * 5}Calculation : SUM grades = {round(sum_grades * 20, 2)} for {sum_coef} grades')
-    print(f'{' ' * 5}Calculation : average = {average}/20 {result} {
+    print(f'{' ' * 5}Calculation : SUM grades = {sum_grades} for {sum_coef} grades')
+    print(f'{' ' * 5}Calculation : average = {average} / 20 {result} {
         round(abs(average - pronote_average), 2)} points.')
 
 
@@ -170,7 +172,7 @@ def print_delta_average():
                 pole, bulletin_subject)
             if average_calculation is not None:
                 average_pronote = pole['subjects_average'][bulletin_subject]
-                if abs(average_calculation - average_pronote) > 0.1:
+                if abs(average_calculation - average_pronote) > 0.01:
                     print(f"{bulletin_subject} : !")
                     print_average_calculation(
                         pole, bulletin_subject, average_pronote)

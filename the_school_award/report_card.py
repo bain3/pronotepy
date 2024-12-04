@@ -236,7 +236,7 @@ The subject '{average.subject.name}' is not found in the conversion table
         Calculate and record delay data from the given Pronote data.
         Delays are integrated into the report card as an average to standardize the processing
         """
-        if delays:
+        if delays is not None:
             for cluster in self.clusters():
                 # print(cluster)
                 for report_card_subject in cluster.subjects():
