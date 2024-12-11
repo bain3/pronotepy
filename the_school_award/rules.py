@@ -34,25 +34,25 @@ class Rules():
         self.description['Boost'] = self.configuration['Boost']['Description']
         self.description['Marathon'] = self.configuration['Marathon']['Description']
 
-    def __get_banco_rule(self, cluster):
+    def _get_banco_rule(self, cluster):
         "Returns the BANCO rule for the given cluster"
         if cluster:
-            if cluster.name() in self.banco:
-                return self.banco[cluster.name()]
+            if cluster.name in self.banco:
+                return self.banco[cluster.name]
         return None
 
-    def __get_boost_rule(self, cluster):
+    def _get_boost_rule(self, cluster):
         "Returns the BOOST rule for the given cluster"
         if cluster:
-            if cluster.name() in self.boost:
-                return self.boost[cluster.name()]
+            if cluster.name in self.boost:
+                return self.boost[cluster.name]
         return None
 
-    def __get_marathon_rule(self, cluster):
+    def _get_marathon_rule(self, cluster):
         "Returns the MARATHON rule for the given cluster"
         if cluster:
-            if cluster.name() in self.marathon:
-                return self.marathon[cluster.name()]
+            if cluster.name in self.marathon:
+                return self.marathon[cluster.name]
         return None
 
     def report_card_is_eligible_for_banco(self, report_card):
@@ -66,43 +66,40 @@ class Rules():
 
     def cluster_can_boost_money(self, cluster):
         "Indicates if the cluster has a BOOST option"
-        return self.__get_boost_rule(cluster) is not None
+        return self._get_boost_rule(cluster) is not None
 
     def cluster_is_eligible_for_banco(self, cluster):
         "Indicates if the provided cluster is eligible for BANCO"
         if cluster:
-            cluster_banco = self.__get_banco_rule(cluster)
-            if cluster_banco and cluster.average() is not None:
-                if cluster_banco['min'] <= cluster.average(
-                ) <= cluster_banco['max']:
+            cluster_banco = self._get_banco_rule(cluster)
+            if cluster_banco and cluster.average is not None:
+                if cluster_banco['min'] <= cluster.average <= cluster_banco['max']:
                     return True
         return False
 
     def cluster_is_eligible_for_boost(self, cluster):
         "Indicates if the provided cluster is eligible for BOOST"
         if cluster:
-            cluster_boost = self.__get_boost_rule(cluster)
-            if cluster_boost and cluster.average() is not None:
-                if cluster_boost['min'] <= cluster.average(
-                ) <= cluster_boost['max']:
+            cluster_boost = self._get_boost_rule(cluster)
+            if cluster_boost and cluster.average is not None:
+                if cluster_boost['min'] <= cluster.average <= cluster_boost['max']:
                     return True
         return False
 
     def cluster_is_eligible_for_marathon(self, cluster):
         "Indicates if the provided cluster is eligible for MARATHON"
         if cluster:
-            cluster_marathon = self.__get_marathon_rule(cluster)
-            if cluster_marathon and cluster.average() is not None:
-                if cluster_marathon['min'] <= cluster.average(
-                ) <= cluster_marathon['max']:
+            cluster_marathon = self._get_marathon_rule(cluster)
+            if cluster_marathon and cluster.average is not None:
+                if cluster_marathon['min'] <= cluster.average <= cluster_marathon['max']:
                     return True
         return False
 
     def subject_downgrades_eligible_cluster_for_boost(
             self, cluster, subject_average):
         "Indicates if the subject downgrades the BOOST eligibility of the provided cluster"
-        if cluster:
-            cluster_boost = self.__get_boost_rule(cluster)
+        if cluster and subject_average is not None:
+            cluster_boost = self._get_boost_rule(cluster)
             if cluster_boost:
                 if self.cluster_is_eligible_for_boost(
                         cluster) and cluster_boost['min'] > subject_average:
@@ -112,18 +109,17 @@ class Rules():
     def subject_downgrades_eligible_cluster_for_marathon(
             self, cluster, subject_average):
         "Indicates if the subject downgrades the MARATHON eligibility of the provided cluster"
-        if cluster:
-            cluster_marathon = self.__get_marathon_rule(cluster)
+        if cluster and subject_average is not None:
+            cluster_marathon = self._get_marathon_rule(cluster)
             if cluster_marathon:
-                if cluster_marathon['min'] <= cluster.average(
-                ) <= cluster_marathon['max'] and cluster_marathon['min'] > subject_average:
+                if cluster_marathon['min'] <= cluster.average <= cluster_marathon['max'] and cluster_marathon['min'] > subject_average:
                     return True
         return False
 
     def get_cluster_boost_money(self, cluster):
         "Indicates the BOOST reward amount"
         if cluster:
-            cluster_boost = self.__get_boost_rule(cluster)
+            cluster_boost = self._get_boost_rule(cluster)
             if cluster_boost:
                 return cluster_boost['money']
         return None
@@ -131,7 +127,7 @@ class Rules():
     def get_cluster_marathon_money(self, cluster):
         "Indicates the MARATHON reward amount"
         if cluster:
-            cluster_marathon = self.__get_marathon_rule(cluster)
+            cluster_marathon = self._get_marathon_rule(cluster)
             if cluster_marathon:
                 return cluster_marathon['money']
         return None
@@ -150,7 +146,7 @@ class Rules():
         "Indicates the total reward amount for the report card"
         money_pool = 0
         if report_card:
-            for cluster in report_card.clusters():
+            for cluster in report_card.clusters:
                 gain = self.get_cluster_money(cluster)
                 if gain:
                     money_pool += gain

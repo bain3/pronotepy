@@ -51,7 +51,7 @@ class ClusterBancoFrame(tk.LabelFrame):
         self.container = container
         self.rules = container.rules
         self.report_card = container.report_card
-        super().__init__(container, text=text)  # cluster.name())
+        super().__init__(container, text=text)  # cluster.name)
         self.pack(fill="both", expand="yes")
 
         self.labels = []
@@ -80,7 +80,7 @@ class ClusterMoneyFrame(tk.LabelFrame):
         self.container = container
         self.rules = container.rules
         self.report_card = container.report_card
-        super().__init__(container, text=text)  # cluster.name())
+        super().__init__(container, text=text)  # cluster.name)
         self.pack(fill="both", expand="yes")
 
         self.labels = []
@@ -121,7 +121,7 @@ class ShortClusterMoneyFrame(tk.LabelFrame):
         self.container = container
         self.rules = container.rules
         self.report_card = container.report_card
-        super().__init__(container, text=text)  # cluster.name())
+        super().__init__(container, text=text)  # cluster.name)
         self.pack(fill="both", expand="yes")
 
         self.labels = []
@@ -217,17 +217,17 @@ class ClusterAverageFrame(tk.LabelFrame):
         self.report_card = container.report_card
         # Apply rules on background
         bg = None
-        if cluster.average() is not None:
+        if cluster.average is not None:
             if self.rules.cluster_is_eligible_for_boost(cluster):
                 bg = 'Spring Green'
             elif self.rules.cluster_is_eligible_for_marathon(cluster):
                 bg = 'Light Green'
 
-            text = f"{cluster.name()} : {cluster.average():.2f}/20"
-            if cluster.name() == 'Retards':
-                text = f"{cluster.name()} : {cluster.average():.0f}"
+            text = f"{cluster.name} : {cluster.average:.2f}/20"
+            if cluster.name == 'Retards':
+                text = f"{cluster.name} : {cluster.average:.0f}"
         else:
-            text = cluster.name()
+            text = cluster.name
         super().__init__(container, text=text, background=bg)
         self.pack(fill="both", expand="yes")
 
@@ -235,12 +235,12 @@ class ClusterAverageFrame(tk.LabelFrame):
         self.frame_subjects = SubjectsFrame(self, bg)
         self.frame_subject_averages = SubjectAveragesFrame(self, bg)
 
-        for report_card_subject in cluster.subjects():
-            self.frame_subjects.write(report_card_subject)
+        for report_card_subject in cluster.subjects:
+            self.frame_subjects.write(report_card_subject.name)
 
             # Apply rules on foreground
             subject_average = cluster.subject_average(
-                report_card_subject.name())
+                report_card_subject.name)
             average_fg = None
             if subject_average is not None:
                 if self.rules.subject_downgrades_eligible_cluster_for_boost(
@@ -251,7 +251,7 @@ class ClusterAverageFrame(tk.LabelFrame):
                     average_fg = 'Red'
 
                 text = f"{subject_average:.2f}/20"
-                if report_card_subject.name() == 'Retards':
+                if report_card_subject.name == 'Retards':
                     text = f"{subject_average:.0f}"
                 self.frame_subject_averages.write(text, average_fg)
             else:
@@ -435,7 +435,7 @@ class Application(tk.Tk):
         current_report_card_done = False
         for report_card in self.report_cards[-1::-1]: # Current report card to first one
             current_row = 0
-            for cluster in report_card.clusters():
+            for cluster in report_card.clusters:
                 if not current_report_card_done:
                     report_card_frame = ReportCardFrame(self, report_card, cluster)
 

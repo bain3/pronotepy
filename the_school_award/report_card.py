@@ -35,16 +35,16 @@ class ReportCard():
         data['infos']['year'] = self.infos.year
         data['infos']['period_name'] = self.infos.period_name
         data['clusters'] = []
-        for cluster in self.clusters():
+        for cluster in self.clusters:
             data_cluster = {}
-            data_cluster['name'] = cluster.name()
+            data_cluster['name'] = cluster.name
             data_cluster['subjects'] = []
-            for subject in cluster.subjects():
-                data_cluster['subjects'].append(subject.name())
+            for subject in cluster.subjects:
+                data_cluster['subjects'].append(subject.name)
             data_cluster['subjects_average'] = {}
-            for subject in cluster.subjects_average():
-                data_cluster['subjects_average'][subject.name()] = subject.average()
-            data_cluster['average'] = cluster.average()
+            for subject in cluster.subjects_average:
+                data_cluster['subjects_average'][subject.name] = subject.average
+            data_cluster['average'] = cluster.average
             data['clusters'].append(data_cluster)
         return data
 
@@ -55,26 +55,29 @@ class ReportCard():
 
     def cluster(self, name):
         "Return the information of a cluster based on its 'name' given as a parameter"
-        for cluster in self.clusters():
-            if name == cluster.name():
+        for cluster in self.clusters:
+            if name == cluster.name:
                 return cluster
         return None
 
+    @property
     def clusters(self):
         "Return the list of clusters"
         class Cluster():
             "Interface to manipulate a discipline cluster"
 
             def __init__(self, cluster):
-                self.cluster = cluster
+                self._cluster = cluster
 
             def __str__(self):
                 return self.name()
 
+            @property
             def name(self):
                 "Return the name"
-                return self.cluster['name']
+                return self._cluster['name']
 
+            @property
             def subjects(self):
                 "Return the subjects of the cluster"
                 class Subject():
@@ -83,17 +86,19 @@ class ReportCard():
                     """
 
                     def __init__(self, subject):
-                        self.subject = subject
+                        self._subject = subject
 
                     def __str__(self):
                         return self.name()
 
+                    @property
                     def name(self):
                         "Return the name"
-                        return self.subject
+                        return self._subject
 
-                return [Subject(subject) for subject in self.cluster['subjects']]
+                return [Subject(subject) for subject in self._cluster['subjects']]
 
+            @property
             def subjects_average(self):
                 "Return the averages of the subjects in the cluster"
                 class SubjectAverage():
@@ -107,36 +112,43 @@ class ReportCard():
                     def __str__(self):
                         return f"{self.name()} : {self.average()}"
 
+                    @property
                     def name(self):
                         "Return the name"
                         return self._name
 
+                    @property
                     def average(self):
                         "Return the average"
                         return self._average
 
+                    @average.setter
+                    def average(self, average):
+                        "Return the average"
+                        self._average = average
+
                 return [SubjectAverage(subject_average)
-                        for subject_average in self.cluster['subjects_average'].items()]
+                        for subject_average in self._cluster['subjects_average'].items()]
 
             def subject_average(self, name):
                 "Return the average of a given subject"
-                if name in self.cluster['subjects_average']:
-                    return self.cluster['subjects_average'].get(name)
+                if name in self._cluster['subjects_average']:
+                    return self._cluster['subjects_average'].get(name)
                 return None
 
             def write_subject_average(self, name, average):
                 "Write the average of a given subject"
-                self.cluster['subjects_average'][name] = average
+                self._cluster['subjects_average'][name] = average
 
+            @property
             def average(self):
                 "Return the average of the discipline cluster"
-                if self.cluster['average'] is not None:
-                    return self.cluster['average']
-                return None
+                return self._cluster['average']
 
-            def write_average(self, average):
+            @average.setter
+            def average(self, average):
                 "Write the average of the discipline cluster"
-                self.cluster['average'] = average
+                self._cluster['average'] = average
 
         return [Cluster(cluster)
                 for cluster in self.configuration['report_card']]
@@ -213,22 +225,21 @@ The subject '{average.subject.name}' is not found in the conversion table
     in the '{self.configuration_json_path}' file : )""")
 
             # Record the averages
-            for cluster in self.clusters():
+            for cluster in self.clusters:
                 # print(cluster)
                 cluster_averages = []
-                for report_card_subject in cluster.subjects():
-                    if report_card_subject.name() in self.convert_report_card_to_pronote:
+                for report_card_subject in cluster.subjects:
+                    if report_card_subject.name in self.convert_report_card_to_pronote:
                         pronote_subject = self.convert_report_card_to_pronote[
-                            report_card_subject.name()]
+                            report_card_subject.name]
                         average = self.__get_pronote_average(
                             averages, pronote_subject)
                         if average is not None:
                             cluster_averages.append(average)
                             cluster.write_subject_average(
-                                report_card_subject.name(), average * 20.)
+                                report_card_subject.name, average * 20.)
                 if len(cluster_averages) != 0:
-                    cluster.write_average(
-                        sum(cluster_averages) / len(cluster_averages) * 20)
+                    cluster.average = sum(cluster_averages) / len(cluster_averages) * 20
                 # print(cluster)
 
     def compute_report_card_delays(self, delays):
@@ -237,12 +248,12 @@ The subject '{average.subject.name}' is not found in the conversion table
         Delays are integrated into the report card as an average to standardize the processing
         """
         if delays is not None:
-            for cluster in self.clusters():
+            for cluster in self.clusters:
                 # print(cluster)
-                for report_card_subject in cluster.subjects():
-                    if report_card_subject.name() == 'Retards':
+                for report_card_subject in cluster.subjects:
+                    if report_card_subject.name == 'Retards':
                         average = float(len(delays))
                         cluster.write_subject_average(
-                            report_card_subject.name(), average)
-                        cluster.write_average(average)
+                            report_card_subject.name, average)
+                        cluster.average = average
                 # print(cluster)

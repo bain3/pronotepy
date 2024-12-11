@@ -1,0 +1,46 @@
+{
+    "Target amount": 200,
+    "Banco": {
+        "Rules": [
+            {
+                "Cluster": "cluster1",
+                "min": 15.0,
+                "max": 20.0
+            },
+            {
+                "Cluster": "cluster2",
+                "min": 13.0,
+                "max": 20.0
+            }
+        ],
+        "Description": "Banco description"
+    },
+    "Boost": {
+        "Rules": [
+            {
+                "Cluster": "cluster2",
+                "min": 12.0,
+                "max": 20.0,
+                "money": 60
+            }
+        ],
+        "Description": "Boost description"
+    },
+    "Marathon": {
+        "Rules": [
+            {
+                "Cluster": "cluster1",
+                "min": 11.0,
+                "max": 20.0,
+                "money": 40
+            },
+            {
+                "Cluster": "cluster2",
+                "min": 10.0,
+                "max": 20.0,
+                "money": 30
+            }
+        ],
+        "Description": "Marathon description"
+    }
+}

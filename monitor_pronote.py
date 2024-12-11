@@ -60,6 +60,12 @@ correspondance_matieres_report_card_vers_pronote = {
     v: k for k, v in correspondance_matieres_pronote_vers_report_card.items()}
 
 
+def clean_report_card():
+    for pole in report_card:
+        pole['subjects_average'].clear()
+        pole['subjects_grades'].clear()
+        pole['average'] = None
+
 def print_grades_report_card(grades):
     if grades:
         print(f'{"-" * 20} Report Card Grades {"-" * 20}')
@@ -112,14 +118,14 @@ def print_last_grade_date(grades):
     if grades:
         last_grade = None
         for grade in grades:  # iterate over all the grades
-            if not last_grade:
+            if last_grade is None:
                 last_grade = grade
                 continue
             elif last_grade.date < grade.date:
                 last_grade = grade
         if last_grade:
             report_card_subject = correspondance_matieres_pronote_vers_report_card[
-                        grade.subject.name]
+                        last_grade.subject.name]
             print(f'Dernière note : {report_card_subject} {last_grade.grade}/{last_grade.out_of
                   } le {last_grade.date.strftime("%d/%m/%Y")}')
         else:
@@ -242,12 +248,12 @@ if client.logged_in:  # check if client successfully logged in
     print(f'Logged in as {nom_utilisateur}')
 
     now = dt.now()
-    report_cards = []
     for period in client.periods:
         # Period.name : 'Trimestre x', 'Semestre x', 'Annee continue' ...
         if not period.name.startswith('Trimestre'):
             continue
         if period.start <= now:
+            clean_report_card()
             print_period_report_card(period)
             print_new_subject(period)
 
