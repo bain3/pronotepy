@@ -101,7 +101,7 @@ laclasse_educonnect = partial(
 
 monbureaunumerique = partial(
     _cas_edu,
-    url="https://cas.monbureaunumerique.fr/login?selection=EDU&service=https://example.com/",
+    url="https://cas.monbureaunumerique.fr/login?selection=EDU&service=",
 )
 
 ac_reims = monbureaunumerique
