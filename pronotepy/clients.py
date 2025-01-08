@@ -704,9 +704,7 @@ class Client(ClientBase):
         """
         if not date_to:
             date_to = datetime.datetime.strptime(
-                self.func_options["donneesSec"]["data"]["General"]["DerniereDate"][
-                    "V"
-                ],
+                self.func_options["donneesSec"]["data"]["General"]["DerniereDate"]["V"],
                 "%d/%m/%Y",
             ).date()
         json_data = {

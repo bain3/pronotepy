@@ -300,7 +300,7 @@ class Object(Slots):
             if include_properties
             else self.__slots__
         )
-        for slot_name in to_iter:
+        for slot_name in to_iter:  # type: ignore
             if slot_name.startswith("_") or slot_name in exclude:
                 # Skip private and excluded slots
                 continue
@@ -516,9 +516,7 @@ class Period(Object):
                 When ``None``, then the report is not yet published or is unavailable for any other reason
         """
         json_data = {"periode": {"G": 2, "N": self.id, "L": self.name}}
-        data = self._client.post("PageBulletins", 13, json_data)["donneesSec"][
-            "data"
-        ]
+        data = self._client.post("PageBulletins", 13, json_data)["donneesSec"]["data"]
         return Report(data) if "Message" not in data else None
 
     @property
@@ -1835,8 +1833,7 @@ class Student(Object):
                 {"Eleve": {"N": self.id}, "AvecEleve": True, "AvecResponsables": True},
             )
         return [
-            Guardian(j)
-            for j in self._cache["donneesSec"]["data"]["Responsables"]["V"]
+            Guardian(j) for j in self._cache["donneesSec"]["data"]["Responsables"]["V"]
         ]
 
 
