@@ -123,7 +123,7 @@ class ClientBase:
         )
 
         if not self.client_identifier:
-            self.client_identifier = self.func_options["donneesSec"]["donnees"][
+            self.client_identifier = self.func_options["donneesSec"]["data"][
                 "identifiantNav"
             ]
 
@@ -139,7 +139,7 @@ class ClientBase:
         self.info: dataClasses.ClientInfo
 
         self.start_day = datetime.datetime.strptime(
-            self.func_options["donneesSec"]["donnees"]["General"]["PremierLundi"]["V"],
+            self.func_options["donneesSec"]["data"]["General"]["PremierLundi"]["V"],
             "%d/%m/%Y",
         ).date()
         self.week = self.get_week(datetime.date.today())
@@ -229,7 +229,7 @@ class ClientBase:
             # check if the account has 2FA enabled
             resp = client.post("PageInfosPerso", onglet=49)
 
-            mode = resp["donneesSec"]["donnees"]["securisation"].get("mode", 0)
+            mode = resp["donneesSec"]["data"]["securisation"].get("mode", 0)
             if mode == 0:
                 log.warning("couldn't get account security mode, ignoring...")
                 return client
@@ -311,7 +311,7 @@ class ClientBase:
 
         # creating the authentification data
         log.debug(str(idr))
-        challenge = idr["donneesSec"]["donnees"]["challenge"]
+        challenge = idr["donneesSec"]["data"]["challenge"]
         e = _Encryption()
         e.aes_set_iv(self.communication.encryption.aes_iv)
 
@@ -320,11 +320,11 @@ class ClientBase:
             motdepasse = SHA256.new(str(password).encode()).hexdigest().upper()
             e.aes_set_key(motdepasse.encode())
         else:
-            if idr["donneesSec"]["donnees"]["modeCompLog"]:
+            if idr["donneesSec"]["data"]["modeCompLog"]:
                 username = username.lower()
-            if idr["donneesSec"]["donnees"]["modeCompMdp"]:
+            if idr["donneesSec"]["data"]["modeCompMdp"]:
                 password = password.lower()
-            alea = idr["donneesSec"]["donnees"].get("alea", "")
+            alea = idr["donneesSec"]["data"].get("alea", "")
             motdepasse = SHA256.new((alea + password).encode()).hexdigest().upper()
             e.aes_set_key((username + motdepasse).encode())
 
@@ -351,11 +351,11 @@ class ClientBase:
             "espace": int(self.attributes["a"]),
         }
         auth_response = self.post("Authentification", data=auth_json)
-        if "cle" in auth_response["donneesSec"]["donnees"]:
+        if "cle" in auth_response["donneesSec"]["data"]:
             self.communication.after_auth(auth_response, e.aes_key)
             self.encryption.aes_key = e.aes_key
 
-            actionsDoubleAuth = auth_response["donneesSec"]["donnees"].get(
+            actionsDoubleAuth = auth_response["donneesSec"]["data"].get(
                 "actionsDoubleAuth"
             )
             if actionsDoubleAuth:
@@ -373,25 +373,25 @@ class ClientBase:
 
             log.info(f"successfully logged in as {self.username}")
 
-            last_conn = auth_response["donneesSec"]["donnees"].get("derniereConnexion")
+            last_conn = auth_response["donneesSec"]["data"].get("derniereConnexion")
             self.last_connection = (
                 dataClasses.Util.datetime_parse(last_conn["V"]) if last_conn else None
             )
 
             if self.login_mode in ("qr_code", "token") and auth_response["donneesSec"][
-                "donnees"
+                "data"
             ].get("jetonConnexionAppliMobile"):
-                self.password = auth_response["donneesSec"]["donnees"][
+                self.password = auth_response["donneesSec"]["data"][
                     "jetonConnexionAppliMobile"
                 ]
 
             # getting listeOnglets separately because of pronote API change
             self.parametres_utilisateur = self.post("ParametresUtilisateur")
             self.info = dataClasses.ClientInfo(
-                self, self.parametres_utilisateur["donneesSec"]["donnees"]["ressource"]
+                self, self.parametres_utilisateur["donneesSec"]["data"]["ressource"]
             )
             self.communication.authorized_onglets = _prepare_onglets(
-                self.parametres_utilisateur["donneesSec"]["donnees"]["listeOnglets"]
+                self.parametres_utilisateur["donneesSec"]["data"]["listeOnglets"]
             )
             log.info("got onglets data.")
             return True
@@ -432,7 +432,7 @@ class ClientBase:
                 },
             )
 
-            if not resp["donneesSec"]["donnees"].get("result", False):
+            if not resp["donneesSec"]["data"].get("result", False):
                 raise MFAError("Invalid PIN")
 
         if doRegisterDevice:
@@ -474,7 +474,7 @@ class ClientBase:
         """
         if hasattr(self, "periods_") and self.periods_:
             return self.periods_
-        json = self.func_options["donneesSec"]["donnees"]["General"]["ListePeriodes"]
+        json = self.func_options["donneesSec"]["data"]["General"]["ListePeriodes"]
         return [dataClasses.Period(self, j) for j in json]
 
     def keep_alive(self) -> _KeepAlive:
@@ -539,9 +539,9 @@ class ClientBase:
         """
         post_data = {}
         if onglet:
-            post_data["_Signature_"] = {"onglet": onglet}
+            post_data["Signature"] = {"onglet": onglet}
         if data:
-            post_data["donnees"] = data
+            post_data["data"] = data
 
         try:
             return self.communication.post(function_name, post_data)
@@ -576,7 +576,7 @@ class ClientBase:
             "url": re.sub(
                 r"/(?:mobile.){,1}(\w+).html$", r"/mobile.\1.html", self.pronote_url
             ),
-            **req["donneesSec"]["donnees"],
+            **req["donneesSec"]["data"],
         }
 
 
@@ -621,7 +621,7 @@ class Client(ClientBase):
         Returns:
             List[Lesson]: List of lessons
         """
-        user = self.parametres_utilisateur["donneesSec"]["donnees"]["ressource"]
+        user = self.parametres_utilisateur["donneesSec"]["data"]["ressource"]
         data = {
             "ressource": user,
             "avecAbsencesEleve": False,
@@ -653,7 +653,7 @@ class Client(ClientBase):
         for week in range(first_week, last_week + 1):
             data["NumeroSemaine"] = data["numeroSemaine"] = week
             response = self.post("PageEmploiDuTemps", 16, data)
-            l_list = response["donneesSec"]["donnees"]["ListeCours"]
+            l_list = response["donneesSec"]["data"]["ListeCours"]
             for lesson in l_list:
                 output.append(dataClasses.Lesson(self, lesson))
 
@@ -668,7 +668,7 @@ class Client(ClientBase):
         Returns:
             str: URL for the exported ICal file
         """
-        user = self.parametres_utilisateur["donneesSec"]["donnees"]["ressource"]
+        user = self.parametres_utilisateur["donneesSec"]["data"]["ressource"]
         data = {
             "ressource": user,
             "avecAbsencesEleve": False,
@@ -682,11 +682,11 @@ class Client(ClientBase):
             "numeroSemaine": 1,
         }
         response = self.post("PageEmploiDuTemps", 16, data)
-        icalsecurise = response["donneesSec"]["donnees"].get("ParametreExportiCal")
+        icalsecurise = response["donneesSec"]["data"].get("ParametreExportiCal")
         if not icalsecurise:
             raise ICalExportError("Pronote did not return ICal token")
 
-        ver = self.func_options["donneesSec"]["donnees"]["General"]["versionPN"]
+        ver = self.func_options["donneesSec"]["data"]["General"]["versionPN"]
         param = f"lh={timezone_shift}".encode().hex()
 
         return f"{self.communication.root_site}/ical/Edt.ics?icalsecurise={icalsecurise}&version={ver}&param={param}"
@@ -704,7 +704,7 @@ class Client(ClientBase):
         """
         if not date_to:
             date_to = datetime.datetime.strptime(
-                self.func_options["donneesSec"]["donnees"]["General"]["DerniereDate"][
+                self.func_options["donneesSec"]["data"]["General"]["DerniereDate"][
                     "V"
                 ],
                 "%d/%m/%Y",
@@ -717,7 +717,7 @@ class Client(ClientBase):
         }
 
         response = self.post("PageCahierDeTexte", 88, json_data)
-        h_list = response["donneesSec"]["donnees"]["ListeTravauxAFaire"]["V"]
+        h_list = response["donneesSec"]["data"]["ListeTravauxAFaire"]["V"]
         out = []
         for h in h_list:
             hw = dataClasses.Homework(self, h)
@@ -747,7 +747,7 @@ class Client(ClientBase):
         """
         user = {
             "G": 4,
-            "N": self.parametres_utilisateur["donneesSec"]["donnees"]["ressource"]["N"],
+            "N": self.parametres_utilisateur["donneesSec"]["data"]["ressource"]["N"],
         }
 
         data = {
@@ -779,7 +779,7 @@ class Client(ClientBase):
         return (
             self.communication.root_site
             + "/"
-            + response["donneesSec"]["donnees"]["url"]["V"]
+            + response["donneesSec"]["data"]["url"]["V"]
         )
 
     def get_recipients(self) -> List[dataClasses.Recipient]:
@@ -792,12 +792,12 @@ class Client(ClientBase):
         data = {"onglet": {"N": 0, "G": 3}}
         recipients = self.post("ListeRessourcesPourCommunication", 131, data)[
             "donneesSec"
-        ]["donnees"]["listeRessourcesPourCommunication"]["V"]
+        ]["data"]["listeRessourcesPourCommunication"]["V"]
         # add staff
         data = {"onglet": {"N": 0, "G": 34}}
         recipients += self.post("ListeRessourcesPourCommunication", 131, data)[
             "donneesSec"
-        ]["donnees"]["listeRessourcesPourCommunication"]["V"]
+        ]["data"]["listeRessourcesPourCommunication"]["V"]
 
         return [dataClasses.Recipient(self, r) for r in recipients]
 
@@ -808,7 +808,7 @@ class Client(ClientBase):
             List[TeachingStaff]: list of teachers and other staff
         """
         # add teacher
-        teachers = self.post("PageEquipePedagogique", 37)["donneesSec"]["donnees"][
+        teachers = self.post("PageEquipePedagogique", 37)["donneesSec"]["data"][
             "liste"
         ]["V"]
 
@@ -842,12 +842,12 @@ class Client(ClientBase):
 
         labels = {
             l["N"]: l["G"]
-            for l in discussions["donneesSec"]["donnees"]["listeEtiquettes"]["V"]
+            for l in discussions["donneesSec"]["data"]["listeEtiquettes"]["V"]
         }
 
         return [
             dataClasses.Discussion(self, d, labels)
-            for d in discussions["donneesSec"]["donnees"]["listeMessagerie"]["V"]
+            for d in discussions["donneesSec"]["data"]["listeMessagerie"]["V"]
             if d.get("estUneDiscussion") and d.get("profondeur", 1) == 0
         ]
 
@@ -868,7 +868,7 @@ class Client(ClientBase):
             "PageActualites", 8, {"modesAffActus": {"_T": 26, "V": "[0..3]"}}
         )
         info = []
-        for liste in response["donneesSec"]["donnees"]["listeModesAff"]:
+        for liste in response["donneesSec"]["data"]["listeModesAff"]:
             info += [
                 dataClasses.Information(self, info)
                 for info in liste["listeActualites"]["V"]
@@ -917,7 +917,7 @@ class Client(ClientBase):
         while first_day <= date_to:
             data = {"date": {"_T": 7, "V": first_day.strftime("%d/%m/%Y") + " 0:0:0"}}
             response = self.post("PageMenus", 10, data)
-            l_list = response["donneesSec"]["donnees"]["ListeJours"]["V"]
+            l_list = response["donneesSec"]["data"]["ListeJours"]["V"]
             for day in l_list:
                 for menu in day["ListeRepas"]["V"]:
                     menu["Date"] = day["Date"]
@@ -930,7 +930,7 @@ class Client(ClientBase):
     @property
     def current_period(self) -> dataClasses.Period:
         """the current period"""
-        onglets = self.parametres_utilisateur["donneesSec"]["donnees"]["ressource"][
+        onglets = self.parametres_utilisateur["donneesSec"]["data"]["ressource"][
             "listeOngletsPourPeriodes"
         ]["V"]
 
@@ -997,7 +997,7 @@ class ParentClient(Client):
         )
 
         self.children: List[dataClasses.ClientInfo] = []
-        for c in self.parametres_utilisateur["donneesSec"]["donnees"]["ressource"][
+        for c in self.parametres_utilisateur["donneesSec"]["data"]["ressource"][
             "listeRessources"
         ]:
             self.children.append(dataClasses.ClientInfo(self, c))
@@ -1006,7 +1006,7 @@ class ParentClient(Client):
             raise ChildNotFound("No children were found.")
 
         self._selected_child: dataClasses.ClientInfo = self.children[0]
-        self.parametres_utilisateur["donneesSec"]["donnees"][
+        self.parametres_utilisateur["donneesSec"]["data"][
             "ressource"
         ] = self._selected_child.raw_resource
 
@@ -1026,7 +1026,7 @@ class ParentClient(Client):
             raise ChildNotFound(f"A child with the name {child} was not found.")
 
         self._selected_child = c
-        self.parametres_utilisateur["donneesSec"]["donnees"][
+        self.parametres_utilisateur["donneesSec"]["data"][
             "ressource"
         ] = self._selected_child.raw_resource
 
@@ -1049,13 +1049,13 @@ class ParentClient(Client):
         """
         post_data = {}
         if onglet:
-            post_data["_Signature_"] = {
+            post_data["Signature"] = {
                 "onglet": onglet,
                 "membre": {"N": self._selected_child.id, "G": 4},
             }
 
         if data:
-            post_data["donnees"] = data
+            post_data["data"] = data
 
         try:
             return self.communication.post(function_name, post_data)
@@ -1123,7 +1123,7 @@ class VieScolaireClient(ClientBase):
         )
         self.classes = [
             dataClasses.StudentClass(self, json)
-            for json in self.parametres_utilisateur["donneesSec"]["donnees"][
+            for json in self.parametres_utilisateur["donneesSec"]["data"][
                 "listeClasses"
             ]["V"]
         ]

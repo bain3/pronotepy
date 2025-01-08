@@ -517,7 +517,7 @@ class Period(Object):
         """
         json_data = {"periode": {"G": 2, "N": self.id, "L": self.name}}
         data = self._client.post("PageBulletins", 13, json_data)["donneesSec"][
-            "donnees"
+            "data"
         ]
         return Report(data) if "Message" not in data else None
 
@@ -526,7 +526,7 @@ class Period(Object):
         """Get grades from the period."""
         json_data = {"Periode": {"N": self.id, "L": self.name}}
         response = self._client.post("DernieresNotes", 198, json_data)
-        grades = response["donneesSec"]["donnees"]["listeDevoirs"]["V"]
+        grades = response["donneesSec"]["data"]["listeDevoirs"]["V"]
         return [Grade(g) for g in grades]
 
     @property
@@ -535,7 +535,7 @@ class Period(Object):
 
         json_data = {"Periode": {"N": self.id, "L": self.name}}
         response = self._client.post("DernieresNotes", 198, json_data)
-        crs = response["donneesSec"]["donnees"]["listeServices"]["V"]
+        crs = response["donneesSec"]["data"]["listeServices"]["V"]
         try:
             return [Average(c) for c in crs]
         except ParsingError as e:
@@ -549,14 +549,14 @@ class Period(Object):
         Calculation may not be the same as the actual average. (max difference 0.01)"""
         json_data = {"Periode": {"N": self.id, "L": self.name}}
         response = self._client.post("DernieresNotes", 198, json_data)
-        average = response["donneesSec"]["donnees"].get("moyGenerale")
+        average = response["donneesSec"]["data"].get("moyGenerale")
         if average:
             return average["V"]
         # VVVVVVVV will be removed in v3.0.0
-        elif response["donneesSec"]["donnees"]["listeServices"]["V"]:
+        elif response["donneesSec"]["data"]["listeServices"]["V"]:
             a: float = 0
             total = 0
-            services = response["donneesSec"]["donnees"]["listeServices"]["V"]
+            services = response["donneesSec"]["data"]["listeServices"]["V"]
             for s in services:
                 try:
                     avrg = s["moyEleve"]["V"].replace(",", ".")
@@ -579,7 +579,7 @@ class Period(Object):
         """Get group average from the period."""
         json_data = {"Periode": {"N": self.id, "L": self.name}}
         response = self._client.post("DernieresNotes", 198, json_data)
-        average = response["donneesSec"]["donnees"].get("moyGeneraleClasse")
+        average = response["donneesSec"]["data"].get("moyGeneraleClasse")
         if average:
             return average["V"]
         else:
@@ -592,7 +592,7 @@ class Period(Object):
         """
         json_data = {"periode": {"N": self.id, "L": self.name, "G": 2}}
         response = self._client.post("DernieresEvaluations", 201, json_data)
-        evaluations = response["donneesSec"]["donnees"]["listeEvaluations"]["V"]
+        evaluations = response["donneesSec"]["data"]["listeEvaluations"]["V"]
         return [Evaluation(e) for e in evaluations]
 
     @property
@@ -607,7 +607,7 @@ class Period(Object):
         }
 
         response = self._client.post("PagePresence", 19, json_data)
-        absences = response["donneesSec"]["donnees"]["listeAbsences"]["V"]
+        absences = response["donneesSec"]["data"]["listeAbsences"]["V"]
         return [Absence(a) for a in absences if a["G"] == 13]
 
     @property
@@ -622,7 +622,7 @@ class Period(Object):
         }
 
         response = self._client.post("PagePresence", 19, json_data)
-        delays = response["donneesSec"]["donnees"]["listeAbsences"]["V"]
+        delays = response["donneesSec"]["data"]["listeAbsences"]["V"]
         return [Delay(a) for a in delays if a["G"] == 14]
 
     @property
@@ -637,7 +637,7 @@ class Period(Object):
         }
 
         response = self._client.post("PagePresence", 19, json_data)
-        absences = response["donneesSec"]["donnees"]["listeAbsences"]["V"]
+        absences = response["donneesSec"]["data"]["listeAbsences"]["V"]
         return [Punishment(self._client, a) for a in absences if a["G"] == 41]
 
 
@@ -896,7 +896,7 @@ class Lesson(Object):
             Util.datetime_parse, "DateDuCoursFin", "V", strict=False
         )
         if self.end is None:
-            end_times = client.func_options["donneesSec"]["donnees"]["General"][
+            end_times = client.func_options["donneesSec"]["data"]["General"][
                 "ListeHeuresFin"
             ]["V"]
 
@@ -971,7 +971,7 @@ class Lesson(Object):
         data = {"domaine": {"_T": 8, "V": f"[{week}..{week}]"}}
         response = self._client.post("PageCahierDeTexte", 89, data)
         contents = {}
-        for lesson in response["donneesSec"]["donnees"]["ListeCahierDeTextes"]["V"]:
+        for lesson in response["donneesSec"]["data"]["ListeCahierDeTextes"]["V"]:
             if lesson["cours"]["V"]["N"] == self.id and lesson["listeContenus"]["V"]:
                 contents = lesson["listeContenus"]["V"][0]
                 break
@@ -1204,7 +1204,7 @@ class Message(Object):
             "SaisiePublicMessage", 131, {"message": {"N": self.id}}
         )
 
-        return [r["L"] for r in resp["donneesSec"]["donnees"]["listeDest"]["V"]]
+        return [r["L"] for r in resp["donneesSec"]["data"]["listeDest"]["V"]]
 
     def reply(self, message: str) -> None:
         """
@@ -1226,11 +1226,11 @@ class Message(Object):
             },
         )
 
-        if len(resp["donneesSec"]["donnees"].get("listeBoutons", {"V": []})["V"]) == 0:
+        if len(resp["donneesSec"]["data"].get("listeBoutons", {"V": []})["V"]) == 0:
             raise DiscussionClosed("Cannot reply to discussion")
 
-        msg = resp["donneesSec"]["donnees"]["messagePourReponse"]["V"]
-        button = resp["donneesSec"]["donnees"]["listeBoutons"]["V"][0]
+        msg = resp["donneesSec"]["data"]["messagePourReponse"]["V"]
+        button = resp["donneesSec"]["data"]["listeBoutons"]["V"][0]
 
         self._client.post(
             "SaisieMessage",
@@ -1346,7 +1346,7 @@ class Discussion(Object):
             },
         )
         # the names are often in the format "NAME - KID'S NAME"
-        return [i["L"] for i in resp["donneesSec"]["donnees"]["listeDest"]["V"]]
+        return [i["L"] for i in resp["donneesSec"]["data"]["listeDest"]["V"]]
 
     @property
     def messages(self) -> List[Message]:
@@ -1366,11 +1366,11 @@ class Discussion(Object):
 
         messages = {}
 
-        for message_json in resp["donneesSec"]["donnees"]["listeMessages"]["V"]:
+        for message_json in resp["donneesSec"]["data"]["listeMessages"]["V"]:
             msg = Message(self._client, message_json)
             messages[msg.id] = msg
 
-        for message_json in resp["donneesSec"]["donnees"]["listeMessages"]["V"]:
+        for message_json in resp["donneesSec"]["data"]["listeMessages"]["V"]:
             messages[message_json["N"]].replying_to = messages.get(
                 message_json["messageSource"]["V"]["N"]
             )
@@ -1422,8 +1422,8 @@ class Discussion(Object):
             {"listePossessionsMessages": self._possessions},
         )
 
-        msg = resp["donneesSec"]["donnees"]["messagePourReponse"]["V"]
-        button = resp["donneesSec"]["donnees"]["listeBoutons"]["V"][0]
+        msg = resp["donneesSec"]["data"]["messagePourReponse"]["V"]
+        button = resp["donneesSec"]["data"]["listeBoutons"]["V"][0]
 
         self._client.post(
             "SaisieMessage",
@@ -1516,8 +1516,8 @@ class ClientInfo(Slots):
             # but we need to manually add the resource id
             self.__cache = self._client.communication.post(
                 "PageInfosPerso",
-                {"_Signature_": {"onglet": 49, "ressource": {"N": self.id, "G": 4}}},
-            )["donneesSec"]["donnees"]["Informations"]
+                {"Signature": {"onglet": 49, "ressource": {"N": self.id, "G": 4}}},
+            )["donneesSec"]["data"]["Informations"]
 
         return self.__cache
 
@@ -1821,7 +1821,7 @@ class Student(Object):
                 105,
                 {"Eleve": {"N": self.id}, "AvecEleve": True, "AvecResponsables": True},
             )
-        return Identity(self._cache["donneesSec"]["donnees"]["Identite"])
+        return Identity(self._cache["donneesSec"]["data"]["Identite"])
 
     @property
     def guardians(self) -> List[Guardian]:
@@ -1836,7 +1836,7 @@ class Student(Object):
             )
         return [
             Guardian(j)
-            for j in self._cache["donneesSec"]["donnees"]["Responsables"]["V"]
+            for j in self._cache["donneesSec"]["data"]["Responsables"]["V"]
         ]
 
 
@@ -1878,7 +1878,7 @@ class StudentClass(Object):
         )
         return [
             Student(self._client, j)
-            for j in r["donneesSec"]["donnees"]["listeRessources"]["V"]
+            for j in r["donneesSec"]["data"]["listeRessources"]["V"]
         ]
 
 
@@ -2028,7 +2028,7 @@ class Punishment(Object):
 
             self.start: Union[datetime.datetime, datetime.date]
             if place is not None:
-                liste_heures = client.func_options["donneesSec"]["donnees"]["General"][
+                liste_heures = client.func_options["donneesSec"]["data"]["General"][
                     "ListeHeures"
                 ]["V"]
                 try:
@@ -2057,7 +2057,7 @@ class Punishment(Object):
         self.given: Union[datetime.datetime, datetime.date]
         if self.during_lesson:
             time_place = self._resolver(int, "placeDemande")
-            liste_heures = client.func_options["donneesSec"]["donnees"]["General"][
+            liste_heures = client.func_options["donneesSec"]["data"]["General"][
                 "ListeHeures"
             ]["V"]
             try:

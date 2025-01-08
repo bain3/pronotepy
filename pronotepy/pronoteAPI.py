@@ -97,7 +97,7 @@ class _Communication(object):
         # we need to catch this exception. the iv was not yet set and we need to decrypt it with the correct iv.
         initial_response = self.post(
             "FonctionParametres",
-            {"donnees": json_post},
+            {"data": json_post},
             decryption_change={"iv": MD5.new(self.encryption.aes_iv_temp).digest()},
         )
         return self.attributes, initial_response
@@ -116,8 +116,8 @@ class _Communication(object):
                 changing in the middle of the request, you can set it here
         """
         if (
-            "_Signature_" in data
-            and data["_Signature_"].get("onglet") not in self.authorized_onglets
+            "Signature" in data
+            and data["Signature"].get("onglet") not in self.authorized_onglets
         ):
             raise PronoteAPIError(
                 "Action not permitted. (onglet is not normally accessible)"
@@ -234,7 +234,7 @@ class _Communication(object):
         if not self.cookies:
             self.cookies = self.last_response.cookies
         work = self.encryption.aes_decrypt(
-            bytes.fromhex(data["donneesSec"]["donnees"]["cle"])
+            bytes.fromhex(data["donneesSec"]["data"]["cle"])
         )
         key = MD5.new(_enBytes(work.decode()))
         self.encryption.aes_key = key.digest()
