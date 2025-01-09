@@ -352,7 +352,7 @@ class _KeepAlive(threading.Thread):
         while self.keep_alive:
             # The delay set in eleve.js is 2 * 60 * 1000 ms (2 minutes)
             if time() - self._client.communication.last_ping >= 110:
-                self._client.post("Presence", 7)
+                self._client.post("Navigation", 7, {"onglet": 7, "ongletPrec": 7})
             sleep(1)
 
     def __enter__(self) -> None:

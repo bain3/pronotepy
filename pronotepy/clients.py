@@ -480,7 +480,7 @@ class ClientBase:
     def keep_alive(self) -> _KeepAlive:
         """
         Returns a context manager to keep the connection alive. When inside the context manager,
-        it sends a "Presence" packet to the server after 5 minutes of inactivity from another thread.
+        it sends a "Navigation" request to the server after 5 minutes of inactivity from another thread.
         """
         return _KeepAlive(self)
 
