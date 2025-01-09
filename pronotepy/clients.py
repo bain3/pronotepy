@@ -516,7 +516,7 @@ class ClientBase:
 
     def session_check(self) -> bool:
         """Checks if the session has expired and refreshes it if it had (returns bool signifying if it was expired)"""
-        self.post("Presence", 7, {})
+        self.post("Navigation", 7, {"onglet": 7, "ongletPrec": 7})
         if self._expired:
             self._expired = False
             return True
