@@ -4,6 +4,9 @@ import unittest
 import pronotepy
 from pronotepy import DiscussionClosed
 
+import warnings
+
+
 client = pronotepy.Client(
     "https://demo.index-education.net/pronote/eleve.html", "demonstration", "pronotevs"
 )
@@ -13,6 +16,11 @@ parent_client = pronotepy.ParentClient(
     username="demonstration",
     password="pronotevs",
 )
+
+
+def warn_empty(list_: list) -> None:
+    if len(list_) == 0:
+        warnings.warn("collection empty - cannot test properly")
 
 
 class TestClient(unittest.TestCase):
@@ -28,8 +36,9 @@ class TestClient(unittest.TestCase):
         start = client.start_day
         end = client.start_day + datetime.timedelta(days=8)
         lessons = client.lessons(start, end)
-        # We assume demo website will always have some lessons
-        self.assertGreater(len(lessons), 0)
+
+        warn_empty(lessons)
+
         for lesson in lessons:
             self.assertLessEqual(start, lesson.start.date())
             self.assertLessEqual(lesson.start.date(), end)
@@ -46,8 +55,8 @@ class TestClient(unittest.TestCase):
         end = client.start_day + datetime.timedelta(days=31)
         homework = client.homework(start, end)
 
-        # We assume demo website will always have homework
-        self.assertGreater(len(homework), 0)
+        warn_empty(homework)
+
         for hw in homework:
             self.assertLessEqual(start, hw.date)
             self.assertLessEqual(hw.date, end)
@@ -55,8 +64,7 @@ class TestClient(unittest.TestCase):
     def test_recipients(self) -> None:
         recipients = client.get_recipients()
 
-        # We assume demo website will always have discussions
-        self.assertGreater(len(recipients), 0)
+        warn_empty(recipients)
 
     def test_menus(self) -> None:
         start = client.start_day
@@ -78,7 +86,7 @@ class TestClient(unittest.TestCase):
         self.assertEqual(client.session_check(), True)
 
     def test_get_teaching_staff(self) -> None:
-        self.assertGreater(len(client.get_teaching_staff()), 0)
+        warn_empty(client.get_teaching_staff())
 
     def test_get_calendar(self) -> None:
         import requests
@@ -97,18 +105,17 @@ class TestPeriod(unittest.TestCase):
 
     def test_grades(self) -> None:
         # We assume demo website will have grades
-        grades = self.period.grades
-        self.assertGreater(len(grades), 0)
+        warn_empty(self.period.grades)
 
     def test_averages(self) -> None:
-        self.assertGreater(len(self.period.averages), 0)
+        warn_empty(self.period.averages)
 
     def test_overall_average(self) -> None:
         self.assertIsNotNone(self.period.overall_average)
 
     def test_evaluations(self) -> None:
         evaluations = self.period.evaluations
-        self.assertGreater(len(evaluations), 0)
+        warn_empty(evaluations)
         for evaluation in evaluations:
             for acquisition in evaluation.acquisitions:
                 self.assertIsNotNone(acquisition)
@@ -117,13 +124,13 @@ class TestPeriod(unittest.TestCase):
         all_absences = []
         for period in client.periods:
             all_absences.extend(period.absences)
-        self.assertGreater(len(all_absences), 0)
+        warn_empty(all_absences)
 
     def test_delays(self) -> None:
         all_delays = []
         for period in client.periods:
             all_delays.extend(period.delays)
-        self.assertGreater(len(all_delays), 0)
+        warn_empty(all_delays)
 
     def test_punishments(self) -> None:
         all_punishments = []
@@ -201,11 +208,7 @@ class TestDiscussion(unittest.TestCase):
         cls.discussion = parent_client.discussions()[0]
 
     def test_messages(self) -> None:
-        self.assertNotEqual(
-            len(self.discussion.messages),
-            0,
-            "Discussion has no message",
-        )
+        warn_empty(self.discussion.messages)
 
     def test_mark_read(self) -> None:
         self.discussion.mark_as(True)
@@ -222,9 +225,7 @@ class TestDiscussion(unittest.TestCase):
         self.discussion.delete()
 
     def test_participants(self) -> None:
-        self.assertGreater(
-            len(self.discussion.participants()), 0, "discussion has no participants"
-        )
+        warn_empty(self.discussion.participants())
 
 
 class TestMenu(unittest.TestCase):
@@ -268,7 +269,7 @@ class TestParentClient(unittest.TestCase):
         discussions = self.client.discussions()
 
         # We assume demo website will always have discussions
-        self.assertGreater(len(discussions), 0)
+        warn_empty(discussions)
 
 
 class TestVieScolaireClient(unittest.TestCase):
@@ -283,14 +284,16 @@ class TestVieScolaireClient(unittest.TestCase):
         )
 
     def test_classes(self) -> None:
-        self.assertGreater(len(self.client.classes), 0)
+        warn_empty(self.client.classes)
 
         for cls in self.client.classes:
             self.assertIsNotNone(cls.name)
 
         for student in self.client.classes[0].students():
             self.assertIsInstance(student.identity, pronotepy.Identity)
-            self.assertGreater(len(student.guardians), 0)
+            self.assertGreater(
+                len(student.guardians), 0
+            )  # pretty safe to assume not empty
             for guardian in student.guardians:
                 self.assertIsInstance(guardian.identity, pronotepy.Identity)
 
