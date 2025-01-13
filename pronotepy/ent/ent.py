@@ -45,12 +45,12 @@ val_de_marne = partial(
 
 cas_cybercolleges42_edu = partial(
     _cas_edu,
-    url="https://cas.cybercolleges42.fr/login?selection=EDU_parent_eleve&service=https://example.com/",
+    url="https://cas.cybercolleges42.fr/login?selection=EDU_parent_eleve&service=",
 )
 
 ecollege_haute_garonne_edu = partial(
     _cas_edu,
-    url="https://cas.ecollege.haute-garonne.fr/login?selection=EDU_parent_eleve&service=https://example.com/",
+    url="https://cas.ecollege.haute-garonne.fr/login?selection=EDU_parent_eleve&service=",
 )
 
 ac_orleans_tours = partial(
@@ -72,27 +72,27 @@ ac_reunion = partial(
 
 cas_agora06 = partial(
     _cas_edu,
-    url="https://cas.agora06.fr/login?selection=EDU&service=https://example.com/",
+    url="https://cas.agora06.fr/login?selection=EDU&service=",
 )
 
 cas_seinesaintdenis_edu = partial(
     _cas_edu,
-    url="https://cas.webcollege.seinesaintdenis.fr/login?selection=EDU_parent_eleve&service=https://example.com/",
+    url="https://cas.webcollege.seinesaintdenis.fr/login?selection=EDU_parent_eleve&service=",
 )
 
 cas_arsene76_edu = partial(
     _cas_edu,
-    url="https://cas.arsene76.fr/login?selection=EDU_parent_eleve&service=https://example.com/",
+    url="https://cas.arsene76.fr/login?selection=EDU_parent_eleve&service=",
 )
 
 eclat_bfc = partial(
     _cas_edu,
-    url="https://cas.eclat-bfc.fr/login?selection=EDU&service=https://example.com/",
+    url="https://cas.eclat-bfc.fr/login?selection=EDU&service=",
 )
 
 ent_auvergnerhonealpe = partial(
     _cas_edu,
-    url="https://cas.ent.auvergnerhonealpes.fr/login?selection=EDU&service=https://example.com/",
+    url="https://cas.ent.auvergnerhonealpes.fr/login?selection=EDU&service=",
 )
 
 laclasse_educonnect = partial(
@@ -108,12 +108,12 @@ ac_reims = monbureaunumerique
 
 occitanie_montpellier_educonnect = partial(
     _cas_edu,
-    url="https://cas.mon-ent-occitanie.fr/login?selection=MONT-EDU_parent_eleve&service=https://example.com/",
+    url="https://cas.mon-ent-occitanie.fr/login?selection=MONT-EDU_parent_eleve&service=",
 )
 
 occitanie_toulouse_edu = partial(
     _cas_edu,
-    url="https://cas.mon-ent-occitanie.fr/login?selection=TOULO-EDU_parent_eleve&service=https://example.com/",
+    url="https://cas.mon-ent-occitanie.fr/login?selection=TOULO-EDU_parent_eleve&service=",
 )
 
 ent_creuse_educonnect = partial(
