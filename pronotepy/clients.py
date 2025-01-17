@@ -234,7 +234,11 @@ class ClientBase:
                 log.warning("couldn't get account security mode, ignoring...")
                 return client
 
-            client._do_2fa(False, mode > 1, account_pin, device_name)
+            return cls.token_login(
+                **client.export_credentials(),
+                account_pin=account_pin,
+                device_name=device_name,
+            )
 
         return client
 
