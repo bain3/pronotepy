@@ -91,8 +91,8 @@ class _Communication(object):
         ).decode()
         # post
         json_post = {"Uuid": uuid, "identifiantNav": client_identifier}
-        self.encrypt_requests = not self.attributes.get("sCrA", False)
-        self.compress_requests = not self.attributes.get("sCoA", False)
+        self.encrypt_requests = self.attributes.get("CrA", False)
+        self.compress_requests = self.attributes.get("CoA", False)
 
         # we need to catch this exception. the iv was not yet set and we need to decrypt it with the correct iv.
         initial_response = self.post(
@@ -111,7 +111,7 @@ class _Communication(object):
 
         Args:
             function_name (str): The name of the function (eg. Authentification)
-            data (dict): The date that will be sent in the donneesSec dictionary
+            data (dict): The date that will be sent in the dataSec dictionary
             decryption_change (Optional[dict]): If the decryption key or iv is
                 changing in the middle of the request, you can set it here
         """
@@ -123,13 +123,13 @@ class _Communication(object):
                 "Action not permitted. (onglet is not normally accessible)"
             )
 
-        post_data: Union[dict, str] = data
+        post_data: Union[dict, str] = {**data, "nom": function_name}
 
         if self.compress_requests:
             # takes care of compression. it is done with zlib, with compression level set to 6. the headers
             # are stripped, and the output is converted to hex
             log.debug("[_Communication.post] compressing data")
-            post_data = jsn.dumps(data).encode().hex()
+            post_data = jsn.dumps(post_data).encode().hex()
             log.debug(post_data)
             post_data = zlib.compress(post_data.encode(), level=6)[2:-4].hex().upper()
         if self.encrypt_requests:
@@ -153,9 +153,9 @@ class _Communication(object):
         r_number = self.encryption.aes_encrypt(str(self.request_number).encode()).hex()
         json = {
             "session": int(self.attributes["h"]),
-            "numeroOrdre": r_number,
-            "nom": function_name,
-            "donneesSec": post_data,
+            "no": r_number,
+            "id": function_name,
+            "dataSec": post_data,
         }
         log.debug("[_Communication.post] sending post request: %s", json)
 
@@ -202,17 +202,17 @@ class _Communication(object):
             # decrypt the received message, the output will either be a hex string, or the json dictionary
             log.debug("[_Communication.post] decrypting")
             decrypted: bytes = self.encryption.aes_decrypt(
-                bytes.fromhex(response_data["donneesSec"])
+                bytes.fromhex(response_data["dataSec"])
             )
             if not self.compress_requests:
-                response_data["donneesSec"] = jsn.loads(decrypted.decode())
+                response_data["dataSec"] = jsn.loads(decrypted.decode())
             else:
-                response_data["donneesSec"] = decrypted
+                response_data["dataSec"] = decrypted
         if self.compress_requests:
             log.debug("[_Communication.post] decompressing")
-            d: Union[bytes, str] = response_data["donneesSec"]
+            d: Union[bytes, str] = response_data["dataSec"]
             try:
-                response_data["donneesSec"] = jsn.loads(
+                response_data["dataSec"] = jsn.loads(
                     zlib.decompress(
                         bytes.fromhex(d) if type(d) == str else d, wbits=-15  # type: ignore
                     ).decode()
@@ -234,7 +234,7 @@ class _Communication(object):
         if not self.cookies:
             self.cookies = self.last_response.cookies
         work = self.encryption.aes_decrypt(
-            bytes.fromhex(data["donneesSec"]["data"]["cle"])
+            bytes.fromhex(data["dataSec"]["data"]["cle"])
         )
         key = MD5.new(_enBytes(work.decode()))
         self.encryption.aes_key = key.digest()
