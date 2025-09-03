@@ -123,7 +123,7 @@ class _Communication(object):
                 "Action not permitted. (onglet is not normally accessible)"
             )
 
-        post_data: Union[dict, str] = {**data, "nom": function_name}
+        post_data: Union[dict, str] = data
 
         if self.compress_requests:
             # takes care of compression. it is done with zlib, with compression level set to 6. the headers
