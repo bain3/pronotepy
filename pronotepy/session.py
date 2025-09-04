@@ -10,10 +10,11 @@ import zlib
 from asyncio import Lock
 from dataclasses import dataclass
 from typing import Optional, Tuple, Union
+from urllib.parse import urlparse
 
 import aiohttp
 from Crypto.Cipher import AES, PKCS1_v1_5
-from Crypto.Hash import MD5
+from Crypto.Hash import MD5, SHA256
 from Crypto.PublicKey import RSA
 from Crypto.Util import Padding
 
@@ -50,15 +51,20 @@ class PronoteAPIError(PronoteError):
     """Unknown PRONOTE API error"""
 
     def __init__(self, status: int, error: Optional[dict]) -> None:
-        super().__init__()
+        super().__init__(f"Unknown PRONOTE API error: {error}")
         self.status = status
         self.api_error = error
+
+
+class MFAError(PronoteError):
+    pass
 
 
 @dataclass
 class UserPass:
     username: str
     password: str
+    using_cas: bool = False
 
 
 @dataclass
@@ -102,10 +108,13 @@ class Spaces(enum.Enum):
 
 
 class PronoteSession:
-    """
-    PRONOTE session management. Handles the session's whole lifecycle, from creation,
-    through authentication, to deletion. Adds additional information to the
-    requests to make them valid.
+    """Low level PRONOTE session.
+
+    Handles the session's whole lifecycle, from creation, through
+    authentication, to deletion. Adds additional information to the requests to
+    make them valid.
+
+    TODO: example how to use
     """
 
     USER_AGENT = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:73.0) Gecko/20100101 Firefox/73.0  PRONOTE Mobile APP"
@@ -117,7 +126,7 @@ class PronoteSession:
         encrypt_requests: bool,
         compress_requests: bool,
         session_id: int,
-        space_id: str,
+        space_id: int,
     ) -> None:
         self.base_url = base_url
 
@@ -129,14 +138,17 @@ class PronoteSession:
         self.session_id = session_id
         self.space_id = space_id
 
+        self.cas_credentials: Optional[UserPass] = None
+
         self.aes_iv = bytes(16)
         self.aes_key = MD5.new().digest()
 
         self.request_number = 1
 
+    # TODO: CAS cookies
     @classmethod
     async def create(
-        cls, base_url: str, space: Spaces, client_identifier: Optional[str] = None
+        cls, base_url: str, space: str, client_identifier: Optional[str] = None
     ) -> Tuple[PronoteSession, dict]:
         """Creates an unauthenticated PRONOTE session"""
 
@@ -146,10 +158,9 @@ class PronoteSession:
         # get rsa keys and session id, retry 3 times
         for _ in range(3):
             try:
-                log.debug(f"requesting html: {base_url}/{space.value}")
-                # TODO: cookies
-                get_response = await http_session.get(f"{base_url}/{space.value}")
-                attributes = cls._parse_html(await get_response.text())
+                log.debug(f"requesting html: {base_url}/{space}")
+                get_response = await http_session.get(f"{base_url}/{space}")
+                attributes = _parse_html(await get_response.text())
             except ValueError:
                 log.warning(
                     "[_Communication.initialise] Failed to parse html, retrying..."
@@ -172,10 +183,14 @@ class PronoteSession:
             attributes.get("CrA", False),
             attributes.get("CoA", False),
             int(attributes["h"]),
-            attributes["a"],
+            int(attributes["a"]),
         )
 
-        # we need to catch this exception. the iv was not yet set and we need to decrypt it with the correct iv.
+        if "e" in attributes:
+            session.cas_credentials = UserPass(
+                attributes["e"], attributes["f"], using_cas=True
+            )
+
         initial_response = await session.post(
             "FonctionParametres",
             {"data": {"Uuid": uuid, "identifiantNav": client_identifier}},
@@ -184,55 +199,266 @@ class PronoteSession:
 
         return session, initial_response
 
-    @staticmethod
-    def _parse_html(html: str) -> dict:
-        if "IP" in html:
-            raise SuspendedError()
-
-        match = re.search(r"Start ?\({(?P<param>[^}]*)}\)", html)
-        if not match:
-            raise BadHtmlError()
-
-        onload_c = match.group("param")
-
-        attributes = {}
-        for attr in onload_c.split(","):
-            key, value = attr.split(":")
-            attributes[key] = value.replace("'", "")
-
-        if "h" not in attributes:
-            raise ValueError("internal exception to retry -> cannot prase html")
-
-        return attributes
-
     @classmethod
     async def userpass_login(
-        cls, url: str, creds: UserPass, mfa: Optional[MFACredentials] = None
-    ) -> PronoteSession:
+        cls,
+        base_url: str,
+        space: Spaces,
+        creds: UserPass,
+        mfa: Optional[MFACredentials] = None,
+    ) -> Tuple[PronoteSession, dict, dict]:
         """Creates a PRONOTE session authenticated with username and password"""
-        ...
+        session, options = await cls.create(
+            base_url, space.value, mfa and mfa.client_identifier
+        )
+
+        auth_response = await session._login(
+            creds.username, creds.password, cls.LoginMode.LOCAL, mfa=mfa
+        )
+
+        return session, options, auth_response
 
     @classmethod
     async def token_login(
-        cls, url: str, creds: Token, mfa: Optional[MFACredentials] = None
-    ) -> PronoteSession:
+        cls,
+        base_url: str,
+        space: Spaces,
+        creds: Token,
+        mfa: Optional[MFACredentials] = None,
+    ) -> Tuple[PronoteSession, dict, dict]:
         """Creates a PRONOTE session authenticated with a token"""
-        ...
+        session, options = await cls.create(
+            base_url, "mobile." + space.value, mfa and mfa.client_identifier
+        )
+
+        auth_response = await session._login(
+            creds.username, creds.token, cls.LoginMode.TOKEN, creds.uuid, mfa
+        )
+
+        return session, options, auth_response
 
     @classmethod
     async def qrcode_login(
         cls,
-        url: str,
         creds: QRCode,
         mfa: Optional[MFACredentials] = None,
-    ) -> PronoteSession:
-        """Creates a PRONOTE session authenticated with a QR code"""
-        ...
+    ) -> Tuple[PronoteSession, dict, dict]:
+        """Creates a PRONOTE session authenticated with a QR code
+
+        The created client instance will have its username and password
+        attributes set to the credentials for the next login using
+        :meth:`.token_login`.
+
+        Args:
+            qr_code (dict): JSON contained in the QR code. Must have ``login``, ``jeton`` and ``url`` keys.
+            pin (str): 4-digit confirmation code created during QR code setup
+            uuid (str): Unique ID for your application. Must not change between logins.
+            account_pin (Optional[str]): 2FA PIN to the account
+            client_identifier (Optional[str]): Identificator of this client provided by PRONOTE
+            device_name (Optional[str]): A name for registering this client as a device.
+            skip_2fa (bool): Skip 2FA. PRONOTE will require it when connecting using the generated token (:meth:`.token_login`).
+        """
+
+        aes_key = MD5.new(creds.pin.encode()).digest()
+
+        short_token = bytes.fromhex(creds.code_contents["login"])
+        long_token = bytes.fromhex(creds.code_contents["jeton"])
+
+        try:
+            login = _aes_decrypt(aes_key, bytes(16), short_token).decode()
+            jeton = _aes_decrypt(aes_key, bytes(16), long_token).decode()
+        except ValueError:
+            raise CredentialsError("Invalid QR code pin")
+
+        # The app would query the server for all the available spaces and find
+        # a space by checking if the last part of the URL matches one of the
+        # space URLs. eg. "/pronote/parent.html" would match "mobile.parent.html"
+        # (info url: <pronote root>/InfoMobileApp.json?id=0D264427-EEFC-4810-A9E9-346942A862A4)
+
+        # We're gonna try the shorter route of just prepending "mobile." if it
+        # isn't there already
+        try:
+            *parts, last = creds.code_contents["url"].split("/")
+        except ValueError:
+            raise CredentialsError("QR code URL is invalid")
+
+        if not last.startswith("mobile."):
+            last = "mobile." + last
+
+        # create custom space, add the magic query params
+        space = last + "?fd=1&bydlg=A6ABB224-12DD-4E31-AD3E-8A39A1C2C335&login=true"
+
+        base_url = "/".join(parts)
+
+        session, options = await cls.create(
+            base_url, space, mfa and mfa.client_identifier
+        )
+
+        auth_response = await session._login(
+            login, jeton, cls.LoginMode.QRCODE, creds.uuid, mfa
+        )
+
+        return session, options, auth_response
+
+    class LoginMode(enum.Enum):
+        LOCAL = 1
+        CAS = 2
+        QRCODE = 3
+        TOKEN = 4
 
     async def _login(
         self,
+        username: str,
+        password: str,
+        login_mode: LoginMode,
+        uuid: str = "",
+        mfa: Optional[MFACredentials] = None,
+    ) -> dict:
+        """Logs in the user"""
+
+        # identification phase
+        ident_json = {
+            "data": {
+                "genreConnexion": 0,
+                "genreEspace": self.space_id,
+                "identifiant": username,
+                "pourENT": login_mode == self.LoginMode.CAS,
+                "enConnexionAuto": False,
+                "demandeConnexionAuto": False,
+                "demandeConnexionAppliMobile": login_mode == self.LoginMode.QRCODE,
+                "demandeConnexionAppliMobileJeton": login_mode == self.LoginMode.QRCODE,
+                "enConnexionAppliMobile": login_mode == self.LoginMode.TOKEN,
+                "uuidAppliMobile": uuid,
+                "loginTokenSAV": "",
+            }
+        }
+
+        idr = await self.post("Identification", data=ident_json)
+
+        # creating the authentification data
+        challenge = idr["dataSec"]["data"]["challenge"]
+
+        if login_mode == self.LoginMode.CAS:
+            motdepasse = SHA256.new(password.encode()).hexdigest().upper()
+            aes_key = MD5.new(motdepasse.encode()).digest()
+        else:
+            if idr["dataSec"]["data"]["modeCompLog"]:
+                username = username.lower()
+            if idr["dataSec"]["data"]["modeCompMdp"]:
+                password = password.lower()
+
+            alea = idr["dataSec"]["data"].get("alea", "")
+
+            motdepasse = SHA256.new((alea + password).encode()).hexdigest().upper()
+            aes_key = MD5.new((username + motdepasse).encode()).digest()
+
+        try:
+            # Solve challenge by removing every other character from the string
+            # and encrypting it back.
+            dec = _aes_decrypt(aes_key, self.aes_iv, bytes.fromhex(challenge)).decode()
+            solved_challenge = _aes_encrypt(
+                aes_key, self.aes_iv, dec[::2].encode()
+            ).hex()
+        except ValueError as ex:
+            raise CredentialsError() from ex
+
+        auth_json = {
+            "data": {
+                "connexion": 0,
+                "challenge": solved_challenge,
+                "espace": self.space_id,
+            }
+        }
+
+        auth_response = await self.post("Authentification", data=auth_json)
+
+        if "cle" not in auth_response["dataSec"]["data"]:
+            log.error("Failed to log in. Server did not respond with key.")
+            raise CredentialsError()
+
+        # Switch to final aes key
+        # Damn, it's hard to create variable names for stupid things
+        key = _aes_decrypt(
+            aes_key, self.aes_iv, bytes.fromhex(auth_response["dataSec"]["data"]["cle"])
+        )
+        self.aes_key = MD5.new(bytes(map(int, key.decode().split(",")))).digest()
+
+        mfa_actions = auth_response["dataSec"]["data"].get("actionsDoubleAuth")
+        if mfa_actions:
+            if mfa is None:
+                raise MFAError("Account requires MFA/2FA")
+
+            actions = jsn.loads(mfa_actions["V"])
+
+            doRegisterDevice = 5 in actions or 3 in actions
+            doVerifyPin = 3 in actions
+
+            await self._do_2fa(
+                mfa,
+                doVerifyPin,
+                doRegisterDevice,
+            )
+
+        log.info(f"successfully logged in as {username}")
+
+        return auth_response
+
+    async def _do_2fa(
+        self,
+        mfa: MFACredentials,
+        doVerifyPin: bool = False,
+        doRegisterDevice: bool = False,
     ) -> None:
-        pass
+        log.debug(
+            "doing 2fa doPin=%s, doRegister=%s, pin=%s (redacted), identifier=%s",
+            doVerifyPin,
+            doRegisterDevice,
+            bool(mfa.account_pin),
+            mfa.device_name,
+        )
+
+        encryptedPin = None
+
+        if doVerifyPin:
+            log.debug("verifying pin")
+
+            if mfa.account_pin is None:
+                raise MFAError("PIN is required for this account")
+
+            encryptedPin = _aes_encrypt(
+                self.aes_key, self.aes_iv, mfa.account_pin.encode()
+            ).hex()
+
+            resp = await self.post(
+                "SecurisationCompteDoubleAuth",
+                data={
+                    "data": {
+                        "action": 0,
+                        "codePin": encryptedPin,
+                    }
+                },
+            )
+
+            if not resp["dataSec"]["data"].get("result", False):
+                raise MFAError("Invalid PIN")
+
+        if doRegisterDevice:
+            log.debug("registering device")
+
+            if mfa.device_name is None:
+                raise MFAError("A device identifier is required for this account")
+
+            data = {
+                "data": {
+                    "action": 3,
+                    "avecIdentification": True,
+                    "strIdentification": mfa.device_name,
+                }
+            }
+            if encryptedPin:
+                data["data"]["codePin"] = encryptedPin
+
+            await self.post("SecurisationCompteDoubleAuth", data=data)
 
     async def post(
         self,
@@ -259,6 +485,7 @@ class PronoteSession:
                 self.aes_key, self.aes_iv, str(self.request_number).encode()
             ).hex()
 
+            response_req_number = self.request_number + 1
             self.request_number += 2
 
             json = {
@@ -267,12 +494,15 @@ class PronoteSession:
                 "id": function_name,
                 "dataSec": post_data,
             }
-            log.debug("[_Communication.post] sending post request: %s", json)
 
             p_site = f"{self.base_url}/appelfonction/{self.space_id}/{self.session_id}/{req_number}"
 
-            # TODO: cookies
+            log.debug("Calling %s with %s", function_name, data)
             response = await self.session.post(p_site, json=json)
+            self.session.cookie_jar.update_cookies(
+                response.cookies, response_url=response.url
+            )
+
             res_data = await response.json()
 
             self.aes_key = new_aes_key or self.aes_key
@@ -288,7 +518,15 @@ class PronoteSession:
 
             raise PronoteAPIError(response.status, res_data)
 
-        # TODO: check returned request_number
+        received_req_number = _aes_decrypt(
+            self.aes_key, self.aes_iv, bytes.fromhex(res_data["no"])
+        ).decode()
+        if received_req_number != str(response_req_number):
+            log.warning(
+                "Request number mismatch! wanted: %s, got: %s",
+                response_req_number,
+                received_req_number,
+            )
 
         try:
             if self.encrypt_requests:
@@ -306,19 +544,16 @@ class PronoteSession:
 
         return res_data
 
-    async def authenticated(self) -> None:
-        pass
-
     async def close(self) -> None:
         await self.session.close()
 
 
-def _aes_encrypt(key, iv, plaintext: bytes):
+def _aes_encrypt(key: bytes, iv: bytes, plaintext: bytes):
     cipher = AES.new(key, AES.MODE_CBC, iv)
     return cipher.encrypt(Padding.pad(plaintext, 16))
 
 
-def _aes_decrypt(key, iv, ciphertext: bytes):
+def _aes_decrypt(key: bytes, iv: bytes, ciphertext: bytes):
     cipher = AES.new(key, AES.MODE_CBC, iv)
     return Padding.unpad(cipher.decrypt(ciphertext), 16)
 
@@ -332,3 +567,23 @@ def _rsa_encrypt(data: bytes) -> bytes:
     pkcs = PKCS1_v1_5.new(key)
 
     return pkcs.encrypt(data)
+
+def _parse_html(html: str) -> dict:
+    if "IP" in html:
+        raise SuspendedError()
+
+    match = re.search(r"Start ?\({(?P<param>[^}]*)}\)", html)
+    if not match:
+        raise BadHtmlError()
+
+    onload_c = match.group("param")
+
+    attributes = {}
+    for attr in onload_c.split(","):
+        key, value = attr.split(":")
+        attributes[key] = value.replace("'", "")
+
+    if "h" not in attributes:
+        raise ValueError("internal exception to retry -> cannot prase html")
+
+    return attributes
