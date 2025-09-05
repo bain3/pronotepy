@@ -26,6 +26,8 @@ ResponseJson = dict[str, Any]
 
 @dataclass
 class UserPass:
+    base_url: str
+    space: Spaces
     username: str
     password: str
     using_cas: bool = False
@@ -40,12 +42,21 @@ class QRCode:
 
 @dataclass
 class Token:
+    base_url: str
+    space: Spaces
     username: str
     token: str
     app_uuid: str
 
 
-Credentials = UserPass | QRCode | Token
+@dataclass
+class CasCookies:
+    base_url: str
+    space: Spaces
+    cookies: aiohttp.CookieJar
+
+
+Credentials = UserPass | QRCode | Token | CasCookies
 
 
 @dataclass
@@ -56,7 +67,7 @@ class MFACredentials:
     device_name: str | None
     client_identifier: str | None
 
-    def __post_init__(self):
+    def __post_init__(self) -> None:
         if (
             self.account_pin is None
             and self.device_name is None
@@ -104,12 +115,15 @@ class PronoteSession:
         self.session_id: int = session_id
         self.space_id: int = space_id
 
-        self.cas_credentials: UserPass | None = None
+        self.cas_username: str | None = None
+        self.cas_password: str | None = None
 
         self.aes_iv: bytes = bytes(16)
         self.aes_key: bytes = MD5.new().digest()
 
         self.request_number: int = 1
+
+        self.client_identifier: str
 
     @classmethod
     async def create(
@@ -156,9 +170,8 @@ class PronoteSession:
         )
 
         if "e" in attributes:
-            session.cas_credentials = UserPass(
-                attributes["e"], attributes["f"], using_cas=True
-            )
+            session.cas_username = attributes["e"]
+            session.cas_password = attributes["f"]
 
         initial_response = await session.post(
             "FonctionParametres",
@@ -166,19 +179,48 @@ class PronoteSession:
             new_aes_iv=MD5.new(new_iv).digest(),
         )
 
+        session.client_identifier = initial_response["dataSec"]["data"][
+            "identifiantNav"
+        ]
+
         return session, initial_response
+
+    @classmethod
+    async def login(
+        cls,
+        creds: Credentials,
+        mfa: MFACredentials | None = None,
+    ) -> tuple[PronoteSession, ResponseJson, ResponseJson]:
+        """Creates an authenticated PRONOTE session
+
+        Args:
+            creds: Credentials for authentication
+            mfa: Additional credentials for multi-factor authentication
+                (code/device name/identifier from earlier session)
+
+        Returns:
+            Tuple of the session, and the FonctionsParametres and Authentification
+            raw responses.
+        """
+        match creds:
+            case UserPass():
+                return await PronoteSession.userpass_login(creds, mfa)
+            case QRCode():
+                return await PronoteSession.qrcode_login(creds, mfa)
+            case Token():
+                return await PronoteSession.token_login(creds, mfa)
+            case CasCookies():
+                return await PronoteSession.cas_login(creds, mfa)
 
     @classmethod
     async def userpass_login(
         cls,
-        base_url: str,
-        space: Spaces,
         creds: UserPass,
         mfa: MFACredentials | None = None,
     ) -> tuple[PronoteSession, ResponseJson, ResponseJson]:
         """Creates a PRONOTE session authenticated with username and password"""
         session, options = await cls.create(
-            base_url, space.value, mfa and mfa.client_identifier
+            creds.base_url, creds.space.value, mfa.client_identifier if mfa else None
         )
 
         auth_response = await session._login(
@@ -190,14 +232,14 @@ class PronoteSession:
     @classmethod
     async def token_login(
         cls,
-        base_url: str,
-        space: Spaces,
         creds: Token,
         mfa: MFACredentials | None = None,
     ) -> tuple[PronoteSession, ResponseJson, ResponseJson]:
         """Creates a PRONOTE session authenticated with a token"""
         session, options = await cls.create(
-            base_url, "mobile." + space.value, mfa and mfa.client_identifier
+            creds.base_url,
+            "mobile." + creds.space.value,
+            mfa.client_identifier if mfa else None,
         )
 
         auth_response = await session._login(
@@ -212,21 +254,7 @@ class PronoteSession:
         creds: QRCode,
         mfa: MFACredentials | None = None,
     ) -> tuple[PronoteSession, ResponseJson, ResponseJson]:
-        """Creates a PRONOTE session authenticated with a QR code
-
-        The created client instance will have its username and password
-        attributes set to the credentials for the next login using
-        :meth:`.token_login`.
-
-        Args:
-            qr_code (dict): JSON contained in the QR code. Must have ``login``, ``jeton`` and ``url`` keys.
-            pin (str): 4-digit confirmation code created during QR code setup
-            uuid (str): Unique ID for your application. Must not change between logins.
-            account_pin (str | None): 2FA PIN to the account
-            client_identifier (str | None): Identificator of this client provided by PRONOTE
-            device_name (str | None): A name for registering this client as a device.
-            skip_2fa (bool): Skip 2FA. PRONOTE will require it when connecting using the generated token (:meth:`.token_login`).
-        """
+        """Creates a PRONOTE session authenticated with a QR code"""
 
         aes_key = MD5.new(creds.pin.encode()).digest()
 
@@ -260,7 +288,7 @@ class PronoteSession:
         base_url = "/".join(parts)
 
         session, options = await cls.create(
-            base_url, space, mfa and mfa.client_identifier
+            base_url, space, mfa.client_identifier if mfa else None
         )
 
         auth_response = await session._login(
@@ -272,13 +300,15 @@ class PronoteSession:
     @classmethod
     async def cas_login(
         cls,
-        base_url: str,
-        space: Spaces,
-        cas_cookies: aiohttp.CookieJar,
+        creds: CasCookies,
         mfa: MFACredentials | None = None,
     ) -> tuple[PronoteSession, ResponseJson, ResponseJson]:
+        """Creates a PRONOTE session authenticated with cookies from CAS"""
         session, options = await cls.create(
-            base_url, space.value, mfa and mfa.client_identifier, cas_cookies
+            creds.base_url,
+            creds.space.value,
+            mfa.client_identifier if mfa else None,
+            creds.cookies,
         )
 
         auth_response = await session._login(
@@ -453,12 +483,12 @@ class PronoteSession:
     async def post(
         self,
         function_name: str,
-        data: dict,  # pyright: ignore[reportMissingTypeArgument]
+        data: dict,
         new_aes_iv: bytes | None = None,
         new_aes_key: bytes | None = None,
     ) -> ResponseJson:
 
-        post_data = data  # remove type
+        post_data: Any = data  # remove type
 
         if self.encrypt_requests:
             post_data = jsn.dumps(post_data).encode()
@@ -534,13 +564,19 @@ class PronoteSession:
     async def close(self) -> None:
         await self.session.close()
 
+    async def __aenter__(self) -> PronoteSession:
+        return self
 
-def _aes_encrypt(key: bytes, iv: bytes, plaintext: bytes):
+    async def __aexit__(self, *_args: object) -> None:
+        await self.close()
+
+
+def _aes_encrypt(key: bytes, iv: bytes, plaintext: bytes) -> bytes:
     cipher = AES.new(key, AES.MODE_CBC, iv)
     return cipher.encrypt(Padding.pad(plaintext, 16))
 
 
-def _aes_decrypt(key: bytes, iv: bytes, ciphertext: bytes):
+def _aes_decrypt(key: bytes, iv: bytes, ciphertext: bytes) -> bytes:
     cipher = AES.new(key, AES.MODE_CBC, iv)
     return Padding.unpad(cipher.decrypt(ciphertext), 16)
 

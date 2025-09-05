@@ -6,7 +6,7 @@ authors = [
   { name="bain", email="bain@bain.cz" },
 ]
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.10" # change mypy version!
 license = "MIT"
 classifiers = [
     "Programming Language :: Python :: 3",
@@ -30,6 +30,17 @@ typeCheckingMode = "standard"
 
 [dependency-groups]
 dev = [
-    "basedpyright>=1.31.4",
+    "mypy>=1.17.1",
     "pytest>=8.4.2",
+    "pytest-asyncio>=1.1.0",
 ]
+
+[tool.pytest.ini_options]
+asyncio_mode="auto"
+asyncio_default_fixture_loop_scope = "session"
+asyncio_default_test_loop_scope = "session"
+
+[tool.mypy]
+python_version = "3.10"  # check against min. supported
+disallow_untyped_defs = true
+disallow_incomplete_defs = true
