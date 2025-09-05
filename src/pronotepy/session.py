@@ -9,8 +9,7 @@ import secrets
 import zlib
 from asyncio import Lock
 from dataclasses import dataclass
-from typing import Optional, Tuple, Union
-from urllib.parse import urlparse
+from typing import Any, Final
 
 import aiohttp
 from Crypto.Cipher import AES, PKCS1_v1_5
@@ -18,46 +17,11 @@ from Crypto.Hash import MD5, SHA256
 from Crypto.PublicKey import RSA
 from Crypto.Util import Padding
 
+from .err import *
+
 log = logging.getLogger(__name__)
 
-
-class PronoteError(Exception):
-    """An unknown error occured (see cause)"""
-
-    def __init__(self, msg: Optional[str] = None) -> None:
-        if msg is None and self.__doc__ is not None:
-            super().__init__(self.__doc__.strip())
-        else:
-            super().__init__(msg)
-
-
-class CredentialsError(PronoteError):
-    """Invalid login credentials"""
-
-
-class ExpiredObject(PronoteError):
-    """An object used in the request was from a different session"""
-
-
-class SuspendedError(PronoteError):
-    """Your IP address has been temporairly suspended"""
-
-
-class BadHtmlError(PronoteError):
-    """Page html is different than expected (hint: is the address of your PRONOTE instance correct?)"""
-
-
-class PronoteAPIError(PronoteError):
-    """Unknown PRONOTE API error"""
-
-    def __init__(self, status: int, error: Optional[dict]) -> None:
-        super().__init__(f"Unknown PRONOTE API error: {error}")
-        self.status = status
-        self.api_error = error
-
-
-class MFAError(PronoteError):
-    pass
+ResponseJson = dict[str, Any]
 
 
 @dataclass
@@ -69,28 +33,28 @@ class UserPass:
 
 @dataclass
 class QRCode:
-    code_contents: dict
+    code_contents: dict[str, str]
     pin: str
-    uuid: str
+    app_uuid: str
 
 
 @dataclass
 class Token:
     username: str
     token: str
-    uuid: str
+    app_uuid: str
 
 
-Credentials = Union[UserPass, Token, QRCode]
+Credentials = UserPass | QRCode | Token
 
 
 @dataclass
 class MFACredentials:
     """Credentials for (2/M)FA authentication"""
 
-    account_pin: Optional[str]
-    device_name: Optional[str]
-    client_identifier: Optional[str]
+    account_pin: str | None
+    device_name: str | None
+    client_identifier: str | None
 
     def __post_init__(self):
         if (
@@ -117,7 +81,9 @@ class PronoteSession:
     TODO: example how to use
     """
 
-    USER_AGENT = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:73.0) Gecko/20100101 Firefox/73.0  PRONOTE Mobile APP"
+    USER_AGENT: Final = (
+        "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:73.0) Gecko/20100101 Firefox/73.0  PRONOTE Mobile APP"
+    )
 
     def __init__(
         self,
@@ -128,31 +94,34 @@ class PronoteSession:
         session_id: int,
         space_id: int,
     ) -> None:
-        self.base_url = base_url
+        self.base_url: str = base_url
 
-        self.session_lock = Lock()
-        self.session = session
+        self.session_lock: Lock = Lock()
+        self.session: aiohttp.ClientSession = session
 
-        self.encrypt_requests = encrypt_requests
-        self.compress_requests = compress_requests
-        self.session_id = session_id
-        self.space_id = space_id
+        self.encrypt_requests: bool = encrypt_requests
+        self.compress_requests: bool = compress_requests
+        self.session_id: int = session_id
+        self.space_id: int = space_id
 
-        self.cas_credentials: Optional[UserPass] = None
+        self.cas_credentials: UserPass | None = None
 
-        self.aes_iv = bytes(16)
-        self.aes_key = MD5.new().digest()
+        self.aes_iv: bytes = bytes(16)
+        self.aes_key: bytes = MD5.new().digest()
 
-        self.request_number = 1
+        self.request_number: int = 1
 
-    # TODO: CAS cookies
     @classmethod
     async def create(
-        cls, base_url: str, space: str, client_identifier: Optional[str] = None
-    ) -> Tuple[PronoteSession, dict]:
+        cls,
+        base_url: str,
+        space: str,
+        client_identifier: str | None = None,
+        cookie_jar: aiohttp.CookieJar | None = None,
+    ) -> tuple[PronoteSession, ResponseJson]:
         """Creates an unauthenticated PRONOTE session"""
 
-        http_session = aiohttp.ClientSession()
+        http_session = aiohttp.ClientSession(cookie_jar=cookie_jar)
         http_session.headers.add("User-Agent", cls.USER_AGENT)
 
         # get rsa keys and session id, retry 3 times
@@ -180,8 +149,8 @@ class PronoteSession:
         session = PronoteSession(
             base_url,
             http_session,
-            attributes.get("CrA", False),
-            attributes.get("CoA", False),
+            bool(attributes.get("CrA", False)),
+            bool(attributes.get("CoA", False)),
             int(attributes["h"]),
             int(attributes["a"]),
         )
@@ -205,8 +174,8 @@ class PronoteSession:
         base_url: str,
         space: Spaces,
         creds: UserPass,
-        mfa: Optional[MFACredentials] = None,
-    ) -> Tuple[PronoteSession, dict, dict]:
+        mfa: MFACredentials | None = None,
+    ) -> tuple[PronoteSession, ResponseJson, ResponseJson]:
         """Creates a PRONOTE session authenticated with username and password"""
         session, options = await cls.create(
             base_url, space.value, mfa and mfa.client_identifier
@@ -224,15 +193,15 @@ class PronoteSession:
         base_url: str,
         space: Spaces,
         creds: Token,
-        mfa: Optional[MFACredentials] = None,
-    ) -> Tuple[PronoteSession, dict, dict]:
+        mfa: MFACredentials | None = None,
+    ) -> tuple[PronoteSession, ResponseJson, ResponseJson]:
         """Creates a PRONOTE session authenticated with a token"""
         session, options = await cls.create(
             base_url, "mobile." + space.value, mfa and mfa.client_identifier
         )
 
         auth_response = await session._login(
-            creds.username, creds.token, cls.LoginMode.TOKEN, creds.uuid, mfa
+            creds.username, creds.token, cls.LoginMode.TOKEN, creds.app_uuid, mfa
         )
 
         return session, options, auth_response
@@ -241,8 +210,8 @@ class PronoteSession:
     async def qrcode_login(
         cls,
         creds: QRCode,
-        mfa: Optional[MFACredentials] = None,
-    ) -> Tuple[PronoteSession, dict, dict]:
+        mfa: MFACredentials | None = None,
+    ) -> tuple[PronoteSession, ResponseJson, ResponseJson]:
         """Creates a PRONOTE session authenticated with a QR code
 
         The created client instance will have its username and password
@@ -253,9 +222,9 @@ class PronoteSession:
             qr_code (dict): JSON contained in the QR code. Must have ``login``, ``jeton`` and ``url`` keys.
             pin (str): 4-digit confirmation code created during QR code setup
             uuid (str): Unique ID for your application. Must not change between logins.
-            account_pin (Optional[str]): 2FA PIN to the account
-            client_identifier (Optional[str]): Identificator of this client provided by PRONOTE
-            device_name (Optional[str]): A name for registering this client as a device.
+            account_pin (str | None): 2FA PIN to the account
+            client_identifier (str | None): Identificator of this client provided by PRONOTE
+            device_name (str | None): A name for registering this client as a device.
             skip_2fa (bool): Skip 2FA. PRONOTE will require it when connecting using the generated token (:meth:`.token_login`).
         """
 
@@ -295,7 +264,28 @@ class PronoteSession:
         )
 
         auth_response = await session._login(
-            login, jeton, cls.LoginMode.QRCODE, creds.uuid, mfa
+            login, jeton, cls.LoginMode.QRCODE, creds.app_uuid, mfa
+        )
+
+        return session, options, auth_response
+
+    @classmethod
+    async def cas_login(
+        cls,
+        base_url: str,
+        space: Spaces,
+        cas_cookies: aiohttp.CookieJar,
+        mfa: MFACredentials | None = None,
+    ) -> tuple[PronoteSession, ResponseJson, ResponseJson]:
+        session, options = await cls.create(
+            base_url, space.value, mfa and mfa.client_identifier, cas_cookies
+        )
+
+        auth_response = await session._login(
+            session.cas_credentials.username,  # type: ignore
+            session.cas_credentials.password,  # type: ignore
+            cls.LoginMode.CAS,
+            mfa=mfa,
         )
 
         return session, options, auth_response
@@ -312,8 +302,8 @@ class PronoteSession:
         password: str,
         login_mode: LoginMode,
         uuid: str = "",
-        mfa: Optional[MFACredentials] = None,
-    ) -> dict:
+        mfa: MFACredentials | None = None,
+    ) -> ResponseJson:
         """Logs in the user"""
 
         # identification phase
@@ -458,15 +448,15 @@ class PronoteSession:
             if encryptedPin:
                 data["data"]["codePin"] = encryptedPin
 
-            await self.post("SecurisationCompteDoubleAuth", data=data)
+            _ = await self.post("SecurisationCompteDoubleAuth", data=data)
 
     async def post(
         self,
         function_name: str,
-        data: dict,
-        new_aes_iv: Optional[bytes] = None,
-        new_aes_key: Optional[bytes] = None,
-    ) -> dict:
+        data: dict,  # pyright: ignore[reportMissingTypeArgument]
+        new_aes_iv: bytes | None = None,
+        new_aes_key: bytes | None = None,
+    ) -> ResponseJson:
 
         post_data = data  # remove type
 
@@ -499,9 +489,6 @@ class PronoteSession:
 
             log.debug("Calling %s with %s", function_name, data)
             response = await self.session.post(p_site, json=json)
-            self.session.cookie_jar.update_cookies(
-                response.cookies, response_url=response.url
-            )
 
             res_data = await response.json()
 
@@ -568,7 +555,8 @@ def _rsa_encrypt(data: bytes) -> bytes:
 
     return pkcs.encrypt(data)
 
-def _parse_html(html: str) -> dict:
+
+def _parse_html(html: str) -> dict[str, str]:
     if "IP" in html:
         raise SuspendedError()
 

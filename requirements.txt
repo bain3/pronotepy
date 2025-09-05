@@ -1,9 +1,10 @@
-beautifulsoup4 >= 4.8.2
-pycryptodome >= 3.9.4
-requests >= 2.22.0
-autoslot >= 2022.12.1
-aiohttp
-# -- dev --
-mypy
-types-requests
-types-beautifulsoup4
+aiohappyeyeballs==2.6.1
+aiohttp==3.12.15
+aiosignal==1.4.0
+attrs==25.3.0
+frozenlist==1.7.0
+idna==3.10
+multidict==6.6.4
+propcache==0.3.2
+pycryptodome==3.23.0
+yarl==1.20.1

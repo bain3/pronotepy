@@ -1,0 +1,35 @@
+[project]
+name = "pronotepy"
+version = "3.0.0"
+description = "An API wrapper for the PRONOTE school management software"
+authors = [
+  { name="bain", email="bain@bain.cz" },
+]
+readme = "README.md"
+requires-python = ">=3.10"
+license = "MIT"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Operating System :: OS Independent",
+]
+license-files = ["LICEN[CS]E*"]
+dependencies = [
+    "aiohttp~=3.12.15",
+    "pycryptodome~=3.23.0",
+]
+
+[project.urls]
+Repository = "https://github.com/bain3/pronotepy"
+
+[build-system]
+requires = ["uv_build ~= 0.8.8"]
+build-backend = "uv_build"
+
+[tool.basedpyright]
+typeCheckingMode = "standard"
+
+[dependency-groups]
+dev = [
+    "basedpyright>=1.31.4",
+    "pytest>=8.4.2",
+]
