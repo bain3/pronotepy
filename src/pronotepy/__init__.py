@@ -10,3 +10,7 @@ __version__ = "3.0.0"
 
 from .err import *
 from .session import *
+from .clients import *
+from .simple_objects import *
+
+from .term import *

@@ -35,3 +35,13 @@ class PronoteAPIError(PronoteError):
 
 class MFAError(PronoteError):
     pass
+
+
+class ParsingError(PronoteError):
+    """Could not parse JSON from PRONOTE"""
+
+    def __init__(self, msg: str, json_dict: dict, path: tuple[str, ...]):
+        super().__init__(msg)
+
+        self.json_dict = json_dict
+        self.path = path

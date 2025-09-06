@@ -33,6 +33,7 @@ dev = [
     "mypy>=1.17.1",
     "pytest>=8.4.2",
     "pytest-asyncio>=1.1.0",
+    "ruff>=0.12.12",
 ]
 
 [tool.pytest.ini_options]
@@ -44,3 +45,11 @@ asyncio_default_test_loop_scope = "session"
 python_version = "3.10"  # check against min. supported
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+ignore = [
+    "F405", "F403"  # wildcard imports are OK
+]

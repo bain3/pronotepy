@@ -68,11 +68,7 @@ class MFACredentials:
     client_identifier: str | None
 
     def __post_init__(self) -> None:
-        if (
-            self.account_pin is None
-            and self.device_name is None
-            and self.client_identifier is None
-        ):
+        if self.account_pin is None and self.device_name is None and self.client_identifier is None:
             raise ValueError("MFA credentials are empty, thus invalid")
 
 
@@ -89,12 +85,25 @@ class PronoteSession:
     authentication, to deletion. Adds additional information to the requests to
     make them valid.
 
-    TODO: example how to use
+    An example:
+
+    .. code-block:: python
+        credentials = UserPass("https://host.invalid/pronote/", Spaces.STUDENT, "user", "pass")
+        session, *_ = await PronoteSession.login(credentials)
+
+        # now we have a valid and authenticated session
+
+        # Send the following post request
+        # {
+        #     "id": "PageInfosPerso",
+        #     "session": ...,
+        #     "no": ...,
+        #     "dataSec": data
+        # }
+        response = await session.post("PageInfosPerso", data)
     """
 
-    USER_AGENT: Final = (
-        "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:73.0) Gecko/20100101 Firefox/73.0  PRONOTE Mobile APP"
-    )
+    USER_AGENT: Final = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:73.0) Gecko/20100101 Firefox/73.0  PRONOTE Mobile APP"
 
     def __init__(
         self,
@@ -107,8 +116,8 @@ class PronoteSession:
     ) -> None:
         self.base_url: str = base_url
 
-        self.session_lock: Lock = Lock()
-        self.session: aiohttp.ClientSession = session
+        self._session_lock: Lock = Lock()
+        self._http_session: aiohttp.ClientSession = session
 
         self.encrypt_requests: bool = encrypt_requests
         self.compress_requests: bool = compress_requests
@@ -135,53 +144,57 @@ class PronoteSession:
     ) -> tuple[PronoteSession, ResponseJson]:
         """Creates an unauthenticated PRONOTE session"""
 
+        base_url = base_url.rstrip("/")
+
         http_session = aiohttp.ClientSession(cookie_jar=cookie_jar)
         http_session.headers.add("User-Agent", cls.USER_AGENT)
 
-        # get rsa keys and session id, retry 3 times
-        for _ in range(3):
-            try:
-                log.debug(f"requesting html: {base_url}/{space}")
-                get_response = await http_session.get(f"{base_url}/{space}")
-                attributes = _parse_html(await get_response.text())
-            except ValueError:
-                log.warning(
-                    "[_Communication.initialise] Failed to parse html, retrying..."
-                )
-                continue  # retry
+        try:
+            # get initialisation attributes from page html
+            for _ in range(3):
+                try:
+                    log.debug(f"requesting html: {base_url}/{space}")
+                    get_response = await http_session.get(f"{base_url}/{space}")
+                    attributes = _parse_html(await get_response.text())
+                except ValueError:
+                    log.warning("failed to parse html, retrying...")
+                    continue
+                else:
+                    break
             else:
-                break
-        else:
-            raise PronoteError("Unable to connect to pronote, please try again later")
+                raise PronoteError("Unable to connect to pronote, please try again later")
 
-        new_iv = secrets.token_bytes(16)
+            new_iv = secrets.token_bytes(16)
 
-        uuid = base64.b64encode(
-            _rsa_encrypt(new_iv) if attributes.get("http", False) else new_iv
-        ).decode()
+            uuid = base64.b64encode(
+                _rsa_encrypt(new_iv) if attributes.get("http", False) else new_iv
+            ).decode()
 
-        session = PronoteSession(
-            base_url,
-            http_session,
-            bool(attributes.get("CrA", False)),
-            bool(attributes.get("CoA", False)),
-            int(attributes["h"]),
-            int(attributes["a"]),
-        )
+            session = PronoteSession(
+                base_url,
+                http_session,
+                bool(attributes.get("CrA", False)),
+                bool(attributes.get("CoA", False)),
+                int(attributes["h"]),
+                int(attributes["a"]),
+            )
 
-        if "e" in attributes:
-            session.cas_username = attributes["e"]
-            session.cas_password = attributes["f"]
+            if "e" in attributes:
+                session.cas_username = attributes["e"]
+                session.cas_password = attributes["f"]
 
-        initial_response = await session.post(
-            "FonctionParametres",
-            {"data": {"Uuid": uuid, "identifiantNav": client_identifier}},
-            new_aes_iv=MD5.new(new_iv).digest(),
-        )
+            initial_response = await session.post(
+                "FonctionParametres",
+                {"data": {"Uuid": uuid, "identifiantNav": client_identifier}},
+                new_aes_iv=MD5.new(new_iv).digest(),
+            )
 
-        session.client_identifier = initial_response["dataSec"]["data"][
-            "identifiantNav"
-        ]
+            session.client_identifier = (
+                client_identifier or initial_response["dataSec"]["data"]["identifiantNav"]
+            )
+        except Exception:
+            await http_session.close()
+            raise
 
         return session, initial_response
 
@@ -202,54 +215,65 @@ class PronoteSession:
             Tuple of the session, and the FonctionsParametres and Authentification
             raw responses.
         """
+
         match creds:
             case UserPass():
-                return await PronoteSession.userpass_login(creds, mfa)
+                return await PronoteSession._userpass_login(creds, mfa)
             case QRCode():
-                return await PronoteSession.qrcode_login(creds, mfa)
+                return await PronoteSession._qrcode_login(creds, mfa)
             case Token():
-                return await PronoteSession.token_login(creds, mfa)
+                return await PronoteSession._token_login(creds, mfa)
             case CasCookies():
-                return await PronoteSession.cas_login(creds, mfa)
+                return await PronoteSession._cas_login(creds, mfa)
 
     @classmethod
-    async def userpass_login(
+    async def _userpass_login(
         cls,
         creds: UserPass,
         mfa: MFACredentials | None = None,
     ) -> tuple[PronoteSession, ResponseJson, ResponseJson]:
         """Creates a PRONOTE session authenticated with username and password"""
+
         session, options = await cls.create(
             creds.base_url, creds.space.value, mfa.client_identifier if mfa else None
         )
 
-        auth_response = await session._login(
-            creds.username, creds.password, cls.LoginMode.LOCAL, mfa=mfa
-        )
+        try:
+            auth_response = await session._login(
+                creds.username, creds.password, cls.LoginMode.LOCAL, mfa=mfa
+            )
+        except Exception:
+            await session.close()
+            raise
 
         return session, options, auth_response
 
     @classmethod
-    async def token_login(
+    async def _token_login(
         cls,
         creds: Token,
         mfa: MFACredentials | None = None,
     ) -> tuple[PronoteSession, ResponseJson, ResponseJson]:
         """Creates a PRONOTE session authenticated with a token"""
+
         session, options = await cls.create(
             creds.base_url,
             "mobile." + creds.space.value,
             mfa.client_identifier if mfa else None,
         )
 
-        auth_response = await session._login(
-            creds.username, creds.token, cls.LoginMode.TOKEN, creds.app_uuid, mfa
-        )
+        try:
+            auth_response = await session._login(
+                creds.username, creds.token, cls.LoginMode.TOKEN, creds.app_uuid, mfa
+            )
+        except Exception:
+            await session.close()
+            raise
 
         return session, options, auth_response
 
     @classmethod
-    async def qrcode_login(
+    async def _qrcode_login(
         cls,
         creds: QRCode,
         mfa: MFACredentials | None = None,
@@ -287,23 +311,26 @@ class PronoteSession:
 
         base_url = "/".join(parts)
 
-        session, options = await cls.create(
-            base_url, space, mfa.client_identifier if mfa else None
-        )
+        session, options = await cls.create(base_url, space, mfa.client_identifier if mfa else None)
 
-        auth_response = await session._login(
-            login, jeton, cls.LoginMode.QRCODE, creds.app_uuid, mfa
-        )
+        try:
+            auth_response = await session._login(
+                login, jeton, cls.LoginMode.QRCODE, creds.app_uuid, mfa
+            )
+        except Exception:
+            await session.close()
+            raise
 
         return session, options, auth_response
 
     @classmethod
-    async def cas_login(
+    async def _cas_login(
         cls,
         creds: CasCookies,
         mfa: MFACredentials | None = None,
     ) -> tuple[PronoteSession, ResponseJson, ResponseJson]:
         """Creates a PRONOTE session authenticated with cookies from CAS"""
+
         session, options = await cls.create(
             creds.base_url,
             creds.space.value,
@@ -311,12 +338,16 @@ class PronoteSession:
             creds.cookies,
         )
 
-        auth_response = await session._login(
-            session.cas_credentials.username,  # type: ignore
-            session.cas_credentials.password,  # type: ignore
-            cls.LoginMode.CAS,
-            mfa=mfa,
-        )
+        try:
+            auth_response = await session._login(
+                session.cas_credentials.username,  # type: ignore
+                session.cas_credentials.password,  # type: ignore
+                cls.LoginMode.CAS,
+                mfa=mfa,
+            )
+        except Exception:
+            await session.close()
+            raise
 
         return session, options, auth_response
 
@@ -353,7 +384,7 @@ class PronoteSession:
             }
         }
 
-        idr = await self.post("Identification", data=ident_json)
+        idr = await self.post("Identification", dataSec=ident_json)
 
         # creating the authentification data
         challenge = idr["dataSec"]["data"]["challenge"]
@@ -376,9 +407,7 @@ class PronoteSession:
             # Solve challenge by removing every other character from the string
             # and encrypting it back.
             dec = _aes_decrypt(aes_key, self.aes_iv, bytes.fromhex(challenge)).decode()
-            solved_challenge = _aes_encrypt(
-                aes_key, self.aes_iv, dec[::2].encode()
-            ).hex()
+            solved_challenge = _aes_encrypt(aes_key, self.aes_iv, dec[::2].encode()).hex()
         except ValueError as ex:
             raise CredentialsError() from ex
 
@@ -390,7 +419,7 @@ class PronoteSession:
             }
         }
 
-        auth_response = await self.post("Authentification", data=auth_json)
+        auth_response = await self.post("Authentification", dataSec=auth_json)
 
         if "cle" not in auth_response["dataSec"]["data"]:
             log.error("Failed to log in. Server did not respond with key.")
@@ -445,13 +474,11 @@ class PronoteSession:
             if mfa.account_pin is None:
                 raise MFAError("PIN is required for this account")
 
-            encryptedPin = _aes_encrypt(
-                self.aes_key, self.aes_iv, mfa.account_pin.encode()
-            ).hex()
+            encryptedPin = _aes_encrypt(self.aes_key, self.aes_iv, mfa.account_pin.encode()).hex()
 
             resp = await self.post(
                 "SecurisationCompteDoubleAuth",
-                data={
+                dataSec={
                     "data": {
                         "action": 0,
                         "codePin": encryptedPin,
@@ -478,17 +505,36 @@ class PronoteSession:
             if encryptedPin:
                 data["data"]["codePin"] = encryptedPin
 
-            _ = await self.post("SecurisationCompteDoubleAuth", data=data)
+            _ = await self.post("SecurisationCompteDoubleAuth", dataSec=data)
 
     async def post(
         self,
         function_name: str,
-        data: dict,
+        dataSec: dict,
         new_aes_iv: bytes | None = None,
         new_aes_key: bytes | None = None,
     ) -> ResponseJson:
+        """Call the PRONOTE API
 
-        post_data: Any = data  # remove type
+        Formats, authenticates, and sends `data` as a POST request (puts `function_name`
+        as the "id" of the function that is being called) to the PRONOTE API.
+
+        Even though this method is async, requests are sent in series. PRONOTE expects
+        a serial number attached to them, which would break if we sent more requests at
+        the same time.
+
+        .. code-block:: python
+            # Send the following post request
+            # {
+            #     "id": "PageInfosPerso",
+            #     "session": ...,
+            #     "no": ...,
+            #     "dataSec": data
+            # }
+            response = await session.post("PageInfosPerso", data)
+        """
+
+        post_data: Any = dataSec  # remove type
 
         if self.encrypt_requests:
             post_data = jsn.dumps(post_data).encode()
@@ -500,7 +546,7 @@ class PronoteSession:
             post_data = _aes_encrypt(self.aes_key, self.aes_iv, post_data).hex().upper()
 
         # Requests cannot run in parallel because PRONOTE requires sequential request numbers
-        async with self.session_lock:
+        async with self._session_lock:
             req_number = _aes_encrypt(
                 self.aes_key, self.aes_iv, str(self.request_number).encode()
             ).hex()
@@ -517,8 +563,8 @@ class PronoteSession:
 
             p_site = f"{self.base_url}/appelfonction/{self.space_id}/{self.session_id}/{req_number}"
 
-            log.debug("Calling %s with %s", function_name, data)
-            response = await self.session.post(p_site, json=json)
+            log.debug("Calling %s with %s", function_name, dataSec)
+            response = await self._http_session.post(p_site, json=json)
 
             res_data = await response.json()
 
@@ -562,7 +608,8 @@ class PronoteSession:
         return res_data
 
     async def close(self) -> None:
-        await self.session.close()
+        if not self._http_session.closed:
+            await self._http_session.close()
 
     async def __aenter__(self) -> PronoteSession:
         return self
