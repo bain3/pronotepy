@@ -889,7 +889,10 @@ class Lesson(Object):
         self.test: bool = self._resolver(
             bool, "cahierDeTextes", "V", "estDevoir", default=False
         )
-
+        lesson_g: int = self._resolver(int, "G", default=0)
+        self.modified: bool = True \
+            if lesson_g in [2, 3] \
+            else False
         self.end: datetime.datetime = self._resolver(
             Util.datetime_parse, "DateDuCoursFin", "V", strict=False
         )
