@@ -1,0 +1,15 @@
+There are a lot of changes from v2. Here's the list:
+
+ - The library is now asynchronous
+
+ - Client is now created using `Client.login()` from a `Credentials` object.
+   You should also make sure to close it with `Client.close()` after you've finished
+   using it. You can also use `async with`.
+
+ - Period has been renamed to Term
+
+ - Many of the properties of v2's `Period` are now a few functions on the new `Term` class.
+   For example grades and averages are now joined into `Term.grades()`, because they're fetched
+   with a single request from PRONOTE.
+
+
