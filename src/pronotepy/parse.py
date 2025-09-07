@@ -137,7 +137,7 @@ class SpecialGradeValue(Enum):
             "AbsentZero",
             "NonRenduZero",
             "Felicitations",
-        ][self.value]
+        ][self.value - 1]
 
 
 GradeValue = str | SpecialGradeValue
