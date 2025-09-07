@@ -45,3 +45,9 @@ class ParsingError(PronoteError):
 
         self.json_dict = json_dict
         self.path = path
+
+
+class NoAccess(PronoteError):
+    """You do not have access to the resource"""
+
+    pass

@@ -10,6 +10,18 @@ from .session import Credentials, MFACredentials, PronoteSession, ResponseJson
 from . import parse
 
 
+def _get_current_term(user_options: ResponseJson, terms: list[Term]) -> Term:
+    onglets = user_options["dataSec"]["data"]["ressource"]["listeOngletsPourPeriodes"]["V"]
+
+    # get onglet with number 198 (mes notes), otherwise fallback to the
+    # first one in the list
+    onglet = next(filter(lambda x: x.get("G") == 198, onglets), onglets[0])
+
+    id_term = onglet["periodeParDefaut"]["V"]["N"]
+
+    return next(term for term in terms if term.id == id_term)
+
+
 class Client:
     def __init__(
         self,
@@ -34,9 +46,11 @@ class Client:
         def make_term(t: Any) -> Term:
             return Term(self, t)
 
-        self.periods: list[Term] = so_get(
+        self.terms: list[Term] = so_get(
             parse.many(make_term), *parse.data_path, "General", "ListePeriodes"
         )
+
+        self.current_term: Term = _get_current_term(user_options, self.terms)
 
     @classmethod
     async def login(cls, credentials: Credentials, mfa: MFACredentials | None = None) -> Client:
