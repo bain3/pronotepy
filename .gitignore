@@ -4,3 +4,8 @@
 /.mypy_cache/
 /api.log
 *.pyc
+/build
+/pronotepy.egg-info
+/dist
+/credentials.json
+/qr-code-Pronote.json
