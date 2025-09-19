@@ -115,8 +115,8 @@ Getting the base URL
 You can get the URL for your PRONOTE instance by logging in with your
 web-browser, then copying the URL from the address bar, and finally removing
 the part after the last slash. If the URL in the address bar is
-`https://abcd.your-schoool.invalid/some/path/pronote/parent.html`, then the
-base URL is `https://abcd.your-schoool.invalid/some/path/pronote/`.
+``https://abcd.your-schoool.invalid/some/path/pronote/parent.html``, then the
+base URL is ``https://abcd.your-schoool.invalid/some/path/pronote/``.
 
 
 .. _mfa:
