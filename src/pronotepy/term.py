@@ -50,24 +50,11 @@ class Term:
 
         self._client = client
 
-    # @property
-    # def report(self) -> Optional[Report]:
-    #     """
-    #     Gets a report from a period.
-    #
-    #     Returns:
-    #         Optional[Report]:
-    #             When ``None``, then the report is not yet published or is unavailable for any other reason
-    #     """
-    #     json_data = {"periode": {"G": 2, "N": self.id, "L": self.name}}
-    #     data = self._client.post("PageBulletins", 13, json_data)["dataSec"]["data"]
-    #     return Report(data) if "Message" not in data else None
-
     async def grades(self) -> TermGrades:
         """Get grades and averages from this term
 
         Returns:
-            A tuple of the grades and averages. Averages might be None if they're hidden
+            A (named) tuple of the grades and averages. Averages might be None if they're hidden
             on PRONOTE.
         """
 
@@ -89,21 +76,11 @@ class Term:
             response(str, *parse.data_path, "moyGeneraleClasse", "V"),
         )
 
-    # @property
-    # def evaluations(self) -> List["Evaluation"]:
-    #     """
-    #     All evaluations from this period
-    #     """
-    #     json_data = {"periode": {"N": self.id, "L": self.name, "G": 2}}
-    #     response = self._client.post("DernieresEvaluations", 201, json_data)
-    #     evaluations = response["dataSec"]["data"]["listeEvaluations"]["V"]
-    #     return [Evaluation(e) for e in evaluations]
-
     async def absences_and_punishments(self) -> TermAbsencesAndPunishments:
         """All absences, delays, and punishments from this term
 
         Returns:
-            A (named) tuple of the
+            A (named) tuple of the absences, delays, and punishments.
         """
 
         json_data = {
@@ -120,3 +97,26 @@ class Term:
             [Delay(a) for a in absences if a["G"] == 14],
             # [Punishment(self._client, a) for a in absences if a["G"] == 41]
         )
+
+    # @property
+    # def evaluations(self) -> List["Evaluation"]:
+    #     """
+    #     All evaluations from this period
+    #     """
+    #     json_data = {"periode": {"N": self.id, "L": self.name, "G": 2}}
+    #     response = self._client.post("DernieresEvaluations", 201, json_data)
+    #     evaluations = response["dataSec"]["data"]["listeEvaluations"]["V"]
+    #     return [Evaluation(e) for e in evaluations]
+
+    # @property
+    # def report(self) -> Optional[Report]:
+    #     """
+    #     Gets a report from a period.
+    #
+    #     Returns:
+    #         Optional[Report]:
+    #             When ``None``, then the report is not yet published or is unavailable for any other reason
+    #     """
+    #     json_data = {"periode": {"G": 2, "N": self.id, "L": self.name}}
+    #     data = self._client.post("PageBulletins", 13, json_data)["dataSec"]["data"]
+    #     return Report(data) if "Message" not in data else None

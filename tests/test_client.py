@@ -28,7 +28,8 @@ async def test_grades_and_averages(client: Client):
 
 
 async def test_absences_and_punishments(client: Client):
-    absences, delays = await client.terms[0].absences_and_punishments()
+    absences, delays = await client.current_term.absences_and_punishments()
 
     warn_empty(absences)
     warn_empty(delays)
+    # warn_empty(punishments)

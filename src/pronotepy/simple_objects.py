@@ -1,11 +1,10 @@
 from __future__ import annotations
 
+import datetime
 from dataclasses import dataclass, field
 
 from . import parse
-from .parse import locator, GradeValue
-
-import datetime
+from .parse import GradeValue, locator
 
 
 @dataclass(init=False, slots=True)
@@ -16,7 +15,7 @@ class Grade:
     """Session-specific ID of the object"""
     grade: GradeValue
     """Student's actual grade"""
-    out_of: GradeValue
+    out_of: str
     """Maximum amount of points"""
     default_out_of: str | None
     """Default maximum amount of points"""
@@ -47,7 +46,7 @@ class Grade:
         self.id = get(str, "N")
         self.grade = get(parse.grade, "note", "V")
         # TODO: Verify that the property cannot contain SpecialGradeValue
-        self.out_of = get(parse.grade, "bareme", "V")
+        self.out_of = get(str, "bareme", "V")
         self.default_out_of = get(str, "baremeParDefaut", "V", default=None)
         self.date = get(parse.date, "date", "V")
         self.subject = get(Subject, "service", "V")
@@ -174,11 +173,7 @@ class Delay:
         self.reasons = get(lambda motifs: [i["L"] for i in motifs], "listeMotifs", "V", default=[])
 
 
-# @dataclass(init=False, slots=True)
 # class Punishment:
-#     """
-#     Represents a punishment.
-#
 #     Attributes:
 #         id (str)
 #         given (Union[datetime.datetime, datetime.date]): Date and time when the punishment was given
@@ -195,11 +190,66 @@ class Delay:
 #         schedule (List[ScheduledPunishment]): List of scheduled date-times with durations
 #         schedulable (bool)
 #         duration (Optional[datetime.timedelta])
+#     class ScheduledPunishment(Object):
+#         Attributes:
+#             id (str)
+#             start (Union[datetime.datetime, datetime.date])
+#             duration (Optional[datetime.timedelta])
+
+
+# @dataclass(init=False)
+# class Punishment:
+#     """A student's punishment
+#
+#     Attributes:
+#         id (str)
+#         given (Union[datetime.datetime, datetime.date]): Date and time when the punishment was given
+#         exclusion (bool): If the punishment is an exclusion from class
+#         during_lesson (bool): If the punishment was given during a lesson.
+#             `self.during_lesson is True => self.given is datetime.datetime`
+#         homework (Optional[str]): Text description of the work that was given as the punishment
+#         homework_documents (List[Attachment]): Attached documents for work
+#         circumstances (str)
+#         circumstance_documents (List[Attachment])
+#         nature (str): Text description of the nature of the punishment (ex. "Retenue")
+#         reasons (List[str]): Text descriptions of the reasons for the punishment
+#         giver (str): Name of the person that gave the punishment
+#         schedule (List[ScheduledPunishment]): List of scheduled date-times with durations
+#         duration (Optional[datetime.timedelta])
 #     """
 #
-#     class ScheduledPunishment(Object):
-#         """
-#         Represents a sheduled punishment.
+#     id: str = field(compare=False)
+#     """Session-specific ID of the object"""
+#     date: datetime.date
+#     """Date on which the punishment was given"""
+#     time_slot: int | None
+#     """Time slot of the lesson the punishment was given in"""
+#     during_lesson: bool
+#     """If the punishment was given during a lesson"""
+#     exclusion: bool
+#     """If the punishment is an exclusion from class"""
+#     homework: str | None
+#     """Text description of the assigned work"""
+#     circumstances: str
+#     """Description of the event that the punishment is for"""
+#     nature: str
+#     """Kind of the punishment"""
+#     requires_parent: str | None
+#     """Is the parent required to fulfill the punishment"""
+#     reasons: list[str]
+#     """Text descriptions of the reasons for the punishment"""
+#     given_by: str
+#     """Name of the person that gave the punishment"""
+#     schedulable: bool
+#     """If the punishment administration can be scheduled"""
+#     schedule: list[Punishment.ScheduledPunishment]
+#     """Scheduled administrations of the punishment"""
+#     duration: datetime.timedelta | None
+#     """The full duration of the punishment"""
+#
+#     @dataclass(init=False)
+#     class ScheduledPunishment:
+#         """A sheduled administration of the punishment
 #
 #         Attributes:
 #             id (str)
@@ -207,93 +257,75 @@ class Delay:
 #             duration (Optional[datetime.timedelta])
 #         """
 #
-#         def __init__(self, client: ClientBase, json_dict: dict) -> None:
-#             super().__init__(json_dict)
-#             self.id: str = self._resolver(str, "N")
+#         id: str = field(compare=False)
+#         """Session-specific ID of the object"""
+#         date: datetime.date
+#         """Date to which the punishment was scheduled"""
+#         time_slot: int | None
+#         """School time slot the punishment was scheduled to"""
+#         duration: datetime.timedelta | None
+#         """Duration of the scheduled punishment"""
 #
-#             # construct a full datetime from "date" and "placeExecution" fields
-#             date = self._resolver(Util.date_parse, "date", "V")
-#             place = self._resolver(int, "placeExecution", strict=False)
+#         def __init__(self, client: Client, json_dict: dict) -> None:
+#             get = locator(json_dict)
 #
-#             self.start: Union[datetime.datetime, datetime.date]
-#             if place is not None:
-#                 liste_heures = client.func_options["dataSec"]["data"]["General"][
-#                     "ListeHeures"
-#                 ]["V"]
-#                 try:
-#                     self.start = datetime.datetime.combine(
-#                         date, Util.place2time(liste_heures, place)
-#                     )
-#                 except ValueError as e:
-#                     raise DataError(str(e))
-#             else:
-#                 self.start = date
+#             self.id = get(str, "N")
+#             self.date = get(parse.date, "date", "V")
+#             self.time_slot = get(int, "placeExecution", default=None)
+#             self.duration = get(parse.timedelta, "duree", default=None)
 #
-#             self.duration: Optional[datetime.timedelta] = self._resolver(
-#                 lambda v: datetime.timedelta(minutes=int(v)), "duree", strict=False
+#             self._lesson_start_times = client._lesson_start_times
+#
+#         @property
+#         def start(self) -> datetime.datetime:
+#             return datetime.datetime.combine(
+#                 self.date,
+#                 place2time(self._lesson_start_times, self.time_slot)
+#                 if self.time_slot is not None
+#                 else datetime.datetime.min.time(),
 #             )
 #
-#             del self._resolver
+#     def __init__(self, client: Client, json_dict: dict) -> None:
+#         get = locator(json_dict)
+#         self.id = get(str, "N")
 #
-#     def __init__(self, client: ClientBase, json_dict: dict) -> None:
-#         super().__init__(json_dict)
-#         self.id: str = self._resolver(str, "N")
-#
-#         date = self._resolver(Util.date_parse, "dateDemande", "V")
-#         self.during_lesson: bool = self._resolver(lambda v: not bool(v), "horsCours")
-#
-#         # construct a full datetime from "dateDemande" and "placeDemande" fields
-#         self.given: Union[datetime.datetime, datetime.date]
-#         if self.during_lesson:
-#             time_place = self._resolver(int, "placeDemande")
-#             liste_heures = client.func_options["dataSec"]["data"]["General"][
-#                 "ListeHeures"
-#             ]["V"]
-#             try:
-#                 self.given = datetime.datetime.combine(
-#                     date, Util.place2time(liste_heures, time_place)
-#                 )
-#             except ValueError as e:
-#                 raise DataError(str(e))
-#         else:
-#             self.given = date
-#
-#         self.exclusion: bool = self._resolver(bool, "estUneExclusion")
-#
-#         self.homework: str = self._resolver(str, "travailAFaire", strict=False)
-#         self.homework_documents: List[Attachment] = self._resolver(
-#             lambda x: [Attachment(client, a) for a in x],
-#             "documentsTAF",
+#         self.date = get(parse.date, "dateDemande", "V")
+#         self.time_slot = get(int, "placeDemande", default=None)
+#         self.during_lesson = get(lambda v: not bool(v), "horsCours")
+#         self.exclusion = get(bool, "estUneExclusion")
+#         self.homework = get(str, "travailAFaire", default=None)
+#         # TODO: change to an enum
+#         self.nature = get(str, "nature", "V", "L")
+#         self.requires_parent = get(str, "nature", "V", "estAvecARParent", default=None)
+#         self.reasons = get(lambda x: [i["L"] for i in x], "listeMotifs", "V")
+#         self.given_by = get(str, "demandeur", "V", "L")
+#         self.duration = get(parse.timedelta, "duree", default=None)
+#         self.circumstances = get(str, "circonstances")
+#         self.schedule = get(
+#             lambda x: [Punishment.ScheduledPunishment(client, i) for i in x],
+#             "programmation",
 #             "V",
 #             default=[],
 #         )
+#         # self.circumstance_documents: list[Attachment] = get(
+#         #     lambda x: [Attachment(client, a) for a in x], "documentsCirconstances", "V"
+#         # )
+#         # self.homework_documents: list[Attachment] = get(
+#         #     lambda x: [Attachment(client, a) for a in x],
+#         #     "documentsTAF",
+#         #     "V",
+#         #     default=[],
+#         # )
 #
-#         self.circumstances: str = self._resolver(str, "circonstances")
-#         self.circumstance_documents: List[Attachment] = self._resolver(
-#             lambda x: [Attachment(client, a) for a in x], "documentsCirconstances", "V"
-#         )
+#         self._lesson_start_times = client._lesson_start_times
 #
-#         # TODO: change to an enum (out of scope for this comment: change this kind of string to enums everywhere)
-#         self.nature: str = self._resolver(str, "nature", "V", "L")
-#         self.requires_parent: Optional[str] = self._resolver(
-#             str, "nature", "V", "estAvecARParent", strict=False
-#         )
+#     @property
+#     def given_at(self) -> datetime.datetime:
+#         """Date and time when the punishment was given"""
 #
-#         self.reasons: List[str] = self._resolver(
-#             lambda x: [i["L"] for i in x], "listeMotifs", "V"
-#         )
-#         self.giver: str = self._resolver(str, "demandeur", "V", "L")
-#
-#         self.schedulable: bool = self._resolver(bool, "estProgrammable")
-#
-#         self.schedule: List[Punishment.ScheduledPunishment] = []
-#         if self.schedulable:
-#             self.schedule = self._resolver(
-#                 lambda x: [Punishment.ScheduledPunishment(client, i) for i in x],
-#                 "programmation",
-#                 "V",
-#             )
-#
-#         self.duration: Optional[datetime.timedelta] = self._resolver(
-#             lambda v: datetime.timedelta(minutes=int(v)), "duree", strict=False
+#         return datetime.datetime.combine(
+#             self.date,
+#             place2time(self._lesson_start_times, self.time_slot)
+#             if self.time_slot is not None
+#             else datetime.datetime.min.time(),
 #         )

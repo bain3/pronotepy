@@ -12,4 +12,11 @@ There are a lot of changes from v2. Here's the list:
    For example grades and averages are now joined into `Term.grades()`, because they're fetched
    with a single request from PRONOTE.
 
+ - Special grade values (Absent, NonRendu, ...) are now enums. For example `Grade.student_grade`
+   now returns `str | SpecialGradeValue`. You can turn it into the old format by passing it to
+   `str`: `str(Grade.student_grade)`, since `SpecialGradeValue` implements `__str__`, which matches
+   the old strings.
 
+ - `Grade.is_optional` is no longer forced to `False` if `Grade.is_bonus` is `True`.
+
+ - Renamed `Client.start_day` to `Client.first_monday`. Added `Client.first_day`.

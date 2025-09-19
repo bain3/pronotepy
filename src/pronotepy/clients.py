@@ -1,13 +1,15 @@
 from __future__ import annotations
 
 import datetime
+import logging
 from typing import Any
 
-from .term import Term
-
-from .session import Credentials, MFACredentials, PronoteSession, ResponseJson
-
 from . import parse
+from .session import Credentials, MFACredentials, PronoteSession, ResponseJson
+from .term import Term
+from .credentials import Token
+
+log = logging.getLogger(__name__)
 
 
 def _get_current_term(user_options: ResponseJson, terms: list[Term]) -> Term:
@@ -15,7 +17,11 @@ def _get_current_term(user_options: ResponseJson, terms: list[Term]) -> Term:
 
     # get onglet with number 198 (mes notes), otherwise fallback to the
     # first one in the list
-    onglet = next(filter(lambda x: x.get("G") == 198, onglets), onglets[0])
+    onglet = next((x for x in onglets if x.get("G") == 198), None)
+
+    if onglet is None:
+        log.warning('Could not find "mes notes" onglet')
+        onglet = onglets[0]
 
     id_term = onglet["periodeParDefaut"]["V"]["N"]
 
@@ -31,17 +37,34 @@ class Client:
         user_options: ResponseJson,
     ) -> None:
         self.session = session
+        """Access to the low level PRONOTE session"""
 
         # raw responses from session initialisation
         self.server_options = server_options
+        """Raw FonctionParametres response"""
+
         self.auth_response = auth_response
+        """Raw Authentification response"""
+
         self.user_options = user_options
+        """Raw ParametresUtilisateur response"""
 
         so_get = parse.locator(server_options)
 
-        self.start_day: datetime.date = so_get(
+        self.first_monday: datetime.date = so_get(
             parse.date, *parse.data_path, "General", "PremierLundi", "V"
         )
+        """Date of the monday of the starting week of the school year"""
+
+        self.first_day: datetime.date = so_get(
+            parse.date, *parse.data_path, "General", "PremiereDate", "V"
+        )
+        """First day of the school year"""
+
+        self.last_day: datetime.date = so_get(
+            parse.date, *parse.data_path, "General", "DerniereDate", "V"
+        )
+        """Last day of the school year"""
 
         def make_term(t: Any) -> Term:
             return Term(self, t)
@@ -49,11 +72,19 @@ class Client:
         self.terms: list[Term] = so_get(
             parse.many(make_term), *parse.data_path, "General", "ListePeriodes"
         )
+        """School year terms"""
 
         self.current_term: Term = _get_current_term(user_options, self.terms)
+        """Current school year term"""
+
+        self._lesson_start_times = so_get(list, *parse.data_path, "General", "ListeHeures", "V")
 
     @classmethod
     async def login(cls, credentials: Credentials, mfa: MFACredentials | None = None) -> Client:
+        """Create an authenticated client
+
+        See :ref:`logging-in` for documentation on how to construct the credentials.
+        """
         session, options, auth_response = await PronoteSession.login(credentials, mfa)
 
         try:
@@ -74,6 +105,14 @@ class Client:
             post_data["data"] = data
 
         return await self.session.post(function_name, dataSec=post_data)
+
+    @property
+    async def client_identifier(self) -> str:
+        return self.session.client_identifier
+
+    @property
+    async def next_token(self) -> Token | None:
+        return self.session.next_token
 
     async def close(self) -> None:
         await self.session.close()

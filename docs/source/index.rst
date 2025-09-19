@@ -7,23 +7,10 @@ pronotepy's documentation
 Introduction
 ^^^^^^^^^^^^
 
-This is a Python API wrapper for the PRONOTE student administration service.
-Pronotepy supports student, parent, and partially vie-scolaire accounts.
+Pronotepy is an unofficial Python wrapper for the PRONOTE (school
+administration service) private API.
 
-.. note:: This project does **not** use the HYPERPLANNING API provided by PRONOTE.
-
-Dependencies
-^^^^^^^^^^^^
-
-* `cryptodome`_
-* `beautifulsoup4`_
-* `requests`_
-* `autoslot`
-
-.. _cryptodome: https://pypi.org/project/pycryptodome/
-.. _beautifulsoup4: https://pypi.org/project/beautifulsoup4/
-.. _requests: https://pypi.org/project/requests/
-.. _autoslot: https://pypi.org/project/autoslot/
+It currently supports student accounts.
 
 
 Guide
@@ -33,8 +20,9 @@ Guide
    :maxdepth: 3
 
    quickstart
+   logging-in
 
-PronotePy API documentation
+Pronotepy API documentation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. toctree::

@@ -3,201 +3,69 @@ Quickstart
 
 Installation
 ------------
-To make pronotepy's installation as easy as possible it is uploaded to pypi. To
-install it you can use pip.
 
-``pip install -U pronotepy``
+You can install pronotepy v3 from the ``v3`` branch on GitHub:
 
-If you want to install the latest version, you can install it directly from the
-master branch:
+.. code-block:: sh
 
-``pip install -U git+https://github.com/bain3/pronotepy.git``
-
-.. note:: You may have problems while installing the dependency pycryptodome.
-   Unfortunately I haven't found a different cryptographic library, if you have
-   an alternative please contact bain (see contact).
+   pip install git+https://github.com/bain3/pronotepy.git@v3
 
 Usage
 -----
 
-Client initialisation
-^^^^^^^^^^^^^^^^^^^^^
-The client can be created in multiple ways. They differ only by login method.
+Create a :class:`.Client`, which is a single authenticated session to PRONOTE.
+It is created with the :meth:`.Client.login` method.
 
-Logging in with QR code (recommended)
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+.. code-block:: python
 
-1. (one time setup) Obtain credentials by using ``python3 -m pronotepy.create_login``.
-   You can either:
-
-   1. Generate a QR code in PRONOTE and scan its contents so that you can paste
-      them into the script, or
-
-   2. log in using username and password. You may have to find an appropriate
-      ENT function in :doc:`api/ent`. (see logging in with username and
-      password below)
-
-   The script uses :meth:`.ClientBase.qrcode_login` internally. You can
-   generate new QR codes using :meth:`.ClientBase.request_qr_code_data`.
-
-2. Create a :class:`.Client` using :meth:`.ClientBase.token_login`, passing in
-   the credentials generated in the first step.
-
-   .. code-block:: python
+    from pronotepy import Client, UserPass, Spaces
     
-    import pronotepy
+    async def main():
+        credentials = UserPass(
+            "https://demo.index-education.net/pronote/",
+            Spaces.STUDENT,
+            "demonstration",
+            "pronotevs",
+        )
 
-    client = pronotepy.Client.token_login(
-        "https://demo.index-education.net/pronote/mobile.eleve.html?login=true",
-        "demonstration",
-        "SUPER_LONG_TOKEN_ABCDEFG",
-        "RandomGeneratedUuid",
-        client_identifier="ABCDEF_LONG_ID", # required only if account has higher security
-    )
+        client = await Client.login(credentials)
 
-    # get new credentials
-    credentials = client.export_credentials()
+        # You can now use the client. Don't forget to close it!
 
-    # use new credentials
-    client = pronotepy.Client.token_login(**credentials)
+        async with client: # or run `await client.close()` when you're done
+            print(f"The school year starts on {client.first_day}")
 
-    do_stuff(client)
+    asyncio.run(main())
 
-    # get new credentials
-    credentials = client.export_credentials()
+You can get the URL for your PRONOTE instance by logging in with your
+web-browser, then copying the URL from the address bar, and finally removing
+the part after the last slash. If the URL in the address bar is
+``https://abcd.your-schoool.invalid/some/path/pronote/parent.html``, then the
+base URL is ``https://abcd.your-schoool.invalid/some/path/pronote/``.
 
-    ...
-
-
-   .. warning:: Save your new credentials somewhere safe. PRONOTE generates a
-      new password token after each login.
-
-
-Logging in with username and password
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-You can also create a new client by passing in your username and password. This
-needs to go through your ENT everytime you login. **Consider logging in using
-the QR code method.**
-
-Use an ENT function from :doc:`api/ent` **if** you are logging in through an ENT.
-
-.. note:: The URL passed into the client must be a direct one to your pronote
-   instance. It usually ends with ``eleve.html``, ``parent.html``, or something
-   similar. Do not include any query parameters.
-
-.. code-block:: python
-
-    import pronotepy
-    from pronotepy.ent import ac_reunion
-    # importing ent specific function, you do not need to import anything if you dont use an ent
-
-    client = pronotepy.Client('https://demo.index-education.net/pronote/eleve.html',
-                          username='demonstration',
-                          password='pronotevs',
-                          ent=ac_reunion) # ent specific - fetches cookies from ENT
-    if not client.logged_in:
-        exit(1)  # the client has failed to log in
-
-Accounts with higher security enabled (unrecognized devices, or PIN codes) need
-additional parameters:
-
-.. code-block:: python
-
-    client = pronotepy.Client('https://demo.index-education.net/pronote/eleve.html',
-                          username='demonstration',
-                          password='pronotevs',
-                          account_pin="1111",
-                          device_name="pronotepy",
-                          client_identifier=None)
-
-    # keep client identifier from pronote
-    identifier = client.client_identifier
-
-When you pass 2FA, Pronotepy will register itself as a recognized device. The
-:attr:`.ClientBase.client_identifier` must be passed in when logging in again, so
-PRONOTE recognizes the device.
-
-Homework
-^^^^^^^^
-To access the user's homework use the :meth:`.Client.homework` method.
-
-.. code-block:: python
-
-    import datetime
-    homework = client.homework(datetime.date.today()) # this will return all the homework starting from <today>
-    # homework is a list of pronotepy.Homework
+.. note:: Authenticating to PRONOTE is a bit complicated. See :ref:`logging-in`
+   for more methods and a more detailed explanation.
 
 Grades
 ^^^^^^
-To access the user's grades you need to first get a period. This can be done
-with the :attr:`.Client.periods` or :attr:`.Client.current_period` properties.
+To access the user's grades you need to first get a school term. This can be
+done with :attr:`.Client.terms` to get all terms or
+:attr:`.Client.current_term` to just get the current one.
 
 .. code-block:: python
 
-    # print all the grades the user had in this school year
-    for period in client.periods:
-        # Iterate over all the periods the user has. This includes semesters and trimesters.
+    async with client:
+        # print all the grades the user had in this school year
+        for period in client.terms:
+            # Iterate over all the terms the user has. This includes semesters and trimesters.
+            grades, *_ = await term.grades()
+            for grade in grades:
+                print(f"{grade.grade}/{grade.out_of}")
 
-        for grade in period.grades: # the grades property returns a list of pronotepy.Grade
-            print(grade.grade) # This prints the actual grade. Could be a number or for example "Absent" (always a string)
-
-    # print only the grades from the current period
-    for grade in client.current_period.grades:
-        print(grade.grade)
-
-Long Term Usage
-^^^^^^^^^^^^^^^
-**From version 1.1 pronotepy will reinitialise the connection when the old one
-expires**. This is done so bots that are checking pronote will not have to do
-this manually.
-
-Unfortunately PRONOTE changes all of its ids for their objects every session.
-This makes old pronotepy objects ( :class:`.Lesson` for example) expire too.
-
-The old data like the description or the subject will still be accessible, but
-any functions that request from pronote will not work (pronotepy will raise the
-:class:`.ExpiredObject` exception). To make sure that you don't get any errors
-you can check the session with :meth:`.Client.session_check` and request new
-objects before you make any requests using your old objects.
-
-Below you can see sample code for a bot that checks one specific lesson content
-(useless but good for this example).
-
-.. code-block:: python
-
-    import pronotepy
-    import datetime
-    from time import sleep
-
-    # initialising the client
-    client = pronotepy.Client('https://demo.index-education.net/pronote/eleve.html',
-                              username='demonstration',
-                              password='pronotevs')
-
-    # user login check
-    if not client.logged_in:
-        print("Client is not logged in")
-        exit()
-
-    # getting the initial lesson
-    lesson = client.lessons(client.start_day + datetime.timedelta(days=1))[0]
-
-    while True: # infinite loop
-
-        # Checks the session status and refreshes the session if it is expired.
-        # Returns True if it has been refreshed.
-        if client.session_check():
-
-            # renew the lesson object
-            lesson = client.lessons(client.start_day + datetime.timedelta(days=1))[0]
-
-            print("Session reinitialised and object renewed.")
-
-        # the content property sends a request to pronote asking for the content (inefficient so don't use it often)
-        print(lesson.content)
-        # lesson.content is pronotepy.LessonContent
-
-        sleep(7200) # wait for 2 hours
+        # print only the grades from the current period
+        grades, *_ = await client.current_term.grades()
+        for grade in grades:
+            print(f"{grade.grade}/{grade.out_of}")
 
 Other usage
 ^^^^^^^^^^^
@@ -205,24 +73,16 @@ For other usage please consult the API reference.
 
 JSON serialization
 ^^^^^^^^^^^^^^^^^^
-Pronotepy currently supports serialization to a python :class:`dict` for easier
-further processing. The built in :mod:`json` module cannot serialize
-:mod:`datetime` objects, so a ``default`` function must be passed to :func:`json.dumps`.
 
-An example showing serialization of :class:`.Period` into JSON, including
-properties, because :attr:`.Period.grades` is a property, but also excluding
-:attr:`.Period.punishments`:
+All PRONOTE objects are dataclasses. You can use :func:`dataclasses.asdict` to convert them to a 
+dictionary and serialize that.
+
+You may want to create your own serializer to serialize :mod:`datetime` objects:
 
 .. code-block:: python
 
-    import pronotepy
-    import datetime
+    from dataclasses import asdict
     import json
-    
-    # initialising the client
-    client = pronotepy.Client('https://demo.index-education.net/pronote/eleve.html',
-                              username='demonstration',
-                              password='pronotevs')
 
     def serializer(obj):
         if isinstance(obj, datetime.datetime):
@@ -232,6 +92,5 @@ properties, because :attr:`.Period.grades` is a property, but also excluding
         elif isinstance(obj, datetime.timedelta):
             return str(obj)
 
-    for period in client.periods:
-        serialized = period.to_dict(include_properties=True, exclude={"punishments", })
-        print(json.dumps(serialized, default=serializer, indent=2))
+    for term in client.terms:
+        print(json.dumps(asdict(term), default=serializer, indent=2))

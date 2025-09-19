@@ -1,6 +1,7 @@
 """
 An API wrapper for PRONOTE
 """
+# ruff: noqa: F401
 
 __title__ = "pronotepy"
 __author__ = "bain, Xiloe"
@@ -12,5 +13,8 @@ from .err import *
 from .session import *
 from .clients import *
 from .simple_objects import *
+from .credentials import *
 
 from .term import *
+
+from .parse import GradeValue, SpecialGradeValue

@@ -118,6 +118,8 @@ def date(formatted_date: str) -> dt.date:
 
 
 class SpecialGradeValue(Enum):
+    """Can be passed to :func:`str` to get (old) text representation"""
+
     ABSENT = 1
     DISPENSE = 2
     NONNOTE = 3
@@ -155,6 +157,10 @@ def many(f: Callable[[Any], R]) -> Callable[[Any], list[R]]:
         return [f(v) for v in vals]
 
     return inner
+
+
+def timedelta(v: Any) -> dt.timedelta:
+    return dt.timedelta(minutes=int(v))
 
 
 data_path = ("dataSec", "data")

@@ -5,6 +5,7 @@ This is the API reference for pronotepy.
 
 .. toctree::
    clients
-   data
+   objects
+   credentials
    exceptions
-   ent
+   low-level

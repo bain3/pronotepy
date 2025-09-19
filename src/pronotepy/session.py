@@ -8,7 +8,6 @@ import re
 import secrets
 import zlib
 from asyncio import Lock
-from dataclasses import dataclass
 from typing import Any, Final
 
 import aiohttp
@@ -18,64 +17,11 @@ from Crypto.PublicKey import RSA
 from Crypto.Util import Padding
 
 from .err import *
+from .credentials import *
 
 log = logging.getLogger(__name__)
 
 ResponseJson = dict[str, Any]
-
-
-@dataclass
-class UserPass:
-    base_url: str
-    space: Spaces
-    username: str
-    password: str
-    using_cas: bool = False
-
-
-@dataclass
-class QRCode:
-    code_contents: dict[str, str]
-    pin: str
-    app_uuid: str
-
-
-@dataclass
-class Token:
-    base_url: str
-    space: Spaces
-    username: str
-    token: str
-    app_uuid: str
-
-
-@dataclass
-class CasCookies:
-    base_url: str
-    space: Spaces
-    cookies: aiohttp.CookieJar
-
-
-Credentials = UserPass | QRCode | Token | CasCookies
-
-
-@dataclass
-class MFACredentials:
-    """Credentials for (2/M)FA authentication"""
-
-    account_pin: str | None
-    device_name: str | None
-    client_identifier: str | None
-
-    def __post_init__(self) -> None:
-        if self.account_pin is None and self.device_name is None and self.client_identifier is None:
-            raise ValueError("MFA credentials are empty, thus invalid")
-
-
-class Spaces(enum.Enum):
-    STUDENT = "eleve.html"
-    PARENT = "parent.html"
-    VIESCOLAIRE = "viescolaire.html"
 
 
 class PronoteSession:
@@ -88,6 +34,7 @@ class PronoteSession:
     An example:
 
     .. code-block:: python
+
         credentials = UserPass("https://host.invalid/pronote/", Spaces.STUDENT, "user", "pass")
         session, *_ = await PronoteSession.login(credentials)
 
@@ -115,24 +62,38 @@ class PronoteSession:
         space_id: int,
     ) -> None:
         self.base_url: str = base_url
+        """Saved base URL of the PRONOTE instance"""
 
         self._session_lock: Lock = Lock()
         self._http_session: aiohttp.ClientSession = session
 
         self.encrypt_requests: bool = encrypt_requests
+        """Is the session encrypting requests"""
         self.compress_requests: bool = compress_requests
+        """Is the session compressing requests"""
         self.session_id: int = session_id
+        """PRONOTE session ID ("h" attribute)"""
         self.space_id: int = space_id
+        """Space number ("a" attribute)"""
 
         self.cas_username: str | None = None
+        """If authenticating with CAS cookies, the username we received"""
         self.cas_password: str | None = None
+        """If authenticating with CAS cookies, the password we received"""
 
         self.aes_iv: bytes = bytes(16)
+        """Current AES IV"""
         self.aes_key: bytes = MD5.new().digest()
+        """Current AES key"""
 
         self.request_number: int = 1
+        """Request number (for "no" attribute in requests)"""
 
         self.client_identifier: str
+        """Received client identifier for MFA"""
+
+        self.next_token: Token | None = None
+        """The next credentials to use if authenticating as mobile app (from QRCode / Token)"""
 
     @classmethod
     async def create(
@@ -258,7 +219,7 @@ class PronoteSession:
 
         session, options = await cls.create(
             creds.base_url,
-            "mobile." + creds.space.value,
+            "mobile." + creds.space,
             mfa.client_identifier if mfa else None,
         )
 
@@ -269,6 +230,14 @@ class PronoteSession:
         except Exception:
             await session.close()
             raise
+
+        session.next_token = Token(
+            base_url=session.base_url,
+            space=creds.space,
+            username=creds.username,
+            token=auth_response["dataSec"]["data"]["jetonConnexionAppliMobile"],
+            app_uuid=creds.app_uuid,
+        )
 
         return session, options, auth_response
 
@@ -320,6 +289,14 @@ class PronoteSession:
         except Exception:
             await session.close()
             raise
+
+        session.next_token = Token(
+            base_url=session.base_url,
+            space=space,
+            username=login,
+            token=auth_response["dataSec"]["data"]["jetonConnexionAppliMobile"],
+            app_uuid=creds.app_uuid,
+        )
 
         return session, options, auth_response
 
@@ -516,7 +493,7 @@ class PronoteSession:
     ) -> ResponseJson:
         """Call the PRONOTE API
 
-        Formats, authenticates, and sends `data` as a POST request (puts `function_name`
+        Formats, authenticates, and sends ``dataSec`` as a POST request (puts ``function_name``
         as the "id" of the function that is being called) to the PRONOTE API.
 
         Even though this method is async, requests are sent in series. PRONOTE expects
@@ -524,6 +501,7 @@ class PronoteSession:
         the same time.
 
         .. code-block:: python
+
             # Send the following post request
             # {
             #     "id": "PageInfosPerso",

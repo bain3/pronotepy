@@ -1,41 +1,22 @@
 Exceptions
 ==========
-This section documents all exceptions that pronotepy intentionally
-raises. All of them extend the :class:`.PronoteAPIError` exception.
-
-------------------------------------------------------------------
 
 .. currentmodule:: pronotepy
 
-.. autoexception:: PronoteAPIError
-   :members:
+.. autoclass:: PronoteError
 
-.. autoexception:: CryptoError
-   :members:
+.. autoclass:: CredentialsError
 
-.. autoexception:: ExpiredObject
-   :members:
+.. autoclass:: ExpiredObject
 
-.. autoexception:: ChildNotFound
-   :members:
+.. autoclass:: SuspendedError
 
-.. autoexception:: DataError
-   :members:
+.. autoclass:: BadHtmlError
 
-.. autoexception:: ParsingError
-   :members:
+.. autoclass:: PronoteAPIError
 
-.. autoexception:: ICalExportError
-   :members:
+.. autoclass:: MFAError
 
-.. autoexception:: DateParsingError
-   :members:
+.. autoclass:: ParsingError
 
-.. autoexception:: ENTLoginError
-   :members:
-
-.. autoexception:: UnsupportedOperation
-   :members:
-
-.. autoexception:: DiscussionClosed
-   :members:
+.. autoclass:: NoAccess
