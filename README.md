@@ -27,9 +27,9 @@
 
 ## Introduction
 
-Pronotepy is a Python API wrapper for the PRONOTE student administration
-service. It mainly focuses on student accounts but has limited support for
-teacher accounts as well.
+Pronotepy is a Python API wrapper for the PRONOTE school administration
+service. It mainly focuses on student and parent accounts but has limited
+support for teacher accounts as well.
 
 ## About
 
