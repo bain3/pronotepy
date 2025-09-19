@@ -1,4 +1,0 @@
-{
-    "restructuredtext.confPath": "${workspaceFolder}\\docs\\source",
-    "python.formatting.provider": "black"
-}
