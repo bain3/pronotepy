@@ -1,5 +1,6 @@
 from functools import partial
 
+from .complex_ent import ile_de_france
 # we need to ignore this because we are
 # ignoring the entire generic_func.py module
 from .generic_func import (  # type: ignore
@@ -134,8 +135,6 @@ ent_mayotte = partial(
     _open_ent_ng, url="https://mayotte.opendigitaleducation.com/auth/login"
 )
 
-ile_de_france = partial(_open_ent_ng, url="https://ent.iledefrance.fr/auth/login")
-
 neoconnect_guadeloupe = partial(
     _open_ent_ng, url="https://neoconnect.opendigitaleducation.com/auth/login"
 )
@@ -195,3 +194,7 @@ extranet_colleges_somme = partial(
     _simple_auth,
     url="http://www.colleges.cg80.fr/identification/identification.php",
 )
+
+"""Ent ile de france"""
+
+ile_de_france = partial(ile_de_france)
