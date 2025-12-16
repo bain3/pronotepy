@@ -2,8 +2,9 @@ from logging import getLogger, DEBUG
 import typing
 
 import requests
+import re
 from bs4 import BeautifulSoup
-from urllib.parse import urlparse, parse_qs
+from urllib.parse import urlparse, parse_qs, urljoin
 
 from ..exceptions import *
 from .generic_func import _educonnect
@@ -78,3 +79,46 @@ def ac_rennes(username: str, password: str) -> requests.cookies.RequestsCookieJa
             t = session.get(toutatice_auth, headers=HEADERS, params=params)
 
         return session.cookies
+
+@typing.no_type_check
+def ile_de_france(username,
+                   password,
+                   pronote_url: str = "") -> requests.cookies.RequestsCookieJar:
+
+    """
+    ENT Île-de-France
+
+    Parameters
+    ----------
+    username : str
+        username
+    password : str
+        password
+    pronote_url: str
+        URL of Pronote instance
+
+    Returns
+    -------
+    cookies : cookies
+        returns the ent session cookies
+    """
+
+
+    s = requests.Session()
+    s.headers.update(HEADERS)
+
+    r = s.get(pronote_url, allow_redirects=True)
+
+    m = re.search(r'<form[^>]+action="([^"]+)"', r.text)
+
+    if not m:
+        raise Exception("Formulaire de login introuvable → pas sur la page Keycloak ?")
+    form_action = urljoin(r.url, m.group(1))
+
+    hidden_inputs = dict(re.findall(r'name="([^"]+)" value="([^"]*)"', r.text))
+
+    payload = {**hidden_inputs, "username": username, "password": password, "credentialId": ""}
+
+    s.post(form_action, data=payload, allow_redirects=True)
+
+    return s.cookies
