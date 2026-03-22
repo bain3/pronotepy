@@ -18,7 +18,6 @@ from urllib.parse import urlparse, urlunparse
 
 from . import dataClasses
 from .exceptions import *
-from .exceptions import MFAError
 from .pronoteAPI import (
     _Communication,
     _Encryption,
@@ -664,36 +663,24 @@ class Client(ClientBase):
         # since we only have week precision, we need to make it more precise on our own
         return [lesson for lesson in output if date_from <= lesson.start <= date_to]
 
-    def export_ical(self, timezone_shift: int = 0) -> str:
-        """Exports ICal URL for the client's timetable
+    def export_ical(self) -> str:
+        """Constructs the client's ICal URL"""
+        response = self.post("PageInfosPerso", 16, None)
 
-        Args:
-            timezone_shift (int): in what timezone should the exported calendar be in (hour shift)
-        Returns:
-            str: URL for the exported ICal file
-        """
-        user = self.parametres_utilisateur["dataSec"]["data"]["ressource"]
-        data = {
-            "ressource": user,
-            "avecAbsencesEleve": False,
-            "avecConseilDeClasse": True,
-            "estEDTPermanence": False,
-            "avecAbsencesRessource": True,
-            "avecDisponibilites": True,
-            "avecInfosPrefsGrille": True,
-            "Ressource": user,
-            "NumeroSemaine": 1,
-            "numeroSemaine": 1,
-        }
-        response = self.post("PageEmploiDuTemps", 16, data)
-        icalsecurise = response["dataSec"]["data"].get("ParametreExportiCal")
-        if not icalsecurise:
-            raise ICalExportError("Pronote did not return ICal token")
+        try:
+            ical_params = response["dataSec"]["data"]["iCal"]["liste"]["V"][0]
+            ical = ical_params["paramICal"]
+            suppl = ical_params["paramSuppl"]
+        except KeyError as e:
+            raise ParsingError(
+                "Could not parse ICal params",
+                response,
+                ("dataSec", "data", "iCal", "liste", "V"),
+            ) from e
 
         ver = self.func_options["dataSec"]["data"]["General"]["versionPN"]
-        param = f"lh={timezone_shift}".encode().hex()
 
-        return f"{self.communication.root_site}/ical/Edt.ics?icalsecurise={icalsecurise}&version={ver}&param={param}"
+        return f"{self.communication.root_site}/ical/mesinformations.ics?icalsecurise={ical}&version={ver}&param={suppl}"
 
     def homework(
         self, date_from: datetime.date, date_to: Optional[datetime.date] = None
