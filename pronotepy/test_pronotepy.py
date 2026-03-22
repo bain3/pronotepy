@@ -6,7 +6,6 @@ from pronotepy import DiscussionClosed
 
 import warnings
 
-
 client = pronotepy.Client(
     "https://demo.index-education.net/pronote/eleve.html", "demonstration", "pronotevs"
 )

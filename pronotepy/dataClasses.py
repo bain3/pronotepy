@@ -34,7 +34,6 @@ from .exceptions import (
 
 from itertools import chain
 
-
 __all__ = (
     "Util",
     "Object",
@@ -684,11 +683,11 @@ class Grade(Object):
         date (datetime.date): the date on which the grade was given
         subject (Subject): the subject in which the grade was given
         period (Period): the period in which the grade was given
-        average (str): the average of the class
-        max (str): the highest grade of the test
-        min (str): the lowest grade of the test
-        coefficient (str): the coefficient of the grade
-        comment (str): the comment on the grade description
+        average (Optional[str]): the average of the class
+        max (Optional[str]): the highest grade of the test
+        min (Optional[str]): the lowest grade of the test
+        coefficient (Optional[str]): the coefficient of the grade
+        comment (Optional[str]): the comment on the grade description
         is_bonus (bool): is the grade bonus : only points above 10 count
         is_optionnal (bool): is the grade optionnal : the grade only counts if it increases the average
         is_out_of_20 (bool): is the grade out of 20. Example 8/10 -> 16/20
@@ -714,15 +713,15 @@ class Grade(Object):
         self.average: str = self._resolver(
             Util.grade_parse, "moyenne", "V", strict=False
         )
-        self.max: str = self._resolver(Util.grade_parse, "noteMax", "V")
-        self.min: str = self._resolver(Util.grade_parse, "noteMin", "V")
-        self.coefficient: str = self._resolver(str, "coefficient")
-        self.comment: str = self._resolver(str, "commentaire")
-        self.is_bonus: bool = self._resolver(bool, "estBonus")
+        self.max: str = self._resolver(Util.grade_parse, "noteMax", "V", strict=False)
+        self.min: str = self._resolver(Util.grade_parse, "noteMin", "V", strict=False)
+        self.coefficient: str = self._resolver(str, "coefficient", strict=False)
+        self.comment: str = self._resolver(str, "commentaire", strict=False)
+        self.is_bonus: bool = self._resolver(bool, "estBonus", default=False)
         self.is_optionnal: bool = (
-            self._resolver(bool, "estFacultatif") and not self.is_bonus
+            self._resolver(bool, "estFacultatif", default=False) and not self.is_bonus
         )
-        self.is_out_of_20: bool = self._resolver(bool, "estRamenerSur20")
+        self.is_out_of_20: bool = self._resolver(bool, "estRamenerSur20", default=False)
 
         del self._resolver
 
