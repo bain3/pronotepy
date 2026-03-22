@@ -13,14 +13,14 @@ from pronotepy.dataClasses import Grade, Period
 
 
 def _make_grade_json(
-    include_noteMax: bool =True,
-    include_noteMin: bool =True,
-    include_coefficient: bool =True,
-    include_commentaire: bool=True,
-    include_estBonus: bool=True,
-    include_estFacultatif: bool=True,
-    include_estRamenerSur20: bool=True,
-    include_moyenne: bool=True,
+    include_noteMax: bool = True,
+    include_noteMin: bool = True,
+    include_coefficient: bool = True,
+    include_commentaire: bool = True,
+    include_estBonus: bool = True,
+    include_estFacultatif: bool = True,
+    include_estRamenerSur20: bool = True,
+    include_moyenne: bool = True,
 ) -> dict:
     """Build a grade JSON dict with optional fields toggled on/off."""
     # Minimal required fields

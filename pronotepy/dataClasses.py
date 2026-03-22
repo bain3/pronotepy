@@ -34,7 +34,6 @@ from .exceptions import (
 
 from itertools import chain
 
-
 __all__ = (
     "Util",
     "Object",
@@ -714,21 +713,15 @@ class Grade(Object):
         self.average: str = self._resolver(
             Util.grade_parse, "moyenne", "V", strict=False
         )
-        self.max: str = self._resolver(
-            Util.grade_parse, "noteMax", "V", strict=False
-        )
-        self.min: str = self._resolver(
-            Util.grade_parse, "noteMin", "V", strict=False
-        )
+        self.max: str = self._resolver(Util.grade_parse, "noteMax", "V", strict=False)
+        self.min: str = self._resolver(Util.grade_parse, "noteMin", "V", strict=False)
         self.coefficient: str = self._resolver(str, "coefficient", strict=False)
         self.comment: str = self._resolver(str, "commentaire", strict=False)
         self.is_bonus: bool = self._resolver(bool, "estBonus", default=False)
         self.is_optionnal: bool = (
             self._resolver(bool, "estFacultatif", default=False) and not self.is_bonus
         )
-        self.is_out_of_20: bool = self._resolver(
-            bool, "estRamenerSur20", default=False
-        )
+        self.is_out_of_20: bool = self._resolver(bool, "estRamenerSur20", default=False)
 
         del self._resolver
 
