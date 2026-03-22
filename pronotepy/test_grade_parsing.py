@@ -13,18 +13,18 @@ from pronotepy.dataClasses import Grade, Period
 
 
 def _make_grade_json(
-    include_noteMax=True,
-    include_noteMin=True,
-    include_coefficient=True,
-    include_commentaire=True,
-    include_estBonus=True,
-    include_estFacultatif=True,
-    include_estRamenerSur20=True,
-    include_moyenne=True,
-):
+    include_noteMax: bool =True,
+    include_noteMin: bool =True,
+    include_coefficient: bool =True,
+    include_commentaire: bool=True,
+    include_estBonus: bool=True,
+    include_estFacultatif: bool=True,
+    include_estRamenerSur20: bool=True,
+    include_moyenne: bool=True,
+) -> dict:
     """Build a grade JSON dict with optional fields toggled on/off."""
     # Minimal required fields
-    json_dict = {
+    json_dict: dict = {
         "N": "001",
         "note": {"V": "15"},
         "bareme": {"V": "20"},
@@ -56,18 +56,18 @@ class TestGradeMissingFields(unittest.TestCase):
     """Test that Grade parsing handles missing optional fields gracefully."""
 
     @classmethod
-    def setUpClass(cls):
+    def setUpClass(cls) -> None:
         # Create a mock Period instance so the period resolver can find it
         mock_period = MagicMock(spec=Period)
         mock_period.id = "test_period_id"
         Period.instances.add(mock_period)
 
     @classmethod
-    def tearDownClass(cls):
+    def tearDownClass(cls) -> None:
         # Clean up mock period instances
         Period.instances = {p for p in Period.instances if not isinstance(p, MagicMock)}
 
-    def test_all_fields_present(self):
+    def test_all_fields_present(self) -> None:
         """Parsing works when all fields are present."""
         json_dict = _make_grade_json()
         grade = Grade(json_dict)
@@ -80,7 +80,7 @@ class TestGradeMissingFields(unittest.TestCase):
         self.assertFalse(grade.is_optionnal)
         self.assertFalse(grade.is_out_of_20)
 
-    def test_missing_noteMax(self):
+    def test_missing_noteMax(self) -> None:
         """Parsing does not crash when noteMax is missing."""
         json_dict = _make_grade_json(include_noteMax=False)
         grade = Grade(json_dict)
@@ -89,49 +89,49 @@ class TestGradeMissingFields(unittest.TestCase):
         self.assertEqual(grade.grade, "15")
         self.assertEqual(grade.min, "5")
 
-    def test_missing_noteMin(self):
+    def test_missing_noteMin(self) -> None:
         """Parsing does not crash when noteMin is missing."""
         json_dict = _make_grade_json(include_noteMin=False)
         grade = Grade(json_dict)
         self.assertIsNone(grade.min)
 
-    def test_missing_coefficient(self):
+    def test_missing_coefficient(self) -> None:
         """Parsing does not crash when coefficient is missing."""
         json_dict = _make_grade_json(include_coefficient=False)
         grade = Grade(json_dict)
         self.assertIsNone(grade.coefficient)
 
-    def test_missing_commentaire(self):
+    def test_missing_commentaire(self) -> None:
         """Parsing does not crash when commentaire is missing."""
         json_dict = _make_grade_json(include_commentaire=False)
         grade = Grade(json_dict)
         self.assertIsNone(grade.comment)
 
-    def test_missing_estBonus(self):
+    def test_missing_estBonus(self) -> None:
         """Parsing does not crash when estBonus is missing."""
         json_dict = _make_grade_json(include_estBonus=False)
         grade = Grade(json_dict)
         self.assertFalse(grade.is_bonus)
 
-    def test_missing_estFacultatif(self):
+    def test_missing_estFacultatif(self) -> None:
         """Parsing does not crash when estFacultatif is missing."""
         json_dict = _make_grade_json(include_estFacultatif=False)
         grade = Grade(json_dict)
         self.assertFalse(grade.is_optionnal)
 
-    def test_missing_estRamenerSur20(self):
+    def test_missing_estRamenerSur20(self) -> None:
         """Parsing does not crash when estRamenerSur20 is missing."""
         json_dict = _make_grade_json(include_estRamenerSur20=False)
         grade = Grade(json_dict)
         self.assertFalse(grade.is_out_of_20)
 
-    def test_missing_moyenne(self):
+    def test_missing_moyenne(self) -> None:
         """Parsing does not crash when moyenne is missing."""
         json_dict = _make_grade_json(include_moyenne=False)
         grade = Grade(json_dict)
         self.assertIsNone(grade.average)
 
-    def test_all_optional_fields_missing(self):
+    def test_all_optional_fields_missing(self) -> None:
         """Parsing does not crash when ALL optional fields are missing.
 
         This simulates the worst case scenario where a Pronote instance
