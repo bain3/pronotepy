@@ -1,0 +1,91 @@
+{
+    "Target amount": 450,
+    "Banco": {
+        "Rules": [
+            {
+                "Cluster": "Pole artistique",
+                "min": 15.0,
+                "max": 20.0
+            },
+            {
+                "Cluster": "Pole littéraire",
+                "min": 15.0,
+                "max": 20.0
+            },
+            {
+                "Cluster": "Pole scientifique",
+                "min": 15.0,
+                "max": 20.0
+            },
+            {
+                "Cluster": "Pole sportif",
+                "min": 15.0,
+                "max": 20.0
+            },
+            {
+                "Cluster": "Retards",
+                "min": 0.0,
+                "max": 5.0
+            }
+        ],
+        "Description": "Le banco est obtenu en cas de mention 'Félicitations' sur un trimestre.\n\nFélicitations :\n\t- Moyenne générale ≥ 15 dans tous les pôles\n\t- 5 retards maximum\n\t- Pas plus de X bâtons par matière/au total.\n\t- Pas plus de 2 avis qui dénoncent :\n\t\t- Peut mieux faire\n\t\t- Bavarde trop\n\t\t- Manque de concentration"
+    },
+    "Boost": {
+        "Rules": [
+            {
+                "Cluster": "Pole littéraire",
+                "min": 15.0,
+                "max": 20.0,
+                "money": 60
+            },
+            {
+                "Cluster": "Pole scientifique",
+                "min": 15.0,
+                "max": 20.0,
+                "money": 30
+            },
+            {
+                "Cluster": "Retards",
+                "min": 0.0,
+                "max": 0.0,
+                "money": 30
+            }
+        ],
+        "Description": "Les BOOSTS sont des bonus au marathon,\nobtenus avec des félicitations dans des pôles stratégiques.\nSa valeur peut varier selon l'effort de travail qu'il necessite."
+    },
+    "Marathon": {
+        "Rules": [
+            {
+                "Cluster": "Pole artistique",
+                "min": 13.0,
+                "max": 20.0,
+                "money": 30
+            },
+            {
+                "Cluster": "Pole littéraire",
+                "min": 13.0,
+                "max": 20.0,
+                "money": 30
+            },
+            {
+                "Cluster": "Pole scientifique",
+                "min": 13.0,
+                "max": 20.0,
+                "money": 30
+            },
+            {
+                "Cluster": "Pole sportif",
+                "min": 13.0,
+                "max": 20.0,
+                "money": 30
+            },
+            {
+                "Cluster": "Retards",
+                "min": 0.0,
+                "max": 8.0,
+                "money": 30
+            }
+        ],
+        "Description": "Le marathon est gagné avec les compliments\nà tous les trimestres.\nIls sont cumulables avec les BOOSTS.\n\nCompliments :\n\t- Moyenne générale ≥ 13 dans tous les pôles\n\t- 8 retards maximum\n\t- Pas plus de X bâtons par matière/au total.\n\t- Pas plus de 2 avis qui dénoncent :\n\t\t- Peut mieux faire\n\t\t- Bavarde trop\n\t\t- Manque de concentration"
+    }
+}

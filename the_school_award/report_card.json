@@ -1,0 +1,65 @@
+{
+    "report_card": [
+        {
+            "name": "Pole artistique",
+            "subjects": [
+                "Arts Plastiques",
+                "Éducation musicale"
+            ],
+            "subjects_average": {},
+            "average": null
+        },
+        {
+            "name": "Pole littéraire",
+            "subjects": [
+                "Anglais LV1",
+                "Allemand LV2",
+                "Français",
+                "Histoire-Géographie EMC"
+            ],
+            "subjects_average": {},
+            "average": null
+        },
+        {
+            "name": "Pole scientifique",
+            "subjects": [
+                "Mathématiques",
+                "Physique-Chimie",
+                "Science Vie et Terre",
+                "Technologie"
+            ],
+            "subjects_average": {},
+            "average": null
+        },
+        {
+            "name": "Pole sportif",
+            "subjects": [
+                "Éducation Physique et Sportive"
+            ],
+            "subjects_average": {},
+            "average": null
+        },
+        {
+            "name": "Retards",
+            "subjects": [
+                "Retards"
+            ],
+            "subjects_average": {},
+            "average": null
+        }
+    ],
+    "subject_mapping_pronote_to_report_card": {
+        "HISTOIRE-GEOGRAPHIE": "Histoire-Géographie EMC",
+        "ARTS PLASTIQUES": "Arts Plastiques",
+        "PHYS-CHIM": "Physique-Chimie",
+        "ALLEMAND LV1": "Allemand LV2",
+        "ALLEMAND": "Allemand LV2",
+        "MATHEMATIQUES": "Mathématiques",
+        "ANGLAIS": "Anglais LV1",
+        "SCIENCES VIE&TERRE": "Science Vie et Terre",
+        "FRANCAIS": "Français",
+        "EDUCATION MUSICALE": "Éducation musicale",
+        "TECHNOLOGIE": "Technologie",
+        "ED.PHYSIQUE & SPORTIVE": "Éducation Physique et Sportive"
+    }
+}
