@@ -984,6 +984,13 @@ class ParentClient(Client):
         )
 
         self.children: List[dataClasses.ClientInfo] = []
+        if not self.logged_in:
+            # Client.__init__ leaves logged_in False on a rejected login instead
+            # of raising, and parametres_utilisateur is only populated on success.
+            # Reading it below raises KeyError('dataSec'); honor the base-class
+            # contract and let callers check .logged_in instead.
+            return
+
         for c in self.parametres_utilisateur["dataSec"]["data"]["ressource"][
             "listeRessources"
         ]:

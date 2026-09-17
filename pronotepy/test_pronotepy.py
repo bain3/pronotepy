@@ -274,6 +274,17 @@ class TestParentClient(unittest.TestCase):
         # We assume demo website will always have discussions
         warn_empty(discussions)
 
+    def test_rejected_login_does_not_crash(self) -> None:
+        # A wrong password must leave logged_in False and children empty,
+        # not raise KeyError('dataSec') from ParentClient.__init__.
+        rejected = pronotepy.ParentClient(
+            "https://demo.index-education.net/pronote/parent.html",
+            username="demonstration",
+            password="not-the-password",
+        )
+        self.assertFalse(rejected.logged_in)
+        self.assertEqual(rejected.children, [])
+
 
 class TestVieScolaireClient(unittest.TestCase):
     client: pronotepy.VieScolaireClient
