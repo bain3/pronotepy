@@ -48,6 +48,32 @@ def _sso_redirect(
     return session.post(url, headers=HEADERS, data=payload)
 
 
+def _educonnect_user_type(opts: typing.Mapping[str, str]) -> typing.Optional[str]:
+    """
+    EduConnect profile ("typeUser") to log in with.
+
+    Taken from the ``type_user`` option when given, otherwise deduced from the
+    PRONOTE space the client connects to (parent.html or eleve.html).
+    """
+    if opts.get("type_user"):
+        return opts["type_user"]
+    path = urlparse(opts.get("pronote_url", "")).path.lower()
+    if path.endswith("parent.html"):
+        return "responsable"
+    if path.endswith("eleve.html"):
+        return "eleve"
+    return None
+
+
+def _form_fields(form: Tag) -> typing.Dict[str, str]:
+    """Named input fields of a form with their default values."""
+    return {
+        str(field["name"]): str(field.get("value", ""))
+        for field in form.find_all("input")
+        if isinstance(field, Tag) and field.get("name")
+    }
+
+
 @typing.no_type_check
 def _educonnect(
     session: requests.Session,
@@ -60,6 +86,11 @@ def _educonnect(
     """
     Generic function for EduConnect
 
+    Since 2025, EduConnect first serves a local-storage check page
+    (execution=e1s1) that only accepts its hidden fields, then the login form
+    (execution=e1s2) that also expects its CSRF token and the selected
+    profile (``typeUser``). The older single-page form is still handled.
+
     Parameters
     ----------
     username : str
@@ -68,6 +99,9 @@ def _educonnect(
         password
     url: str
         url of the ent login page
+    type_user : str, optional
+        EduConnect profile, "eleve" or "responsable". Deduced from
+        ``pronote_url`` when omitted.
 
     Returns
     -------
@@ -79,7 +113,32 @@ def _educonnect(
 
     log.debug(f"[EduConnect {url}] Logging in with {username}")
 
-    payload = {"j_username": username, "j_password": password, "_eventId_proceed": ""}
+    response = session.get(url, headers=HEADERS)
+    form = BeautifulSoup(response.text, "html.parser").find("form")
+
+    # Local-storage check: submit its hidden fields as a browser would.
+    if form and form.find(
+        "input", {"name": lambda n: n and n.startswith("shib_idp_ls_")}
+    ):
+        payload = {**_form_fields(form), "_eventId_proceed": ""}
+        action = urljoin(response.url, form.get("action") or response.url)
+        response = session.post(action, headers=HEADERS, data=payload)
+        form = BeautifulSoup(response.text, "html.parser").find("form")
+
+    payload = _form_fields(form) if form else {}
+    payload.update(
+        {"j_username": username, "j_password": password, "_eventId_proceed": ""}
+    )
+    if "typeUser" in payload:
+        type_user = _educonnect_user_type(opts)
+        if type_user:
+            payload["typeUser"] = type_user
+        else:
+            log.warning(
+                "[EduConnect] Unknown profile, pass type_user='eleve' or 'responsable'"
+            )
+    url = urljoin(response.url, form.get("action") or response.url) if form else url
+
     response = session.post(url, headers=HEADERS, data=payload)
     response = _sso_redirect(session, response, "SAMLResponse", url, payload)
     if not response:
@@ -133,7 +192,7 @@ def _cas_edu(
         if not response:
             raise ENTLoginError("Connection failure")
 
-        _educonnect(session, username, password, response.url)
+        _educonnect(session, username, password, response.url, **opts)
 
         return session.cookies
 
@@ -266,7 +325,7 @@ def _open_ent_ng_edu(
 
         response = session.get(ent_login_page, params=params, headers=HEADERS)
         response = _educonnect(
-            session, username, password, response.url, exceptions=False
+            session, username, password, response.url, exceptions=False, **opts
         )
 
         if not response:
@@ -341,7 +400,7 @@ def _wayf(
         if not response:
             raise ENTLoginError("Connection failure")
 
-        _educonnect(session, username, password, response.url)
+        _educonnect(session, username, password, response.url, **opts)
 
         return session.cookies
 
@@ -535,6 +594,8 @@ def _hubeduconnect(
                 "Fail to connect with HubEduConnect : Service URL not trusted. Is Pronote instance supported?"
             )
 
-        _educonnect(session, username, password, response.url)
+        _educonnect(
+            session, username, password, response.url, pronote_url=pronote_url, **opts
+        )
 
     return session.cookies
