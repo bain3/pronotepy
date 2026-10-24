@@ -644,9 +644,9 @@ class Average(Object):
 
     Attributes:
         student (str): students average in the subject
-        class_average (str): classes average in the subject
-        max (str): highest average in the class
-        min (str): lowest average in the class
+        class_average (Optional[str]): classes average in the subject
+        max (Optional[str]): highest average in the class
+        min (Optional[str]): lowest average in the class
         out_of (str): maximum amount of points
         default_out_of (str): the default maximum amount of points
         subject (Subject): subject the average is from
@@ -661,9 +661,15 @@ class Average(Object):
         self.default_out_of: str = self._resolver(
             Util.grade_parse, "baremeMoyEleveParDefault", "V", default=""
         )
-        self.class_average: str = self._resolver(Util.grade_parse, "moyClasse", "V")
-        self.min: str = self._resolver(Util.grade_parse, "moyMin", "V")
-        self.max: str = self._resolver(Util.grade_parse, "moyMax", "V")
+        self.class_average: Optional[str] = self._resolver(
+            Util.grade_parse, "moyClasse", "V", strict=False
+        )
+        self.min: Optional[str] = self._resolver(
+            Util.grade_parse, "moyMin", "V", strict=False
+        )
+        self.max: Optional[str] = self._resolver(
+            Util.grade_parse, "moyMax", "V", strict=False
+        )
         self.subject = Subject(json_dict)
         self.background_color: Optional[str] = self._resolver(
             str, "couleur", strict=False
