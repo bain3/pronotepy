@@ -182,14 +182,15 @@ class _Communication(object):
             r_json = response.json()
             if r_json["Erreur"]["G"] == 22:
                 raise ExpiredObject(error_messages.get(22))
+            # Titre is empty for some errors => use Message as a fallback
+            msg = r_json["Erreur"]["Titre"] or r_json["Erreur"].get("Message", "")
             raise PronoteAPIError(
                 error_messages.get(
                     r_json["Erreur"]["G"],
-                    f'Unknown error from pronote: {r_json["Erreur"]["G"]} '
-                    f'| {r_json["Erreur"]["Titre"]}',
+                    f'Unknown error from pronote: {r_json["Erreur"]["G"]} | {msg}',
                 ),
                 pronote_error_code=r_json["Erreur"]["G"],
-                pronote_error_msg=r_json["Erreur"]["Titre"],
+                pronote_error_msg=msg,
             )
 
         # TODO: check returned request_number
@@ -253,11 +254,11 @@ class _Communication(object):
         """
         parsed = BeautifulSoup(html, "html.parser")
 
-        if "IP" in html:
-            raise PronoteAPIError("Your IP address is suspended.")
-
         match = re.search(r"Start ?\({(?P<param>[^}]*)}\)", html)  # type: ignore
         if not match:
+            # Careful: "IP" can appear in names (eg. ANTIPOLIS), check it after checking Start()
+            if "IP" in html:
+                raise PronoteAPIError("Your IP address is suspended.")
             raise PronoteAPIError(
                 "Page html is different than expected. Be sure that pronote_url is the direct url to your pronote page."
             )
